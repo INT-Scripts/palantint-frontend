@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+    // Next.js will now run as a Node.js server to support dynamic [id] routes
 };
 
 export default nextConfig;

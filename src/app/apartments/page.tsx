@@ -171,7 +171,7 @@ function ApartmentsContent() {
                         title1="Facility"
                         title2="Overview"
                         titleGradient="from-orange-500 to-red-600"
-                        subtitle="Mapping resident telemetry across regional vectors."
+                        subtitle="Mapping student housing locations."
                         colorName="orange"
                         searchPlaceholder="QUERY: APT_NUM [e.g. 7523]"
                         searchValue={search}
@@ -289,13 +289,13 @@ function ApartmentsContent() {
                                         transform: "translate(-50%, -100%)"
                                     }}
                                 >
-                                    {/* Tooltip Target Brackets */}
+                                    {/* Tooltip Room Labels */}
                                     <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-orange-500" />
                                     <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-orange-500" />
                                     
                                     <div className="flex items-center gap-2 mb-2 border-b border-orange-500/30 pb-1">
                                         <Home className="w-3.5 h-3.5 text-orange-500" />
-                                        <span className="text-xs font-black text-white font-mono uppercase tracking-widest">Target: {hoveredRoom}</span>
+                                        <span className="text-xs font-black text-white font-mono uppercase tracking-widest">Room: {hoveredRoom}</span>
                                     </div>
                                     {hoveredOccupants && hoveredOccupants.length > 0 ? (
                                         hoveredOccupants.slice(0, 4).map((o: any) => (
@@ -354,7 +354,7 @@ function ApartmentsContent() {
                                 )) : (
                                     <div className="flex flex-col items-center justify-center py-20 text-zinc-600">
                                         <Building2 className="w-12 h-12 mb-4 text-zinc-800" />
-                                        <p className="text-xs font-mono uppercase tracking-widest text-zinc-500">Zero Targets Detected</p>
+                                        <p className="text-xs font-mono uppercase tracking-widest text-zinc-500">No residents found</p>
                                     </div>
                                 )}
                             </div>

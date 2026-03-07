@@ -126,7 +126,7 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
                     
                     <div className="flex items-center gap-2 mb-2">
                         <span className="w-1.5 h-1.5 bg-emerald-500 animate-pulse" />
-                        <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">Initialize Link Protocol</span>
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">Add New Relationship</span>
                     </div>
 
                     {/* Student Search */}
@@ -135,7 +135,7 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
                             <Search className="w-4 h-4 text-emerald-500/50" />
                             <input
                                 type="text"
-                                placeholder="Query Target Database..."
+                                placeholder="Search Student Database..."
                                 value={searchQuery}
                                 onChange={e => searchStudents(e.target.value)}
                                 className="flex-1 bg-transparent text-xs font-mono text-white placeholder-zinc-600 outline-none uppercase tracking-wider"
@@ -184,7 +184,7 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
                                     />
                                 </div>
                                 <div className="flex flex-col flex-1">
-                                    <span className="text-[10px] font-mono text-emerald-500/70 uppercase tracking-widest">Target Locked</span>
+                                    <span className="text-[10px] font-mono text-emerald-500/70 uppercase tracking-widest">Student Selected</span>
                                     <span className="text-xs text-emerald-400 font-black uppercase tracking-wider">{selectedStudent.first_name} {selectedStudent.last_name}</span>
                                 </div>
                                 <button onClick={() => { setSelectedStudent(null); setSearchQuery(""); }} className="p-2 text-zinc-500 hover:text-red-400 transition-colors">
@@ -205,7 +205,7 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
                                     ))}
                                 </select>
                             ) : (
-                                <p className="text-[10px] text-red-500 uppercase font-mono tracking-widest p-2 border border-red-500/20 bg-red-500/5">ERROR: CLASSIFICATION SCHEMAS MISSING. CONTACT INTEL ADMIN.</p>
+                                <p className="text-[10px] text-red-500 uppercase font-mono tracking-widest p-2 border border-red-500/20 bg-red-500/5">ERROR: CATEGORIES MISSING. CONTACT ADMIN.</p>
                             )}
                             
                             {/* Submit */}

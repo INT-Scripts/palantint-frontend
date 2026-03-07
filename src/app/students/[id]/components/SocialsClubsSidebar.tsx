@@ -202,7 +202,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                     <ul className="space-y-2">
                         {socials.map((link: any) => (
                             <li key={link.id} className="group relative border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-800 transition-colors">
-                                {/* Hover Target Line */}
+                                {/* Hover Line */}
                                 <div className="absolute top-0 left-0 w-0 h-full bg-blue-500 group-hover:w-1 transition-all duration-300" />
                                 
                                 <div className="flex items-center justify-between p-3 pl-4">
@@ -301,7 +301,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                                 })()}
                                 <input
                                     type="text"
-                                    placeholder="Designation Role (e.g. Operative)"
+                                    placeholder="Role (e.g. President)"
                                     value={clubForm.role}
                                     onChange={e => setClubForm({ ...clubForm, role: e.target.value })}
                                     className="w-full bg-zinc-950/50 border border-zinc-700/50 px-3 py-2 text-xs font-mono text-white placeholder-zinc-600 outline-none focus:border-emerald-500 transition-colors"
@@ -313,7 +313,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                                         onChange={e => setClubForm({ ...clubForm, is_mandat: e.target.checked })}
                                         className="accent-emerald-500 w-4 h-4"
                                     />
-                                    <span className="text-[10px] font-mono text-zinc-300 uppercase tracking-widest">Executive Clearance (Mandat)</span>
+                                    <span className="text-[10px] font-mono text-zinc-300 uppercase tracking-widest">Board Member</span>
                                 </label>
                                 <button
                                     onClick={addClub}
@@ -352,7 +352,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                                             )}
                                         </div>
                                         <p className="text-[10px] text-zinc-500 font-mono tracking-widest uppercase truncate border-l border-zinc-700 pl-2">
-                                            {affil.role || "OPERATIVE"}
+                                            {affil.role || "MEMBER"}
                                         </p>
                                     </div>
                                     <button

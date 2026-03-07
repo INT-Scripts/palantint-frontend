@@ -37,7 +37,7 @@ export default function LoginPage() {
 
             if (res.access_token) {
                 localStorage.setItem("palantint_token", res.access_token);
-                router.push("/");
+                router.push("/account");
             }
         } catch (err: any) {
             setError(err.message || "Login failed");
@@ -68,7 +68,7 @@ export default function LoginPage() {
                         Palant<span className="text-blue-500">INT</span>
                     </h1>
                     <p className="text-zinc-500 font-mono text-xs uppercase tracking-[0.2em] border-l-2 border-zinc-700 pl-3">
-                        Authentication Required
+                        Sign In
                     </p>
                 </div>
 
@@ -83,7 +83,7 @@ export default function LoginPage() {
                     <div className="space-y-2 group">
                         <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] flex items-center justify-between">
                             <span>Username</span>
-                            <span className="text-zinc-800 font-mono">IDENTIFIER</span>
+                            <span className="text-zinc-800 font-mono">USER</span>
                         </label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 w-1 bg-zinc-800 group-focus-within:bg-blue-500 transition-colors z-20" />
@@ -94,7 +94,7 @@ export default function LoginPage() {
                                 onChange={(e) => setUsername(e.target.value)}
                                 required
                                 className="w-full h-14 bg-zinc-950/50 backdrop-blur-2xl border-y border-r border-l-0 border-zinc-800/80 rounded-none pl-12 pr-4 text-sm font-mono text-zinc-200 placeholder-zinc-700 shadow-inner focus-visible:ring-0 focus-visible:border-blue-500/50 transition-all hover:bg-zinc-900/60 outline-none"
-                                placeholder="OPERATOR"
+                                placeholder="USERNAME"
                             />
                         </div>
                     </div>
@@ -102,7 +102,7 @@ export default function LoginPage() {
                     <div className="space-y-2 group">
                         <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] flex items-center justify-between">
                             <span>Password</span>
-                            <span className="text-zinc-800 font-mono">SECRET</span>
+                            <span className="text-zinc-800 font-mono">PASS</span>
                         </label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 w-1 bg-zinc-800 group-focus-within:bg-blue-500 transition-colors z-20" />
@@ -124,7 +124,7 @@ export default function LoginPage() {
                             disabled={loading}
                             className="w-full h-14 flex items-center justify-between px-6 bg-zinc-100 hover:bg-white text-zinc-950 font-bold uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed group/btn hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
                         >
-                            <span>{loading ? "Validating..." : "Initialize Session"}</span>
+                            <span>{loading ? "Authenticating..." : "Login"}</span>
                             <span>
                                 {loading ? <Loader2Icon /> : <LogIn />}
                             </span>

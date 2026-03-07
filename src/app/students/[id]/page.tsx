@@ -270,7 +270,8 @@ export default function StudentProfilePage() {
                                         </TabsTrigger>
                                         <TabsTrigger value="notes" className="whitespace-nowrap data-[state=active]:bg-zinc-800 data-[state=active]:text-white py-3 sm:py-0 sm:h-full px-4 sm:px-6 font-mono uppercase tracking-widest text-xs font-black transition-all relative flex items-center gap-2">
                                             <Lock className="w-4 h-4 text-amber-500/50" />
-                                            Observer Logs
+                                            Activity Logs
+
                                         </TabsTrigger>
                                     </TabsList>
                                     

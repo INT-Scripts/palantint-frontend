@@ -71,10 +71,10 @@ export default function DashboardPage() {
           {/* Hero Section */}
           <PageHeader
             badgeText="System Active // Global Network"
-            title1="Intel"
-            title2="Database"
+            title1="Student"
+            title2="Directory"
             titleGradient="from-blue-500 via-indigo-400 to-purple-600"
-            subtitle="Directory access protocol. Querying student, association, and facility telemetry."
+            subtitle="Directory access. Access student, association, and housing information."
             colorName="blue"
             searchPlaceholder="EXEC QUERY: NAME / DEPT / ID..."
             searchValue={search}

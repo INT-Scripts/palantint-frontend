@@ -87,7 +87,7 @@ export default function MediaGallery({ studentId, initialMedia }: MediaGalleryPr
                 <div className="flex items-center gap-3 mt-2">
                     <div className="w-2 h-2 bg-blue-500 animate-pulse" />
                     <h2 className="text-xl font-black text-white uppercase tracking-widest font-mono">
-                        Evidence Repo
+                        Media Gallery
                     </h2>
                 </div>
 
@@ -113,7 +113,7 @@ export default function MediaGallery({ studentId, initialMedia }: MediaGalleryPr
                             </div>
                             <input
                                 type="text"
-                                placeholder="EVIDENCE_DESCRIPTION"
+                                placeholder="MEDIA_DESCRIPTION"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 disabled={uploading}
@@ -250,7 +250,7 @@ export default function MediaGallery({ studentId, initialMedia }: MediaGalleryPr
                             />
                         ) : null}
                         
-                        {/* Dossier info panel over image */}
+                        {/* Profile info panel over image */}
                         <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-zinc-950/90 border border-zinc-800 p-4 backdrop-blur-md shadow-2xl flex flex-col gap-4">
                             <div className="space-y-1 border-b border-zinc-800 pb-3">
                                 <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">

@@ -49,11 +49,8 @@ export default function Navbar() {
 
     return (
         <>
-            {/* Spacer to push content down since the navbar is fixed */}
-            <div className="h-[73px] w-full bg-transparent" />
-            
-            <nav className="fixed top-0 z-50 w-full bg-zinc-950/90 backdrop-blur-2xl border-b border-zinc-900 shadow-2xl px-4 sm:px-6 py-3 sm:py-4">
-                <div className="mx-auto w-full flex items-center justify-between gap-2 sm:gap-4">
+            <nav className="sticky top-0 z-[100] w-full bg-zinc-950/90 backdrop-blur-2xl border-b border-zinc-900 shadow-2xl px-4 sm:px-6 py-3 sm:py-4">
+            <div className="mx-auto w-full flex items-center justify-between gap-2 sm:gap-4">
                     
                     <div className="flex items-center gap-4 sm:gap-12">
                         <div
@@ -71,7 +68,7 @@ export default function Navbar() {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600 z-10 pointer-events-none group-focus-within:text-blue-500 transition-colors" />
                         <Input
                             type="text"
-                            placeholder="QUERY SYSTEM..."
+                            placeholder="SEARCH..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             onFocus={() => { if (search.length > 1) setShowResults(true) }}
@@ -108,9 +105,9 @@ export default function Navbar() {
 
                 <div className="flex items-center gap-4 sm:gap-8 shrink-0">
                     <div className="hidden lg:flex items-center gap-6 text-sm font-mono tracking-widest text-zinc-500 uppercase">
-                        <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/")}>Agents</span>
-                        <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/clubs")}>Entities</span>
-                        <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/apartments")}>Facilities</span>
+                        <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/")}>Students</span>
+                        <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/clubs")}>Clubs</span>
+                        <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/apartments")}>Apartments</span>
                     </div>
 
                     <div className="lg:hidden">
@@ -127,17 +124,19 @@ export default function Navbar() {
                     {user ? (
                         <div className="flex items-center gap-2">
                             <div
-                                className={`flex items-center gap-2 sm:gap-4 bg-zinc-950 p-1 sm:p-2 sm:pr-6 border border-zinc-800 ${user.is_admin ? 'cursor-pointer hover:border-blue-500/50 transition-all group' : ''}`}
-                                onClick={() => user.is_admin ? router.push(`/admin/settings`) : null}
+                                className="flex items-center gap-2 sm:gap-4 bg-zinc-950 p-1 sm:p-2 sm:pr-6 border border-zinc-800 cursor-pointer hover:border-blue-500/50 transition-all group"
+                                onClick={() => router.push(`/account`)}
                             >
-                                <div className="w-8 h-8 bg-zinc-800 flex items-center justify-center text-xs font-mono font-bold text-white shrink-0">
+                                <div className="w-8 h-8 bg-zinc-800 flex items-center justify-center text-xs font-mono font-bold text-white shrink-0 group-hover:bg-blue-900/40 transition-colors">
                                     {user.username.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="hidden sm:block">
-                                    <p className="text-sm font-bold text-white uppercase tracking-wider leading-tight">{user.username}</p>
-                                    {user.is_admin && <p className="text-[10px] text-blue-500 font-mono uppercase tracking-widest group-hover:text-blue-400">SYS_ADMIN</p>}
+                                    <p className="text-sm font-bold text-white uppercase tracking-wider leading-tight group-hover:text-blue-400 transition-colors">{user.username}</p>
+                                    <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest group-hover:text-blue-500/70 transition-colors">
+                                        {user.is_admin ? 'ADMIN' : 'USER'}
+                                    </p>
                                 </div>
-                                {user.is_admin && <Settings className="hidden sm:block w-4 h-4 text-zinc-600 group-hover:text-blue-500 transition-colors ml-2 sm:ml-4 shrink-0" />}
+                                <User className="hidden sm:block w-4 h-4 text-zinc-600 group-hover:text-blue-500 transition-colors ml-2 sm:ml-4 shrink-0" />
                             </div>
                             <Button 
                                 variant="ghost" 

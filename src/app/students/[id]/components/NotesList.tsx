@@ -71,7 +71,7 @@ export default function NotesList({ studentId }: NotesListProps) {
                 <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-amber-500 animate-pulse" />
                     <h2 className="text-xl font-black text-white uppercase tracking-widest font-mono">
-                        Observer Logs
+                        Activity Logs
                     </h2>
                 </div>
             </div>

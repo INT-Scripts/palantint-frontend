@@ -75,7 +75,7 @@ export default function ClubDetailsPage() {
                         </h4>
                         <div className="flex items-center gap-2 mt-1">
                             {member.is_mandat && <Crown className="w-3 h-3 text-amber-500 shrink-0" />}
-                            <p className="text-[10px] text-emerald-500 font-mono tracking-widest uppercase truncate">{member.role || "OPERATIVE"}</p>
+                            <p className="text-[10px] text-emerald-500 font-mono tracking-widest uppercase truncate">{member.role || "MEMBER"}</p>
                         </div>
                     </div>
                 </div>
@@ -162,7 +162,7 @@ export default function ClubDetailsPage() {
                     <section>
                         <div className="flex items-center gap-4 mb-8">
                             <h2 className="text-xl font-black uppercase tracking-widest flex items-center gap-3 text-white">
-                                <Users className="w-5 h-5 text-zinc-500" /> Registered Operatives
+                                <Users className="w-5 h-5 text-zinc-500" /> Members
                             </h2>
                             <div className="h-px flex-1 bg-gradient-to-r from-zinc-800 to-transparent" />
                         </div>

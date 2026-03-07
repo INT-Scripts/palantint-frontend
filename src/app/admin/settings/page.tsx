@@ -1,44 +1,131 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { fetchAPI } from "@/lib/api";
+import { 
+    Users, Database, Calendar, Shield, Activity, 
+    Search, Fingerprint, ShieldAlert, X, Key, Loader2,
+    Tags, Plus, Pencil, Trash2, Check
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tags, Loader2, Plus, Trash2, Check, Pencil, X, UserPlus, Shield, User, Download, Upload } from "lucide-react";
 
 export default function AdminSettingsPage() {
     const [me, setMe] = useState<{ id: string } | null>(null);
-
-    // Relationship types
+    const [telemetry, setTelemetry] = useState<any>(null);
+    
+    // Grid State
+    const [students, setStudents] = useState<any[]>([]);
+    const [search, setSearch] = useState("");
+    const [loading, setLoading] = useState(true);
+    
+    // Relationship Types State
     const [relTypes, setRelTypes] = useState<any[]>([]);
+    const [showRelTypes, setShowRelTypes] = useState(false);
     const [relName, setRelName] = useState("");
     const [relColor, setRelColor] = useState("#3b82f6");
     const [creatingRel, setCreatingRel] = useState(false);
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [editName, setEditName] = useState("");
-    const [editColor, setEditColor] = useState("");
-    const [editLoading, setEditLoading] = useState(false);
 
-    // User Creation State
-    const [createUsername, setCreateUsername] = useState("");
-    const [createPassword, setCreatePassword] = useState("");
-    const [createIsAdmin, setCreateIsAdmin] = useState(false);
-    const [createError, setCreateError] = useState("");
-    const [createSuccess, setCreateSuccess] = useState("");
-    const [createSubmitting, setCreateSubmitting] = useState(false);
-
-    // User Management List State
-    const [allUsers, setAllUsers] = useState<any[]>([]);
+    // Provisioning Modal State
+    const [provTarget, setProvTarget] = useState<any>(null);
+    const [provIsAdmin, setProvIsAdmin] = useState(false);
+    const [provLoading, setProvLoading] = useState(false);
+    const [provCredentials, setProvCredentials] = useState<{username: string, password: string} | null>(null);
 
     useEffect(() => {
         fetchAPI("/users/me").then(data => setMe(data)).catch(() => { });
-        fetchAPI("/relationship-types")
-            .then(data => setRelTypes(data || []))
-            .catch(() => { });
-        fetchAPI("/admin/users")
-            .then(data => setAllUsers(data || []))
-            .catch(() => { });
+        fetchAPI("/admin/telemetry").then(data => setTelemetry(data)).catch(() => { });
+        fetchAPI("/relationship-types").then(data => setRelTypes(data || [])).catch(() => { });
+        loadGrid("");
     }, []);
 
+    const loadGrid = (q: string) => {
+        setLoading(true);
+        fetchAPI(`/admin/students/grid?limit=200&search=${encodeURIComponent(q)}`)
+            .then(data => {
+                setStudents(data || []);
+                setLoading(false);
+            })
+            .catch(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        const delay = setTimeout(() => {
+            loadGrid(search);
+        }, 500);
+        return () => clearTimeout(delay);
+    }, [search]);
+
+    // --- Cell Editing ---
+    const handleCellSave = async (id: string, field: string, value: string) => {
+        const original = students.find(s => s.id === id);
+        if (original[field] === value) return; // no change
+        
+        // Optimistic update
+        setStudents(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
+        
+        try {
+            await fetchAPI(`/admin/students/${id}`, {
+                method: "PATCH",
+                body: JSON.stringify({ [field]: value || null })
+            });
+        } catch (err: any) {
+            alert("GRID UPDATE FAILED: " + err.message);
+            // Revert on fail
+            setStudents(prev => prev.map(s => s.id === id ? { ...s, [field]: original[field] } : s));
+        }
+    };
+
+    // --- Provisioning ---
+    const handleProvisionUser = async () => {
+        if (!provTarget) return;
+        setProvLoading(true);
+        try {
+            const res = await fetchAPI("/admin/users/provision", {
+                method: "POST",
+                body: JSON.stringify({ student_id: provTarget.id, is_admin: provIsAdmin })
+            });
+            setProvCredentials({ username: res.username, password: res.generated_password });
+            
+            // Update grid with real user ID
+            setStudents(prev => prev.map(s => s.id === provTarget.id ? { 
+                ...s, 
+                user_id: res.user_id, 
+                is_admin: res.is_admin 
+            } : s));
+            
+            fetchAPI("/admin/telemetry").then(data => setTelemetry(data));
+        } catch (err: any) {
+            alert("PROVISION FAILED: " + err.message);
+        } finally {
+            setProvLoading(false);
+        }
+    };
+
+    const revokeUser = async (student: any) => {
+        if (!confirm(`REVOKE ACCESS FOR ${student.trombint_id}?`)) return;
+        try {
+            await fetchAPI(`/admin/users/${student.user_id}`, { method: "DELETE" });
+            setStudents(prev => prev.map(s => s.id === student.id ? { ...s, user_id: null, is_admin: false } : s));
+            fetchAPI("/admin/telemetry").then(data => setTelemetry(data));
+        } catch (err: any) {
+            alert("PURGE FAILED: " + err.message);
+        }
+    };
+    
+    const toggleAdmin = async (student: any) => {
+        try {
+            await fetchAPI(`/admin/users/${student.user_id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ is_admin: !student.is_admin })
+            });
+            setStudents(prev => prev.map(s => s.id === student.id ? { ...s, is_admin: !student.is_admin } : s));
+        } catch (err: any) {
+            alert("CLEARANCE UPDATE FAILED: " + err.message);
+        }
+    };
+
+    // --- Rel Types ---
     const handleCreateRelType = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!relName.trim()) return;
@@ -51,39 +138,13 @@ export default function AdminSettingsPage() {
             });
             setRelTypes([...relTypes, newType]);
             setRelName("");
-            setRelColor("#3b82f6");
-        } catch (err: any) {
-            alert("Error: " + err.message);
         } finally {
             setCreatingRel(false);
         }
     };
 
-    const startEdit = (rt: any) => {
-        setEditingId(rt.id);
-        setEditName(rt.name);
-        setEditColor(rt.color);
-    };
-
-    const saveEdit = async (id: string) => {
-        setEditLoading(true);
-        try {
-            const updated = await fetchAPI(`/admin/relationship-types/${id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: editName, color: editColor }),
-            });
-            setRelTypes(relTypes.map(rt => rt.id === id ? updated : rt));
-            setEditingId(null);
-        } catch (err: any) {
-            alert("Error: " + err.message);
-        } finally {
-            setEditLoading(false);
-        }
-    };
-
     const deleteRelType = async (id: string) => {
-        if (!confirm("Delete this relationship type? All connections using it will also be deleted.")) return;
+        if (!confirm("PURGE VECTOR?")) return;
         try {
             await fetchAPI(`/admin/relationship-types/${id}`, { method: "DELETE" });
             setRelTypes(relTypes.filter(rt => rt.id !== id));
@@ -92,318 +153,185 @@ export default function AdminSettingsPage() {
         }
     };
 
-    const handleDownloadTemplate = async () => {
-        try {
-            const token = localStorage.getItem("palantint_token");
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "/api"}/admin/apartments/template`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            });
-            if (!res.ok) throw new Error("Failed to download template");
-
-            const blob = await res.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = "apartment_template.csv";
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        } catch (err: any) {
-            alert(err.message);
-        }
-    };
-
-    const handleUploadApartments = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const formData = new FormData();
-        formData.append("file", file);
-
-        try {
-            const data = await fetchAPI("/admin/apartments/upload", {
-                method: "POST",
-                body: formData
-            });
-            alert(data.message);
-        } catch (err: any) {
-            alert(err.message);
-        } finally {
-            e.target.value = ""; // reset
-        }
-    };
-
-    const handleCreateUser = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setCreateSubmitting(true);
-        setCreateError("");
-        setCreateSuccess("");
-
-        try {
-            const newUser = await fetchAPI("/admin/users", {
-                method: "POST",
-                body: JSON.stringify({ username: createUsername, password: createPassword, is_admin: createIsAdmin }),
-            });
-            setAllUsers(prev => [...prev, newUser]);
-            setCreateSuccess(`User ${newUser.username} created successfully!`);
-            setCreateUsername("");
-            setCreatePassword("");
-            setCreateIsAdmin(false);
-        } catch (err: any) {
-            setCreateError(err.message || "Failed to create user");
-        } finally {
-            setCreateSubmitting(false);
-        }
-    };
-
-    const toggleAdminStatus = async (user: any) => {
-        try {
-            const updatedUser = await fetchAPI(`/admin/users/${user.id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ is_admin: !user.is_admin })
-            });
-            setAllUsers(allUsers.map((u: any) => u.id === updatedUser.id ? updatedUser : u));
-        } catch (err: any) {
-            alert("Error updating user: " + err.message);
-        }
-    };
-
-    const deleteUser = async (user: any) => {
-        if (!confirm(`Are you sure you want to completely delete ${user.username}?`)) return;
-        try {
-            await fetchAPI(`/admin/users/${user.id}`, { method: "DELETE" });
-            setAllUsers(allUsers.filter((u: any) => u.id !== user.id));
-        } catch (err: any) {
-            alert("Error deleting user: " + err.message);
-        }
-    };
-
     return (
-        <div className="space-y-8">
-            <div>
-                <h1 className="text-2xl font-bold text-white mb-2">Platform Settings</h1>
-                <p className="text-zinc-400">Manage users, relationship labels, and apartment data.</p>
+        <div className="space-y-8 pb-20 max-w-[1600px] mx-auto">
+            {/* Header */}
+            <header className="animate-in fade-in slide-in-from-top-4 duration-1000 ease-out flex items-end justify-between border-b border-zinc-800/60 pb-6 relative">
+                <div className="absolute bottom-0 left-0 w-1/3 h-[1px] bg-gradient-to-r from-red-500 to-transparent shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
+                <div>
+                    <div className="flex items-center gap-2 text-red-500 mb-2">
+                        <Activity className="w-4 h-4" />
+                        <span className="font-mono text-xs tracking-[0.3em] font-bold">SYSTEM CONTROL</span>
+                    </div>
+                    <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter uppercase">
+                        Admin Dashboard
+                    </h1>
+                </div>
+                <div className="hidden md:flex flex-col items-end text-right font-mono text-xs text-zinc-500">
+                    <button 
+                        onClick={() => setShowRelTypes(!showRelTypes)}
+                        className="mb-2 bg-purple-500/10 text-purple-400 border border-purple-500/30 px-3 py-1 rounded hover:bg-purple-500/20 transition flex items-center gap-2 uppercase tracking-widest"
+                    >
+                        <Tags className="w-3 h-3" /> Graph Vectors
+                    </button>
+                    <span>V 4.1.0-OSINT</span>
+                    <span>LIVE EDIT: ENABLED</span>
+                </div>
+            </header>
+
+            {/* TELEMETRY ROW */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both" style={{ animationDelay: '100ms' }}>
+                <div className="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/60 rounded-none p-6 shadow-xl relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 w-1 h-8 bg-blue-500/50" />
+                    <Users className="w-6 h-6 text-blue-500 mb-4 opacity-50 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+                    <p className="text-xs font-mono tracking-widest text-zinc-500 uppercase">Students</p>
+                    <p className="text-3xl font-mono font-bold text-white mt-1">{telemetry ? telemetry.counts.students : "---"}</p>
+                </div>
+                <div className="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/60 rounded-none p-6 shadow-xl relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 w-1 h-8 bg-blue-500/50" />
+                    <Database className="w-6 h-6 text-emerald-500 mb-4 opacity-50 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                    <p className="text-xs font-mono tracking-widest text-zinc-500 uppercase">Clubs</p>
+                    <p className="text-3xl font-mono font-bold text-white mt-1">{telemetry ? telemetry.counts.clubs : "---"}</p>
+                </div>
+                <div className="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/60 rounded-none p-6 shadow-xl relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 w-1 h-8 bg-blue-500/50" />
+                    <Calendar className="w-6 h-6 text-purple-500 mb-4 opacity-50 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+                    <p className="text-xs font-mono tracking-widest text-zinc-500 uppercase">Events</p>
+                    <p className="text-3xl font-mono font-bold text-white mt-1">{telemetry ? telemetry.counts.events : "---"}</p>
+                </div>
+                <div className="bg-zinc-900/40 backdrop-blur-xl border border-red-900/40 rounded-none p-6 shadow-xl relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 w-1 h-8 bg-red-500" />
+                    <Shield className="w-6 h-6 text-red-500 mb-4 opacity-50 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                    <p className="text-xs font-mono tracking-widest text-zinc-500 uppercase">Users</p>
+                    <p className="text-3xl font-mono font-bold text-red-400 mt-1">{telemetry ? telemetry.counts.users : "---"}</p>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Apartments Card */}
-                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-                    <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <Upload className="w-5 h-5 text-orange-500" /> Apartments Data
-                    </h2>
-                    <p className="text-sm text-zinc-400 mb-6">Upload a CSV linking TrombINT usernames to apartment numbers.</p>
-
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 bg-zinc-950 rounded-xl border border-zinc-800">
-                            <div>
-                                <p className="text-white font-medium">Download Template</p>
-                                <p className="text-xs text-zinc-500">Generates a CSV with all existing users.</p>
+            {/* Rel Types Modal */}
+            {showRelTypes && (
+                <div className="p-6 bg-purple-950/20 border border-purple-500/30 rounded-none animate-in zoom-in-95 duration-300">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-mono text-purple-400 uppercase tracking-widest flex items-center gap-2">
+                            <Tags className="w-4 h-4" /> Social Graph Vectors
+                        </h3>
+                        <button onClick={() => setShowRelTypes(false)} className="text-zinc-500 hover:text-white"><X className="w-4 h-4"/></button>
+                    </div>
+                    <form onSubmit={handleCreateRelType} className="flex gap-2 mb-4">
+                        <input type="color" value={relColor} onChange={e=>setRelColor(e.target.value)} className="w-10 h-10 bg-transparent rounded-none cursor-pointer"/>
+                        <input type="text" value={relName} onChange={e=>setRelName(e.target.value)} placeholder="NEW LABEL..." className="flex-1 bg-black/50 border border-zinc-800 rounded-none px-3 font-mono text-sm uppercase text-white outline-none focus:border-purple-500" />
+                        <Button type="submit" className="bg-purple-600 hover:bg-purple-500 text-white font-mono uppercase tracking-widest text-xs rounded-none">Add</Button>
+                    </form>
+                    <div className="flex flex-wrap gap-2">
+                        {relTypes.map(rt => (
+                            <div key={rt.id} className="flex items-center gap-2 bg-black/40 border border-zinc-800 px-3 py-1.5 rounded-none">
+                                <div className="w-2 h-2 rounded-none" style={{backgroundColor: rt.color}} />
+                                <span className="font-mono text-xs uppercase text-zinc-300">{rt.name}</span>
+                                <button onClick={() => deleteRelType(rt.id)} className="text-red-500/50 hover:text-red-500 ml-2"><Trash2 className="w-3 h-3"/></button>
                             </div>
-                            <Button onClick={handleDownloadTemplate} variant="outline" className="border-zinc-700 text-zinc-300 hover:text-white">
-                                <Download className="w-4 h-4 mr-2" /> Download
-                            </Button>
-                        </div>
-                        <div className="flex items-center justify-between p-4 bg-zinc-950 rounded-xl border border-zinc-800">
-                            <div>
-                                <p className="text-white font-medium">Upload CSV</p>
-                                <p className="text-xs text-zinc-500">Columns must contain: nom, prénom, id utilisateur, num appart.</p>
-                            </div>
-                            <label className="cursor-pointer">
-                                <span className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-zinc-700 hover:bg-zinc-800 hover:text-zinc-100 bg-transparent text-zinc-300 h-10 px-4 py-2">
-                                    <Upload className="w-4 h-4 mr-2" /> Upload
-                                </span>
-                                <input type="file" accept=".csv" className="hidden" onChange={handleUploadApartments} />
-                            </label>
-                        </div>
+                        ))}
                     </div>
                 </div>
+            )}
 
-                {/* Relationship Types Card */}
-                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-                    <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <Tags className="w-5 h-5 text-purple-500" /> Relationship Labels
-                    </h2>
-                    <p className="text-sm text-zinc-400 mb-4">Define the labels users can choose when linking two students together.</p>
-
-                    {/* Existing types list */}
-                    {relTypes.length > 0 && (
-                        <div className="space-y-2 mb-4">
-                            {relTypes.map((rt: any) => (
-                                <div key={rt.id} className="flex items-center gap-3 p-3 bg-zinc-950 rounded-xl border border-zinc-800 group">
-                                    {editingId === rt.id ? (
-                                        <>
-                                            <input
-                                                type="color" value={editColor} onChange={e => setEditColor(e.target.value)}
-                                                className="w-8 h-8 rounded cursor-pointer bg-transparent border-0 shrink-0"
-                                            />
-                                            <input
-                                                type="text" value={editName} onChange={e => setEditName(e.target.value)}
-                                                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1 text-sm text-white outline-none focus:border-purple-500"
-                                            />
-                                            <button onClick={() => saveEdit(rt.id)} disabled={editLoading}
-                                                className="text-emerald-400 hover:text-emerald-300 transition">
-                                                {editLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                            </button>
-                                            <button onClick={() => setEditingId(null)} className="text-zinc-500 hover:text-white transition">
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: rt.color }} />
-                                            <span className="flex-1 text-sm text-white font-medium">{rt.name}</span>
-                                            <span className="text-xs text-zinc-600 font-mono">{rt.color}</span>
-                                            <button onClick={() => startEdit(rt)}
-                                                className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-white transition">
-                                                <Pencil className="w-3.5 h-3.5" />
-                                            </button>
-                                            <button onClick={() => deleteRelType(rt.id)}
-                                                className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-400 transition">
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Add new type form */}
-                    <form onSubmit={handleCreateRelType} className="flex items-center gap-2 p-3 bg-zinc-950 rounded-xl border border-dashed border-zinc-700">
+            {/* LIVE EXCEL GRID */}
+            <div className="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/60 rounded-none shadow-2xl relative overflow-hidden flex flex-col h-[800px] animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both" style={{ animationDelay: '200ms' }}>
+                {/* Brutalist Corner Accents */}
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-zinc-700/50 m-2 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-zinc-700/50 m-2 pointer-events-none" />
+                {/* Toolbar */}
+                <div className="p-4 border-b border-zinc-800/60 flex items-center justify-between bg-black/20">
+                    <div className="relative w-[300px]">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                         <input
-                            type="color" value={relColor} onChange={e => setRelColor(e.target.value)}
-                            className="w-8 h-8 rounded cursor-pointer bg-transparent border-0 shrink-0"
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="SEARCH STUDENTS..."
+                            className="w-full bg-black/50 border border-zinc-800 rounded py-2 pl-9 pr-4 text-white focus:border-blue-500/50 focus:bg-black focus:shadow-[0_0_15px_rgba(59,130,246,0.1)] outline-none transition-all text-xs font-mono placeholder:text-zinc-700 uppercase tracking-widest"
                         />
-                        <input
-                            type="text" required value={relName} onChange={e => setRelName(e.target.value)}
-                            placeholder="New label (e.g. Roommate)"
-                            className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-purple-500"
-                        />
-                        <Button type="submit" disabled={creatingRel || !relName.trim()} size="sm"
-                            className="bg-purple-600 hover:bg-purple-500 text-white shrink-0">
-                            {creatingRel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                        </Button>
-                    </form>
+                    </div>
+                    {loading && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
                 </div>
 
-                {/* User Management Card */}
-                <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-                    <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <UserPlus className="w-5 h-5 text-blue-500" /> Create New Platform User
-                    </h2>
-                    <p className="text-sm text-zinc-400 mb-6">Create accounts for students so they can log into the PalantINT application. Only Admins can modify accounts.</p>
-
-                    {createError && <div className="p-3 bg-red-500/10 text-red-500 text-sm rounded-lg mb-4">{createError}</div>}
-                    {createSuccess && <div className="p-3 bg-green-500/10 text-green-500 text-sm rounded-lg mb-4">{createSuccess}</div>}
-
-                    <form onSubmit={handleCreateUser} className="space-y-4">
-                        <div>
-                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1 block">Username</label>
-                            <input
-                                type="text"
-                                required
-                                value={createUsername}
-                                onChange={(e) => setCreateUsername(e.target.value)}
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition text-sm"
-                                placeholder="e.g. jdoe01"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1 block">Password</label>
-                            <input
-                                type="password"
-                                required
-                                value={createPassword}
-                                onChange={(e) => setCreatePassword(e.target.value)}
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition text-sm"
-                                placeholder="••••••••"
-                            />
-                        </div>
-
-                        <div className="flex items-center gap-3 py-2 border-t border-zinc-800 mt-4 pt-4">
-                            <input
-                                type="checkbox"
-                                id="is_admin"
-                                checked={createIsAdmin}
-                                onChange={(e) => setCreateIsAdmin(e.target.checked)}
-                                className="w-4 h-4 rounded bg-zinc-950 border-zinc-800 text-blue-600 focus:ring-blue-600"
-                            />
-                            <label htmlFor="is_admin" className="text-sm font-medium text-white select-none flex items-center gap-2">
-                                <Shield className="w-4 h-4 text-purple-400" /> Grant Administrator Privileges
-                            </label>
-                        </div>
-
-                        <Button
-                            type="submit"
-                            disabled={createSubmitting}
-                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium"
-                        >
-                            {createSubmitting ? "Creating..." : "Create App Account"}
-                        </Button>
-                    </form>
-                </div>
-            </div>
-
-            {/* List of Users Card spans full width at bottom */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-                <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <User className="w-5 h-5 text-zinc-400" /> Platform Users
-                </h2>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left mt-4 border-collapse">
-                        <thead>
-                            <tr className="border-b border-zinc-800">
-                                <th className="py-3 px-4 text-xs font-semibold text-zinc-500 uppercase">Username</th>
-                                <th className="py-3 px-4 text-xs font-semibold text-zinc-500 uppercase">Role</th>
-                                <th className="py-3 px-4 text-xs font-semibold text-zinc-500 uppercase text-right">Actions</th>
+                {/* Grid Container */}
+                <div className="flex-1 overflow-auto custom-scrollbar relative">
+                    <table className="w-full text-left border-collapse min-w-[1000px]">
+                        <thead className="sticky top-0 z-20 bg-zinc-950/90 backdrop-blur shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
+                            <tr>
+                                <th className="py-3 px-4 text-[10px] font-bold font-mono text-zinc-500 uppercase tracking-[0.2em] border-b border-zinc-800 w-32">ID</th>
+                                <th className="py-3 px-4 text-[10px] font-bold font-mono text-zinc-500 uppercase tracking-[0.2em] border-b border-zinc-800">First Name</th>
+                                <th className="py-3 px-4 text-[10px] font-bold font-mono text-zinc-500 uppercase tracking-[0.2em] border-b border-zinc-800">Last Name</th>
+                                <th className="py-3 px-4 text-[10px] font-bold font-mono text-zinc-500 uppercase tracking-[0.2em] border-b border-zinc-800">École</th>
+                                <th className="py-3 px-4 text-[10px] font-bold font-mono text-zinc-500 uppercase tracking-[0.2em] border-b border-zinc-800">Promo</th>
+                                <th className="py-3 px-4 text-[10px] font-bold font-mono text-orange-500/70 uppercase tracking-[0.2em] border-b border-zinc-800 w-32">APT #</th>
+                                <th className="py-3 px-4 text-[10px] font-bold font-mono text-blue-500/70 uppercase tracking-[0.2em] border-b border-zinc-800 w-48 text-center">Role</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {allUsers.map((u: any) => (
-                                <tr key={u.id} className="border-b border-zinc-800/50 hover:bg-zinc-950/50 transition">
-                                    <td className="py-3 px-4 text-sm font-medium text-white">{u.username}</td>
-                                    <td className="py-3 px-4 text-sm">
-                                        {u.is_admin ? (
-                                            <span className="bg-purple-500/10 text-purple-400 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 w-fit">
-                                                <Shield className="w-3 h-3" /> Admin
-                                            </span>
-                                        ) : (
-                                            <span className="text-zinc-500 px-2.5 py-1 text-xs font-bold uppercase tracking-wider">
-                                                User
-                                            </span>
-                                        )}
+                        <tbody className="divide-y divide-zinc-800/50 font-mono text-sm">
+                            {students.map((s) => (
+                                <tr key={s.id} className="hover:bg-zinc-800/30 transition-colors group">
+                                    <td className="py-2 px-4 text-zinc-500 text-xs">{s.trombint_id}</td>
+                                    <td className="py-2 px-4">
+                                        <EditableCell value={s.first_name} onSave={(v) => handleCellSave(s.id, 'first_name', v)} />
                                     </td>
-                                    <td className="py-3 px-4 text-sm text-right">
-                                        <div className="flex items-center justify-end gap-3">
-                                            {me && me.id !== u.id && (
-                                                <>
-                                                    <button
-                                                        onClick={() => toggleAdminStatus(u)}
-                                                        className="text-xs font-medium text-zinc-400 hover:text-white transition"
-                                                    >
-                                                        {u.is_admin ? "Revoke Admin" : "Make Admin"}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => deleteUser(u)}
-                                                        title="Delete User"
-                                                        className="text-red-500 hover:text-red-400 transition ml-2"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </>
-                                            )}
+                                    <td className="py-2 px-4">
+                                        <EditableCell value={s.last_name} onSave={(v) => handleCellSave(s.id, 'last_name', v)} />
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <EditableCell value={s.ecole} onSave={(v) => handleCellSave(s.id, 'ecole', v)} />
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <EditableCell value={s.promo} onSave={(v) => handleCellSave(s.id, 'promo', v)} />
+                                    </td>
+                                    <td className="py-2 px-4">
+                                        <div className="relative group/apt">
+                                            <EditableCell 
+                                                value={s.apartment} 
+                                                onSave={(v) => handleCellSave(s.id, 'apartment', v)} 
+                                                className="text-orange-400 font-bold focus:bg-orange-500/10 focus:border-orange-500/50" 
+                                            />
                                         </div>
+                                    </td>
+                                    <td className="py-2 px-4 text-center">
+                                        {s.user_id ? (
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button 
+                                                    onClick={() => toggleAdmin(s)}
+                                                    className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest border transition-all ${
+                                                        s.is_admin 
+                                                        ? 'bg-red-500/10 border-red-500/30 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]' 
+                                                        : 'bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:text-white'
+                                                    }`}
+                                                >
+                                                    {s.is_admin ? 'L4 Admin' : 'Standard'}
+                                                </button>
+                                                <button 
+                                                    onClick={() => revokeUser(s)}
+                                                    className="opacity-0 group-hover:opacity-100 text-red-500/50 hover:text-red-500 transition-all p-1"
+                                                    title="Revoke Access"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button 
+                                                onClick={() => {
+                                                    setProvTarget(s);
+                                                    setProvIsAdmin(false);
+                                                    setProvCredentials(null);
+                                                }}
+                                                className="opacity-0 group-hover:opacity-100 text-[10px] font-bold uppercase tracking-widest text-blue-400 border border-blue-500/30 hover:bg-blue-500/10 px-3 py-1 rounded transition-all"
+                                            >
+                                                Provision
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
-                            {allUsers.length === 0 && (
+                            {students.length === 0 && !loading && (
                                 <tr>
-                                    <td colSpan={3} className="py-8 text-center text-zinc-500 text-sm">
-                                        No users found.
+                                    <td colSpan={7} className="py-12 text-center text-zinc-500 uppercase tracking-widest text-xs">
+                                        No records found in grid.
                                     </td>
                                 </tr>
                             )}
@@ -411,6 +339,92 @@ export default function AdminSettingsPage() {
                     </table>
                 </div>
             </div>
+
+            {/* PROVISIONING MODAL */}
+            {provTarget && (
+                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-zinc-950 border border-blue-500/30 rounded-xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(59,130,246,0.15)] relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-[60px] pointer-events-none" />
+                        
+                        <div className="flex justify-between items-start mb-6">
+                            <div>
+                                <h2 className="text-xl font-bold text-white tracking-wide uppercase flex items-center gap-3 font-mono">
+                                    <Fingerprint className="w-5 h-5 text-blue-500 drop-shadow-[0_0_5px_rgba(59,130,246,0.8)]" /> 
+                                    Create User Account
+                                </h2>
+                                <p className="text-xs font-mono text-blue-400 mt-2">Profile: {provTarget.first_name} {provTarget.last_name}</p>
+                            </div>
+                            <button onClick={() => setProvTarget(null)} className="text-zinc-500 hover:text-white"><X className="w-5 h-5"/></button>
+                        </div>
+
+                        {!provCredentials ? (
+                            <div className="space-y-6 relative z-10">
+                                <div className="flex items-center gap-3 py-4 border-y border-zinc-800/60">
+                                    <input
+                                        type="checkbox"
+                                        id="modal_is_admin"
+                                        checked={provIsAdmin}
+                                        onChange={(e) => setProvIsAdmin(e.target.checked)}
+                                        className="w-4 h-4 rounded bg-zinc-950 border-zinc-800 text-red-600 focus:ring-red-600 focus:ring-offset-zinc-900 cursor-pointer"
+                                    />
+                                    <label htmlFor="modal_is_admin" className="text-xs tracking-widest font-mono font-medium text-zinc-400 select-none flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
+                                        <Shield className="w-4 h-4 text-red-500/70" /> ADMINISTRATOR PERMISSIONS
+                                    </label>
+                                </div>
+
+                                <Button
+                                    onClick={handleProvisionUser}
+                                    disabled={provLoading}
+                                    className="w-full bg-blue-600/80 hover:bg-blue-500 text-white font-mono uppercase tracking-[0.2em] font-bold h-12 border border-blue-400/30 shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:shadow-[0_0_25px_rgba(59,130,246,0.5)] transition-all"
+                                >
+                                    {provLoading ? "GENERATING..." : "GENERATE SECURE KEY"}
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="p-6 bg-emerald-950/20 border border-emerald-500/30 rounded-lg animate-in zoom-in-95 duration-500 relative z-10">
+                                <div className="flex items-center gap-2 text-emerald-400 mb-4 justify-center">
+                                    <Key className="w-5 h-5 drop-shadow-[0_0_5px_rgba(52,211,153,0.8)]" />
+                                    <span className="font-mono text-xs tracking-widest font-bold">CREDENTIALS GENERATED</span>
+                                </div>
+                                <div className="space-y-3 font-mono text-sm text-center">
+                                    <div className="bg-black/50 p-3 rounded border border-zinc-800">
+                                        <span className="text-zinc-500 mr-2">ID:</span>
+                                        <span className="text-white font-bold">{provCredentials.username}</span>
+                                    </div>
+                                    <div className="bg-black/50 p-3 rounded border border-zinc-800">
+                                        <span className="text-zinc-500 mr-2">KEY:</span>
+                                        <span className="text-emerald-400 font-bold tracking-widest">{provCredentials.password}</span>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-center text-red-400 uppercase tracking-widest mt-4">Copy key now. It is unrecoverable.</p>
+                                <Button onClick={() => setProvTarget(null)} className="w-full mt-4 bg-zinc-800 hover:bg-zinc-700 text-white font-mono uppercase tracking-widest text-xs">Close</Button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
         </div>
+    );
+}
+
+// Inline Editable Cell Component
+function EditableCell({ value, onSave, className = "" }: { value: string, onSave: (v: string) => void, className?: string }) {
+    const [val, setVal] = useState(value || "");
+    
+    useEffect(() => {
+        setVal(value || "");
+    }, [value]);
+
+    return (
+        <input 
+            type="text"
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
+            onBlur={() => onSave(val)}
+            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+            className={`w-full bg-transparent border border-transparent hover:border-zinc-800/50 focus:border-blue-500/50 focus:bg-black/30 rounded px-2 py-1 outline-none transition-all text-white placeholder-zinc-700 ${className}`}
+            placeholder="---"
+        />
     );
 }

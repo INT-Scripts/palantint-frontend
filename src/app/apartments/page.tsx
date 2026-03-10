@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useState, useRef, Suspense, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { fetchAPI } from "@/lib/api";
-import { Home, Search, User, MapPin, Building2, Users } from "lucide-react";
+import { 
+    Home, User, Building2, Users, 
+    Maximize2, X, Eye, FileText, Layers, MapPin
+} from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import BuildingModel from "./components/BuildingModel";
+
 const BUILDINGS: Record<string, { label: string; value: string }[]> = {
     U1: [{ label: "RDC", value: "0" }, { label: "1er", value: "1" }, { label: "2e", value: "2" }, { label: "3e", value: "3" }, { label: "4e", value: "4" }, { label: "5e", value: "5" }],
     U2: [{ label: "1er", value: "1" }, { label: "2e", value: "2" }, { label: "3e", value: "3" }, { label: "4e", value: "4" }, { label: "5e", value: "5" }],
@@ -15,7 +20,6 @@ const BUILDINGS: Record<string, { label: string; value: string }[]> = {
     U7: [{ label: "1er", value: "1" }, { label: "2e", value: "2" }, { label: "3e", value: "3" }, { label: "4e", value: "4" }, { label: "5e", value: "5" }, { label: "6e", value: "6" }],
 };
 
-// Map floor value to the old PNG naming convention
 function getPngPath(bldg: string, floor: string) {
     let f = floor;
     if (bldg === "U5" && floor === "-0.5") f = "_-1";
@@ -23,20 +27,22 @@ function getPngPath(bldg: string, floor: string) {
     return `/api/assets/plans/${bldg}-${f}.png`;
 }
 
-function ApartmentsContent() {
+export default function ApartmentsPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const svgRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
+    const hoveredRoomRef = useRef<string | null>(null);
 
     const [bldg, setBldg] = useState("U7");
     const [floor, setFloor] = useState("1");
     const [occupied, setOccupied] = useState<Record<string, any>>({});
     const [search, setSearch] = useState("");
-    const [hoveredRoom, setHoveredRoom] = useState<string | null>(null);
-    const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
     const [svgContent, setSvgContent] = useState<string>("");
+    const [buildingSvgs, setBuildingSvgs] = useState<Record<string, string>>({});
+    const [buildingMetadata, setBuildingMetadata] = useState<Record<string, any>>({});
     const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (!BUILDINGS[bldg].find(f => f.value === floor)) {
@@ -45,7 +51,7 @@ function ApartmentsContent() {
     }, [bldg, floor]);
 
     useEffect(() => {
-        document.title = "Bâtiments | PalantINT";
+        document.title = "Apartments | PalantINT";
         fetchAPI("/students/apartments/occupied")
             .then(data => {
                 setOccupied(data || {});
@@ -62,10 +68,10 @@ function ApartmentsContent() {
                     }
                 }
             })
-            .catch(console.error);
+            .catch(console.error)
+            .finally(() => setLoading(false));
     }, [searchParams]);
 
-    // Load SVG
     useEffect(() => {
         fetch(`/api/assets/plans/${bldg}_${floor}.svg`)
             .then(r => r.ok ? r.text() : "")
@@ -73,29 +79,87 @@ function ApartmentsContent() {
             .catch(() => setSvgContent(""));
     }, [bldg, floor]);
 
-    // Wire SVG interactivity
-    const occupiedRef = useRef(occupied);
-    occupiedRef.current = occupied;
+    useEffect(() => {
+        let isMounted = true;
+        const fetchAll = async () => {
+            const svgs: Record<string, string> = {};
+            await Promise.all(BUILDINGS[bldg].map(async (f) => {
+                try {
+                    const res = await fetch(`/api/assets/plans/${bldg}_${f.value}.svg`);
+                    if (res.ok) {
+                        svgs[f.value] = await res.text();
+                    }
+                } catch (e) {}
+            }));
+            
+            const meta = await fetchAPI(`/maps/${bldg}/metadata`);
+            
+            if (isMounted) {
+                setBuildingSvgs(svgs);
+                setBuildingMetadata(meta || {});
+            }
+        };
+        fetchAll();
+        return () => { isMounted = false; };
+    }, [bldg]);
 
+    const occupiedRef = useRef(occupied);
+    useEffect(() => {
+        occupiedRef.current = occupied;
+    }, [occupied]);
+
+    // 1. Direct DOM manipulation for fast tooltips & highlights
     useEffect(() => {
         const el = svgRef.current;
         if (!el || !svgContent) return;
-
-        const container = el;
 
         const handleMouseMove = (e: MouseEvent) => {
             const link = (e.target as Element).closest?.("a[data-room]");
             if (link) {
                 const roomNum = link.getAttribute("data-room") || "";
-                setHoveredRoom(roomNum);
-                // Position tooltip relative to SVG container
-                const containerRect = container.getBoundingClientRect();
-                setTooltipPos({
-                    x: e.clientX - containerRect.left,
-                    y: e.clientY - containerRect.top - 10
-                });
+                const containerRect = el.getBoundingClientRect();
+                
+                if (tooltipRef.current) {
+                    tooltipRef.current.style.display = 'block';
+                    tooltipRef.current.style.left = `${e.clientX - containerRect.left + 15}px`;
+                    tooltipRef.current.style.top = `${e.clientY - containerRect.top + 15}px`;
+
+                    if (hoveredRoomRef.current !== roomNum) {
+                        if (hoveredRoomRef.current) {
+                            const prev = el.querySelector(`a[data-room="${hoveredRoomRef.current}"]`);
+                            if (prev) prev.removeAttribute("data-hover");
+                        }
+                        link.setAttribute("data-hover", "true");
+                        
+                        hoveredRoomRef.current = roomNum;
+                        const occupants = occupiedRef.current[roomNum] || [];
+                        const occupantsHtml = occupants.length > 0 
+                            ? occupants.map((o: any) => `
+                                <div class="flex items-center gap-2 text-xs text-zinc-300 font-mono mt-1 uppercase">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 text-orange-500/50"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    ${o.first_name?.[0] || ""}. ${o.last_name || ""}
+                                </div>
+                            `).join('')
+                            : `<p class="text-[10px] text-zinc-500 font-mono italic uppercase">VACANT</p>`;
+                        
+                        tooltipRef.current.innerHTML = `
+                            <div class="flex items-center gap-2 mb-2 border-b border-orange-500/30 pb-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-orange-500"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                <span class="text-xs font-black text-white font-mono uppercase">APT_${roomNum}</span>
+                            </div>
+                            ${occupantsHtml}
+                        `;
+                    }
+                }
             } else {
-                setHoveredRoom(null);
+                if (hoveredRoomRef.current !== null) {
+                    const prev = el.querySelector(`a[data-room="${hoveredRoomRef.current}"]`);
+                    if (prev) prev.removeAttribute("data-hover");
+                    hoveredRoomRef.current = null;
+                    if (tooltipRef.current) {
+                        tooltipRef.current.style.display = 'none';
+                    }
+                }
             }
         };
 
@@ -109,35 +173,41 @@ function ApartmentsContent() {
             }
         };
 
-        container.addEventListener("mousemove", handleMouseMove);
-        container.addEventListener("click", handleClick);
-        container.addEventListener("mouseleave", () => setHoveredRoom(null));
-
-        // Highlight selected room
-        // First clear all existing
-        container.querySelectorAll("a.group[data-active='true']").forEach(a => {
-            a.removeAttribute("data-active");
-            
-            // Clean up any historical inline styles from old code
-            const r = a.querySelector(".room-area");
-            if (r) r.removeAttribute("style");
-            const t = a.querySelector(".room-label");
-            if (t) t.removeAttribute("style");
-        });
-
-        if (selectedRoom) {
-            const selectedLink = container.querySelector(`a[data-room="${selectedRoom}"]`);
-            if (selectedLink) {
-                selectedLink.setAttribute("data-active", "true");
+        const handleMouseLeave = () => {
+            if (hoveredRoomRef.current) {
+                const prev = el.querySelector(`a[data-room="${hoveredRoomRef.current}"]`);
+                if (prev) prev.removeAttribute("data-hover");
             }
-        }
+            hoveredRoomRef.current = null;
+            if (tooltipRef.current) tooltipRef.current.style.display = 'none';
+        };
+
+        el.addEventListener("mousemove", handleMouseMove);
+        el.addEventListener("click", handleClick);
+        el.addEventListener("mouseleave", handleMouseLeave);
+
+        if (tooltipRef.current) tooltipRef.current.style.display = 'none';
 
         return () => {
-            container.removeEventListener("mousemove", handleMouseMove);
-            container.removeEventListener("click", handleClick);
-            container.removeEventListener("mouseleave", () => setHoveredRoom(null));
+            el.removeEventListener("mousemove", handleMouseMove);
+            el.removeEventListener("click", handleClick);
+            el.removeEventListener("mouseleave", handleMouseLeave);
         };
-    }, [svgContent, selectedRoom]);
+    }, [svgContent]); 
+
+    // 2. Visual State Sync Hook (Only Selection)
+    useEffect(() => {
+        const el = svgRef.current;
+        if (!el) return;
+
+        el.querySelectorAll("a.group").forEach(a => {
+            if (a.getAttribute("data-room") === selectedRoom) {
+                a.setAttribute("data-active", "true");
+            } else {
+                a.removeAttribute("data-active");
+            }
+        });
+    }, [selectedRoom, svgContent]);
 
     const belongsToCurrentView = (aptNum: string) => {
         if (aptNum.length !== 4 || isNaN(Number(aptNum))) return false;
@@ -151,29 +221,91 @@ function ApartmentsContent() {
         .filter(belongsToCurrentView)
         .sort((a, b) => Number(a) - Number(b));
 
-    const searchedApt = search.trim() !== "" ? occupied[search.trim()] : null;
-    const hoveredOccupants = hoveredRoom ? occupied[hoveredRoom] : null;
+    const getBuildingResidentCount = useCallback((b: string) => {
+        const b_num = b.replace("U", "");
+        return Object.keys(occupied).filter(apt => apt[0] === b_num).length;
+    }, [occupied]);
+
+    const getFloorResidentCount = useCallback((b: string, f: string) => {
+        const b_num = b.replace("U", "");
+        let f_val = f;
+        if (f_val === "-0.5" || f_val === "0.5") f_val = "0";
+        return Object.keys(occupied).filter(apt => apt[0] === b_num && apt[1] === f_val).length;
+    }, [occupied]);
+
+    const renderSelectors = () => {
+        const ControlBox = ({ label, currentLabel, currentValue, children, className = "" }: any) => (
+            <div className={`p-4 sm:p-6 space-y-4 ${className}`}>
+                <div className="flex items-center justify-between border-b border-zinc-800/50 pb-3">
+                    <label className="text-[10px] font-bold font-mono text-zinc-500 uppercase tracking-[0.2em]">{label}</label>
+                    <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest hidden sm:block">
+                        {currentLabel}: <span className="text-white font-black">{currentValue}</span>
+                    </span>
+                </div>
+                <div className="pt-2">{children}</div>
+            </div>
+        );
+
+        const ControlButton = ({ active, onClick, label, count, className = "" }: any) => (
+            <button
+                onClick={onClick}
+                className={`group relative w-full h-full flex flex-col items-center justify-center p-3 sm:p-4 border transition-all duration-300 rounded-none ${
+                    active 
+                        ? "bg-zinc-800 text-white border-zinc-500 shadow-inner" 
+                        : "bg-zinc-950/50 border-transparent text-zinc-600 hover:bg-zinc-800 hover:text-zinc-400 hover:border-zinc-700"
+                } ${className}`}
+            >
+                <span className={`text-[10px] sm:text-[11px] font-black font-mono tracking-widest mb-1 sm:mb-1.5 transition-colors ${active ? "text-orange-400" : "text-zinc-500"}`}>{label}</span>
+                <div className="flex items-center gap-1.5 w-full justify-center">
+                    <div className={`h-1 w-6 sm:w-10 transition-colors ${active ? "bg-orange-500" : "bg-zinc-800 group-hover:bg-zinc-700"}`} />
+                    <span className="text-[8px] sm:text-[9px] font-mono font-bold opacity-60">({count})</span>
+                </div>
+            </button>
+        );
+
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-1.5 bg-zinc-900/50 border border-zinc-800 shadow-2xl overflow-hidden backdrop-blur-3xl rounded-none">
+                <ControlBox label="Buildings" currentLabel="Current" currentValue={bldg} className="col-span-12 md:col-span-5 lg:col-span-4 xl:col-span-5">
+                    <div className="grid grid-cols-4 sm:grid-cols-7 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-7 gap-1.5">
+                        {Object.keys(BUILDINGS).map(b => (
+                            <ControlButton key={b} active={bldg === b} onClick={() => setBldg(b)} label={b} count={getBuildingResidentCount(b)} />
+                        ))}
+                    </div>
+                </ControlBox>
+                <ControlBox 
+                    label="Floors" 
+                    currentLabel="Current" 
+                    currentValue={BUILDINGS[bldg].find(f => f.value === floor)?.label || floor}
+                    className="col-span-12 md:col-span-7 lg:col-span-8 xl:col-span-7 border-t md:border-t-0 md:border-l border-zinc-800"
+                >
+                    <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-5 2xl:grid-cols-6 gap-1.5">
+                        {BUILDINGS[bldg].map(f => (
+                            <ControlButton key={f.value} active={floor === f.value} onClick={() => { setFloor(f.value); setSelectedRoom(null); }} label={f.label} count={getFloorResidentCount(bldg, f.value)} />
+                        ))}
+                    </div>
+                </ControlBox>
+            </div>
+        );
+    };
 
     return (
-        <div className="min-h-screen bg-zinc-950 selection:bg-orange-500/30">
-            {/* Ambient Background */}
+        <div className="min-h-screen bg-zinc-950 selection:bg-orange-500/30 font-sans">
             <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
                 <div className="absolute top-[20%] left-[-10%] w-[30%] h-[50%] bg-orange-600/10 blur-[150px] mix-blend-screen" />
                 <div className="absolute bottom-[10%] right-[-10%] w-[30%] h-[40%] bg-red-600/10 blur-[150px] mix-blend-screen" />
             </div>
 
-            <main className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 mt-4 sm:mt-8 pb-20 sm:pb-24">
-                <div className="space-y-10">
+            <main className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 mt-4 sm:mt-8 pb-32">
+                <div className="space-y-12">
 
-                    {/* Header */}
                     <PageHeader
-                        badgeText="Thermal Radar // Active"
-                        title1="Facility"
+                        badgeText="Orbital radar // Active"
+                        title1="Residential"
                         title2="Overview"
                         titleGradient="from-orange-500 to-red-600"
-                        subtitle="Mapping student housing locations."
+                        subtitle="Centralized mapping for student housing assets."
                         colorName="orange"
-                        searchPlaceholder="QUERY: APT_NUM [e.g. 7523]"
+                        searchPlaceholder="QUERY: APARTMENT NUMBER"
                         searchValue={search}
                         onSearchChange={(v) => {
                             setSearch(v);
@@ -188,188 +320,129 @@ function ApartmentsContent() {
                                 }
                             }
                         }}
-                        searchResults={
-                            search.trim() !== "" ? (
-                                searchedApt && searchedApt.length > 0 ? searchedApt.map((o: any) => (
-                                    <div key={o.id} className="p-4 bg-transparent hover:bg-zinc-900 border-l-2 border-transparent hover:border-orange-500 cursor-pointer transition-all flex items-center gap-4 group" onClick={() => router.push(`/students/${o.id}`)}>
-                                        <div className="w-12 h-12 bg-zinc-900 border border-zinc-800 flex items-center justify-center">
-                                            <Home className="w-5 h-5 text-orange-500 group-hover:scale-110 transition-transform" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-bold text-white uppercase tracking-wider truncate">{o.first_name} {o.last_name}</p>
-                                            <p className="text-[10px] text-zinc-500 font-mono mt-1 tracking-widest">LOC_ID: {search.trim()}</p>
-                                        </div>
-                                    </div>
-                                )) : (
-                                    <div className="p-6 text-sm text-zinc-600 font-mono text-center uppercase tracking-widest">
-                                        No Native Resident Found
-                                    </div>
-                                )
-                            ) : undefined
-                        }
                     />
 
-                    {/* Building / Floor Selectors */}
-                    <div className="flex gap-6 items-center flex-wrap bg-zinc-950/80 p-3 border border-zinc-800 backdrop-blur-2xl shadow-2xl">
-                        <div className="flex flex-wrap gap-2 p-1 bg-zinc-900 border border-zinc-800 w-full sm:w-auto">
-                            {Object.keys(BUILDINGS).map(b => (
-                                <button key={b} onClick={() => setBldg(b)}
-                                    className={`px-3 sm:px-5 py-2 text-xs sm:text-sm font-mono font-bold tracking-widest uppercase transition-all border ${bldg === b ? "bg-orange-500/20 text-orange-400 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.2)]" : "text-zinc-500 border-transparent hover:text-zinc-300 hover:border-zinc-700 hover:bg-zinc-800/80"}`}>
-                                    {b}
-                                </button>
-                            ))}
-                        </div>
-                        <div className="h-8 w-px bg-zinc-800 hidden sm:block" />
-                        <div className="flex gap-2 overflow-x-auto p-1 scrollbar-hide">
-                            {BUILDINGS[bldg].map(f => (
-                                <button key={f.value} onClick={() => { setFloor(f.value); setSelectedRoom(null); }}
-                                    className={`px-4 py-2 text-xs font-mono font-bold uppercase tracking-widest transition-all whitespace-nowrap border ${floor === f.value ? "bg-zinc-800 text-white border-zinc-600 shadow-inner" : "text-zinc-600 border-transparent hover:text-zinc-400 hover:border-zinc-700 hover:bg-zinc-800/50"}`}>
-                                    FL:{f.label}
-                                </button>
-                            ))}
-                        </div>
-                        <span className="ml-auto pr-4 text-[10px] text-zinc-500 font-mono tracking-widest hidden lg:block uppercase">
-                            LOC_NODE: <span className="text-orange-500 font-bold">{bldg}</span> // Z-INDEX: {BUILDINGS[bldg].find(f => f.value === floor)?.label || floor}
-                        </span>
-                    </div>
+                    {renderSelectors()}
 
-                    {/* Main Layout */}
-                    <div className="flex gap-8 flex-col xl:flex-row relative" style={{ minHeight: "650px" }}>
-
-                        {/* Top Left Bracket Accent */}
-                        <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-orange-500/50 z-20 pointer-events-none -ml-2 -mt-2 hidden xl:block" />
-                        {/* Bottom Right Bracket Accent */}
-                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-orange-500/50 z-20 pointer-events-none -mr-2 -mb-2 hidden xl:block" />
-
-                        {/* SVG Plan */}
-                        <div className="flex-1 bg-zinc-950/60 backdrop-blur-3xl border border-zinc-800 overflow-hidden flex flex-col relative shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                            
-                            {/* Scanning Line Animation overlay */}
-                            <div className="absolute top-0 left-0 w-full h-[2px] bg-orange-500/30 blur-[2px] z-10 animate-[scan_6s_ease-in-out_infinite] pointer-events-none" />
-
-                            {/* Original building image thumbnail */}
-                            <div className="absolute top-4 left-4 z-20 bg-zinc-950/90 border border-zinc-800 p-1.5 backdrop-blur-xl group hover:p-2 transition-all shadow-[0_0_20px_rgba(0,0,0,0.8)] hidden sm:block group-hover:border-orange-500/50">
-                                <span className="absolute -top-3 -left-2 bg-orange-500 text-black text-[9px] font-mono font-bold px-1 py-0.5 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Raw_View</span>
-                                <img
-                                    src={getPngPath(bldg, floor)}
-                                    alt={`Plan original ${bldg}`}
-                                    className="w-16 h-16 group-hover:w-64 group-hover:h-64 object-contain opacity-40 grayscale sepia hue-rotate-15 group-hover:opacity-100 group-hover:grayscale-0 group-hover:sepia-0 transition-all duration-500"
-                                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                                />
+                    <div className="flex gap-6 flex-col lg:flex-row relative">
+                        <div className="flex-1 bg-zinc-900/40 backdrop-blur-3xl border border-zinc-800 overflow-hidden flex flex-col relative shadow-2xl rounded-none min-h-[500px] lg:min-h-[800px]">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-black/20">
+                                <h3 className="text-[10px] font-black font-mono text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                                    <MapPin className="w-4 h-4 text-orange-500" /> Interactive_Floor_Matrix
+                                </h3>
+                                <div className="flex items-center gap-4 text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
+                                    <span>Signal: 100%</span>
+                                    <div className="w-2 h-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                                </div>
                             </div>
 
-                            {/* SVG Container */}
                             <div
                                 ref={svgRef}
-                                className="flex-1 flex items-center justify-center p-6 overflow-auto relative z-0"
-                                dangerouslySetInnerHTML={{ __html: svgContent || `<div class="flex flex-col items-center justify-center text-zinc-600 gap-4 font-mono uppercase tracking-widest"><svg class="w-16 h-16 opacity-30 animate-pulse text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="square" stroke-linejoin="miter" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg><span class="text-xs text-red-500/80">ERROR: VECTOR MAP NOT FOUND<br/>NODE: ${bldg} / ${BUILDINGS[bldg].find(f => f.value === floor)?.label || floor}</span></div>` }}
-                            />
-                            <style dangerouslySetInnerHTML={{__html: `
-                                a.group:hover .room-area, a.group[data-active="true"] .room-area {
-                                    fill: rgba(249,115,22,0.3) !important;
-                                    stroke: rgba(249,115,22,1) !important;
-                                    stroke-width: 2px !important;
-                                    cursor: crosshair;
-                                }
-                                a.group:hover .room-label, a.group[data-active="true"] .room-label {
-                                    fill: white !important;
-                                    font-weight: 900;
-                                    font-family: monospace;
-                                }
-                            `}} />
-
-                            {/* Hover Tooltip */}
-                            {hoveredRoom && (
-                                <div
-                                    ref={tooltipRef}
-                                    className="absolute z-50 bg-zinc-950/90 backdrop-blur-md border border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.3)] px-3 py-2 pointer-events-none rounded-none"
-                                    style={{
-                                        left: `${tooltipPos.x}px`,
-                                        top: `${tooltipPos.y}px`,
-                                        transform: "translate(-50%, -100%)"
-                                    }}
+                                className="flex-1 flex overflow-auto relative z-0 scrollbar-thin scrollbar-thumb-zinc-800"
+                            >
+                                <div 
+                                    className="m-auto flex w-full h-full"
                                 >
-                                    {/* Tooltip Room Labels */}
-                                    <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-orange-500" />
-                                    <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-orange-500" />
-                                    
-                                    <div className="flex items-center gap-2 mb-2 border-b border-orange-500/30 pb-1">
-                                        <Home className="w-3.5 h-3.5 text-orange-500" />
-                                        <span className="text-xs font-black text-white font-mono uppercase tracking-widest">Room: {hoveredRoom}</span>
-                                    </div>
-                                    {hoveredOccupants && hoveredOccupants.length > 0 ? (
-                                        hoveredOccupants.slice(0, 4).map((o: any) => (
-                                            <div key={o.id} className="flex items-center gap-2 text-xs text-zinc-300 font-mono mt-1">
-                                                <User className="w-3 h-3 text-orange-500/70" />
-                                                <span className="uppercase">{o.first_name} {o.last_name}</span>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Vacant</p>
-                                    )}
+                                    <div 
+                                        className="m-auto flex w-full h-full
+                                                   [&_svg]:m-auto [&_svg]:max-w-[95%] [&_svg]:max-h-[95%] [&_svg]:w-auto [&_svg]:h-auto [&_svg]:block
+                                                   [&_.room-area]:fill-transparent [&_.room-area]:stroke-zinc-800/50 [&_.room-area]:stroke-[0.5px] [&_.room-area]:transition-none
+                                                   [&_a.group[data-hover='true']_.room-area]:fill-indigo-500/30 [&_a.group[data-hover='true']_.room-area]:stroke-indigo-400 [&_a.group[data-hover='true']_.room-area]:stroke-[1.5px] [&_a.group[data-hover='true']_.room-area]:cursor-crosshair
+                                                   [&_a.group[data-active='true']_.room-area]:fill-orange-500/60 [&_a.group[data-active='true']_.room-area]:stroke-orange-500 [&_a.group[data-active='true']_.room-area]:stroke-2
+                                                   [&_a.group[data-active='true'][data-hover='true']_.room-area]:fill-orange-400/80
+                                                   [&_.room-label]:font-sans
+                                                   [&_a.group:hover_.room-label]:fill-white [&_a.group:hover_.room-label]:font-black
+                                                   [&_a.group[data-active='true']_.room-label]:fill-white [&_a.group[data-active='true']_.room-label]:font-black"
+                                        dangerouslySetInnerHTML={{ __html: svgContent || `<div class="m-auto flex flex-col items-center justify-center text-zinc-600 gap-4 font-mono uppercase tracking-widest"><svg class="w-16 h-16 opacity-30 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="square" stroke-linejoin="miter" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg><span class="text-xs text-red-500/80 text-center">PLAN_NOT_FOUND</span></div>` }}
+                                    />
                                 </div>
-                            )}
+                            </div>
+
+                            {/* Direct DOM updated tooltip */}
+                            <div
+                                ref={tooltipRef}
+                                className="absolute z-50 bg-zinc-950/90 backdrop-blur-md border border-orange-500 px-3 py-2 pointer-events-none rounded-none"
+                            />
                         </div>
 
-                        {/* Residents Panel */}
-                        <div className="xl:w-[400px] shrink-0 bg-zinc-950/80 border border-zinc-800 p-0 flex flex-col shadow-2xl relative" style={{ maxHeight: "750px" }}>
-                            {/* Accent Line */}
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-red-600" />
-                            
-                            <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-3 p-5 border-b-2 border-zinc-800 bg-zinc-900/50">
-                                <Users className="w-5 h-5 text-orange-500" />
-                                Sector {bldg} <span className="text-zinc-500">//</span> {BUILDINGS[bldg].find(f => f.value === floor)?.label}
-                                <span className="ml-auto px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] font-mono border border-orange-500/30">
-                                    COUNT: {currentViewApts.length}
-                                </span>
+                        <div className="xl:w-[450px] shrink-0 bg-zinc-900/40 backdrop-blur-3xl border border-zinc-800 flex flex-col shadow-2xl relative rounded-none h-[500px] lg:h-[800px]">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-orange-500" />
+                            <h3 className="text-sm font-black text-white uppercase tracking-widest p-5 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between">
+                                <span className="flex items-center gap-3"><Users className="w-5 h-5 text-orange-500" /> {bldg}</span>
+                                <span className="text-[10px] font-mono opacity-50">{BUILDINGS[bldg].find(f => f.value === floor)?.label}</span>
                             </h3>
-
-                            <div className="flex-1 overflow-y-auto custom-scrollbar bg-zinc-950">
-                                {currentViewApts.length > 0 ? currentViewApts.map((apt, i) => (
-                                    <div
-                                        key={apt}
-                                        className={`group border-b border-zinc-800/50 cursor-pointer transition-all ${selectedRoom === apt ? "bg-orange-500/10 border-l-2 border-l-orange-500" : "hover:bg-zinc-900 border-l-2 border-l-transparent hover:border-l-zinc-600"}`}
-                                        onClick={() => { setSelectedRoom(apt); setSearch(apt); }}
-                                    >
-                                        <div className="flex items-center gap-3 p-4">
-                                            <div className={`w-2 h-2 rounded-sm ${occupied[apt]?.length > 0 ? "bg-orange-500 animate-pulse shadow-[0_0_8px_rgba(249,115,22,0.8)]" : "bg-zinc-800"}`} />
-                                            <span className="text-sm font-black text-white font-mono tracking-widest">APT_{apt}</span>
-                                            <span className="text-[10px] text-zinc-600 font-mono ml-auto uppercase group-hover:text-zinc-400 transition-colors">
-                                                Entities: {occupied[apt]?.length || 0}
-                                            </span>
+                            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                                {currentViewApts.length > 0 ? currentViewApts.map((apt) => (
+                                    <div key={apt} className={`border-b border-zinc-800/30 p-4 transition-all cursor-pointer ${selectedRoom === apt ? "bg-orange-500/5 border-l-2 border-orange-500" : "hover:bg-zinc-900/40 border-l-2 border-transparent"}`} onClick={() => { setSelectedRoom(apt); setSearch(apt); }}>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-bold text-white font-mono">{apt}</span>
+                                            <span className="text-[10px] text-zinc-500 font-mono">{occupied[apt]?.length || 0} residents</span>
                                         </div>
-                                        
                                         {occupied[apt]?.length > 0 && (
-                                            <div className="px-4 pb-4 space-y-2">
+                                            <div className="mt-3 space-y-1">
                                                 {occupied[apt].map((o: any) => (
-                                                    <button key={o.id} onClick={(e) => { e.stopPropagation(); router.push(`/students/${o.id}`); }}
-                                                        className="w-full text-left bg-zinc-900/50 border border-zinc-800 px-3 py-2 text-[11px] font-mono text-zinc-400 hover:text-white hover:border-orange-500/50 hover:bg-orange-500/10 transition-all flex items-center justify-between group/btn">
-                                                        <span className="uppercase tracking-wide">{o.first_name} {o.last_name}</span>
-                                                        <User className="w-3 h-3 text-zinc-600 group-hover/btn:text-orange-500 transition-colors" />
+                                                    <button key={o.id} onClick={(e) => { e.stopPropagation(); router.push(`/students/${o.id}`); }} className="w-full text-left text-[11px] font-mono text-zinc-400 hover:text-orange-400 truncate uppercase border border-zinc-800/50 p-1 bg-black/20 hover:bg-black/40 transition-colors">
+                                                        {o.first_name} {o.last_name}
                                                     </button>
                                                 ))}
                                             </div>
                                         )}
                                     </div>
-                                )) : (
-                                    <div className="flex flex-col items-center justify-center py-20 text-zinc-600">
-                                        <Building2 className="w-12 h-12 mb-4 text-zinc-800" />
-                                        <p className="text-xs font-mono uppercase tracking-widest text-zinc-500">No residents found</p>
-                                    </div>
+                                )) : <div className="p-10 text-center text-zinc-600 font-mono text-xs uppercase tracking-widest">No assets detected</div>}
+                            </div>
+                        </div>
+                    </div>
+
+                    {renderSelectors()}
+
+                    {/* Section 2: Building Skeleton & Reference Blueprint */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-zinc-800/60">
+                        
+                        {/* 3D Skeleton */}
+                        <div className="bg-zinc-900/40 backdrop-blur-3xl border border-zinc-800 p-1 flex flex-col relative group shadow-2xl rounded-none h-[600px]">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-black/20">
+                                <h3 className="text-[10px] font-black font-mono text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                                    <Layers className="w-4 h-4 text-orange-500" /> Structural_Skeleton_3D
+                                </h3>
+                                <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">3D_Format</span>
+                            </div>
+                            <div className="flex-1 relative overflow-hidden bg-zinc-950/20">
+                                <BuildingModel 
+                                    bldg={bldg} 
+                                    floors={BUILDINGS[bldg]} 
+                                    activeFloor={floor} 
+                                    buildingSvgs={buildingSvgs} 
+                                    buildingMetadata={buildingMetadata} 
+                                />
+                            </div>
+                        </div>
+
+                        {/* Reference PNG */}
+                        <div className="bg-zinc-900/40 backdrop-blur-3xl border border-zinc-800 p-1 flex flex-col relative group shadow-2xl rounded-none h-[600px]">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-black/20">
+                                <h3 className="text-[10px] font-black font-mono text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                                    <FileText className="w-4 h-4 text-orange-500" /> Static_Blueprint_Ref
+                                </h3>
+                                <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">Raster_Format</span>
+                            </div>
+                            <div className="flex-1 relative overflow-hidden flex items-center justify-center bg-zinc-950/20 p-8">
+                                <a href={getPngPath(bldg, floor)} target="_blank" rel="noopener noreferrer" className="block max-w-full max-h-full cursor-zoom-in">
+                                    <img 
+                                        src={getPngPath(bldg, floor)} 
+                                        alt="Full Plan" 
+                                        className="max-w-full max-h-full object-contain brightness-90 saturate-[0.8] contrast-125 hover:brightness-110 transition-all" 
+                                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} 
+                                    />
+                                </a>
+                                {!getPngPath(bldg, floor) && (
+                                    <div className="text-zinc-800 font-mono text-[10px] uppercase tracking-widest">No blueprint data</div>
                                 )}
                             </div>
                         </div>
+
                     </div>
                 </div>
             </main>
         </div>
-    );
-}
-
-export default function ApartmentsPage() {
-    return (
-        <Suspense fallback={<div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-400">Chargement...</div>}>
-            <ApartmentsContent />
-        </Suspense>
     );
 }

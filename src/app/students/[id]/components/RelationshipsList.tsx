@@ -2,10 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { fetchAPI } from "@/lib/api";
-import { Share2, Plus, X, Check, Loader2, Trash2, Search } from "lucide-react";
+import { Share2, Plus, X, Check, Trash2, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function RelationshipsList({ studentId }: { studentId: string }) {
+interface RelationshipsListProps {
+    studentId: string;
+    themeColor: string;
+}
+
+export default function RelationshipsList({ studentId, themeColor }: RelationshipsListProps) {
     const [rels, setRels] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
@@ -51,7 +56,6 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
         const t = setTimeout(async () => {
             try {
                 const results = await fetchAPI(`/students?q=${encodeURIComponent(q)}&limit=8`);
-                // Filter out the current student
                 setSearchResults((results || []).filter((s: any) => s.id !== studentId));
             } catch (e) {
                 console.error(e);
@@ -73,7 +77,6 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
                     relationship_type_id: selectedType,
                 }),
             });
-            // Re-fetch relationships
             const updated = await fetchAPI(`/students/${studentId}/relationships`);
             setRels(updated || []);
             setShowAdd(false);
@@ -103,14 +106,15 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6 border-b border-zinc-800 pb-4">
                 <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-emerald-500 animate-pulse" />
+                    <div className="w-2 h-2 animate-pulse" style={{ backgroundColor: themeColor }} />
                     <h3 className="text-xl font-black text-white uppercase tracking-widest font-mono">
-                        Network Links
+                        Connections
                     </h3>
                 </div>
                 <button
                     onClick={() => showAdd ? setShowAdd(false) : openAddForm()}
-                    className="p-1 px-3 bg-zinc-900 border border-zinc-700 text-emerald-400 font-mono font-bold hover:bg-emerald-500/10 hover:text-white hover:border-emerald-500 transition-colors uppercase tracking-widest text-xs"
+                    className="p-1 px-3 bg-zinc-900 border font-mono font-bold hover:text-white transition-colors uppercase tracking-widest text-xs"
+                    style={{ borderColor: `${themeColor}80`, color: themeColor }}
                 >
                     {showAdd ? "Abort" : "+ Establish Link"}
                 </button>
@@ -125,14 +129,14 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
                     <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-zinc-700 m-2 pointer-events-none" />
                     
                     <div className="flex items-center gap-2 mb-2">
-                        <span className="w-1.5 h-1.5 bg-emerald-500 animate-pulse" />
+                        <span className="w-1.5 h-1.5 animate-pulse" style={{ backgroundColor: themeColor }} />
                         <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">Add New Relationship</span>
                     </div>
 
                     {/* Student Search */}
                     <div className="relative z-20">
-                        <div className="flex items-center gap-3 bg-zinc-950/50 border border-zinc-700/50 px-3 py-2 transition-colors focus-within:border-emerald-500">
-                            <Search className="w-4 h-4 text-emerald-500/50" />
+                        <div className="flex items-center gap-3 bg-zinc-950/50 border px-3 py-2 transition-colors focus-within:border-white" style={{ borderColor: `${themeColor}40` }}>
+                            <Search className="w-4 h-4" style={{ color: `${themeColor}80` }} />
                             <input
                                 type="text"
                                 placeholder="Search Student Database..."
@@ -141,9 +145,8 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
                                 className="flex-1 bg-transparent text-xs font-mono text-white placeholder-zinc-600 outline-none uppercase tracking-wider"
                             />
                         </div>
-                        {/* Search results dropdown */}
                         {searchResults.length > 0 && !selectedStudent && (
-                            <div className="absolute mt-1 w-full bg-zinc-950 border border-emerald-500/50 shadow-2xl max-h-48 overflow-y-auto custom-scrollbar border-t-0 z-30">
+                            <div className="absolute mt-1 w-full bg-zinc-950 border shadow-2xl max-h-48 overflow-y-auto custom-scrollbar border-t-0 z-30" style={{ borderColor: `${themeColor}80` }}>
                                 {searchResults.map((s: any) => (
                                     <button
                                         key={s.id}
@@ -154,7 +157,7 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
                                         }}
                                         className="w-full flex items-center gap-4 px-4 py-3 text-left hover:bg-zinc-900 transition-colors border-b border-zinc-800/50 last:border-0 group"
                                     >
-                                        <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-zinc-700 group-hover:border-emerald-500 transition-colors overflow-hidden bg-zinc-900">
+                                        <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-zinc-700 group-hover:border-white transition-colors overflow-hidden bg-zinc-900" style={{ groupHover: { borderColor: themeColor } } as any}>
                                             <img
                                                 src={`${apiUrl}/students/${s.id}/image`}
                                                 alt=""
@@ -163,7 +166,7 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
                                             />
                                         </div>
                                         <div>
-                                            <p className="text-xs font-black text-white uppercase tracking-wider group-hover:text-emerald-400 transition-colors">{s.first_name} {s.last_name}</p>
+                                            <p className="text-xs font-black text-white uppercase tracking-wider group-hover:text-white transition-colors" style={{ groupHover: { color: themeColor } } as any}>{s.first_name} {s.last_name}</p>
                                             <p className="text-[10px] text-zinc-500 font-mono tracking-widest">ID: {s.trombint_id || "UNKNOWN"}</p>
                                         </div>
                                     </button>
@@ -175,8 +178,8 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
                     {/* Selected student badge */}
                     {selectedStudent && (
                         <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-3 p-3 bg-emerald-500/10 border border-emerald-500/30">
-                                <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-emerald-500/50 overflow-hidden bg-zinc-900">
+                            <div className="flex items-center gap-3 p-3 bg-zinc-950 border" style={{ backgroundColor: `${themeColor}10`, borderColor: `${themeColor}40` }}>
+                                <div className="w-8 h-8 flex items-center justify-center shrink-0 border overflow-hidden bg-zinc-900" style={{ borderColor: `${themeColor}60` }}>
                                     <img
                                         src={`${apiUrl}/students/${selectedStudent.id}/image`}
                                         alt="" className="w-full h-full object-cover"
@@ -184,8 +187,8 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
                                     />
                                 </div>
                                 <div className="flex flex-col flex-1">
-                                    <span className="text-[10px] font-mono text-emerald-500/70 uppercase tracking-widest">Student Selected</span>
-                                    <span className="text-xs text-emerald-400 font-black uppercase tracking-wider">{selectedStudent.first_name} {selectedStudent.last_name}</span>
+                                    <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: `${themeColor}80` }}>Student Selected</span>
+                                    <span className="text-xs font-black uppercase tracking-wider" style={{ color: themeColor }}>{selectedStudent.first_name} {selectedStudent.last_name}</span>
                                 </div>
                                 <button onClick={() => { setSelectedStudent(null); setSearchQuery(""); }} className="p-2 text-zinc-500 hover:text-red-400 transition-colors">
                                     <X className="w-4 h-4" />
@@ -197,9 +200,10 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
                                 <select
                                     value={selectedType}
                                     onChange={e => setSelectedType(e.target.value)}
-                                    className="w-full bg-zinc-950/50 border border-zinc-700/50 px-3 py-3 text-xs font-mono uppercase tracking-widest text-white outline-none focus:border-emerald-500 transition-colors cursor-pointer"
+                                    className="w-full bg-zinc-950/50 border border-zinc-700/50 px-3 py-3 text-xs font-mono uppercase tracking-widest text-white outline-none transition-colors cursor-pointer focus:border-white"
+                                    style={{ focusWithin: { borderColor: themeColor } } as any}
                                 >
-                                    <option value="" disabled>-- SELECT CLEARENCE TYPE --</option>
+                                    <option value="" disabled>-- SELECT CLEARANCE TYPE --</option>
                                     {relTypes.map((rt: any) => (
                                         <option key={rt.id} value={rt.id}>{rt.name}</option>
                                     ))}
@@ -208,13 +212,13 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
                                 <p className="text-[10px] text-red-500 uppercase font-mono tracking-widest p-2 border border-red-500/20 bg-red-500/5">ERROR: CATEGORIES MISSING. CONTACT ADMIN.</p>
                             )}
                             
-                            {/* Submit */}
                             <button
                                 onClick={addConnection}
                                 disabled={addLoading || !selectedStudent || !selectedType}
-                                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white text-xs font-black uppercase tracking-widest py-3 flex items-center justify-center gap-2 transition-colors mt-2"
+                                className="w-full text-white text-xs font-black uppercase tracking-widest py-3 flex items-center justify-center gap-2 transition-colors mt-2"
+                                style={{ backgroundColor: themeColor }}
                             >
-                                {addLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                <Check className="w-4 h-4" />
                                 BIND ENTITIES
                             </button>
                         </div>
@@ -223,15 +227,10 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
             )}
 
             {/* Existing Relationships */}
-            {loading ? (
-                <div className="flex-1 flex flex-col items-center justify-center space-y-4 py-12">
-                    <div className="w-8 h-8 border-t-2 border-r-2 border-emerald-500 animate-spin" />
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-zinc-500">Scanning Network Graph...</span>
-                </div>
-            ) : rels.length === 0 && !showAdd ? (
+            {rels.length === 0 && !showAdd ? (
                 <div className="flex flex-col items-center justify-center text-center space-y-4 py-16 border border-zinc-800/50 bg-zinc-950/30">
-                    <div className="w-16 h-16 border border-emerald-500/30 bg-emerald-500/5 flex items-center justify-center shadow-[inset_0_0_15px_rgba(16,185,129,0.1)]">
-                        <Share2 className="w-8 h-8 text-emerald-500/50" />
+                    <div className="w-16 h-16 border flex items-center justify-center shadow-[inset_0_0_15px_rgba(0,0,0,0.5)]" style={{ borderColor: `${themeColor}30`, backgroundColor: `${themeColor}05` }}>
+                        <Share2 className="w-8 h-8 opacity-50" style={{ color: themeColor }} />
                     </div>
                     <div>
                         <h3 className="text-sm font-black text-white uppercase tracking-widest mb-2">Graph Empty</h3>
@@ -243,12 +242,12 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
                     {rels.map((rel: any) => (
                         <div
                             key={rel.id}
-                            className="flex items-center gap-4 p-3 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800/80 hover:border-emerald-500/50 group cursor-pointer transition-colors relative overflow-hidden"
+                            className="flex items-center gap-4 p-3 bg-zinc-900 border border-zinc-800 group cursor-pointer transition-colors relative overflow-hidden"
                             onClick={() => router.push(`/students/${rel.other_student.id}`)}
                         >
-                            <div className="absolute top-0 left-0 w-1 h-full bg-zinc-700 group-hover:bg-emerald-500 transition-colors" />
+                            <div className="absolute top-0 left-0 w-1 h-full bg-zinc-700 group-hover:bg-cyan-500 transition-colors" style={{ groupHover: { backgroundColor: themeColor } } as any} />
                             
-                            <div className="w-12 h-12 flex items-center justify-center shrink-0 border border-zinc-700 group-hover:border-emerald-500/50 overflow-hidden bg-zinc-950 relative z-10 ml-2">
+                            <div className="w-12 h-12 flex items-center justify-center shrink-0 border border-zinc-700 group-hover:border-cyan-500/50 overflow-hidden bg-zinc-950 relative z-10 ml-2" style={{ groupHover: { borderColor: themeColor } } as any}>
                                 <img
                                     src={`${apiUrl}/students/${rel.other_student.id}/image`}
                                     alt="" className="w-full h-full object-cover grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
@@ -258,7 +257,7 @@ export default function RelationshipsList({ studentId }: { studentId: string }) 
                             </div>
                             
                             <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                <p className="text-sm font-black text-white uppercase tracking-wider truncate mb-1 group-hover:text-emerald-400 transition-colors">
+                                <p className="text-sm font-black text-white uppercase tracking-wider truncate mb-1 group-hover:text-cyan-400 transition-colors" style={{ groupHover: { color: themeColor } } as any}>
                                     {rel.other_student.first_name} {rel.other_student.last_name}
                                 </p>
                                 <div className="flex items-center gap-2 mt-0.5 max-w-full">

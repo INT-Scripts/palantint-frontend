@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { Lock, User, LogIn, Loader2Icon } from "lucide-react";
+import { Lock, User, LogIn } from "lucide-react";
 
 export default function LoginPage() {
     const [username, setUsername] = useState("");
@@ -125,9 +125,9 @@ export default function LoginPage() {
                             className="w-full h-14 flex items-center justify-between px-6 bg-zinc-100 hover:bg-white text-zinc-950 font-bold uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed group/btn hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
                         >
                             <span>{loading ? "Authenticating..." : "Login"}</span>
-                            <span>
-                                {loading ? <Loader2Icon /> : <LogIn />}
-                            </span>
+                             <span>
+                                 <LogIn className="w-4 h-4" />
+                             </span>
                         </button>
                     </div>
                 </form>

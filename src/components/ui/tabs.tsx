@@ -109,7 +109,7 @@ function TabsTrigger({
       className={cn(
         "relative inline-flex flex-shrink-0 items-center justify-center gap-2 px-4 py-3 text-sm font-mono font-bold uppercase tracking-wide whitespace-nowrap transition-all border-b-2 border-transparent disabled:pointer-events-none disabled:opacity-50",
         "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50",
-        "data-[state=active]:text-blue-400 data-[state=active]:bg-zinc-800 data-[state=active]:border-blue-500",
+        "data-[state=active]:text-white data-[state=active]:bg-zinc-800 data-[state=active]:border-white",
         "[&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}

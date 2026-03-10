@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchAPI } from "@/lib/api";
-import { Loader2, ShieldAlert, Cpu } from "lucide-react";
+import { ShieldAlert, Cpu } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
@@ -24,11 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }, [router]);
 
     if (isAdmin === null) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-zinc-950 relative overflow-hidden">
-                <Loader2 className="w-8 h-8 animate-spin text-red-500/80" />
-            </div>
-        );
+        return <div className="min-h-screen bg-zinc-950" />;
     }
 
     return (

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchAPI } from "@/lib/api";
-import { Menu, User, Eye, LogIn, Compass, Home as HomeIcon, Settings, LogOut, Search, MapPin, Share2, CalendarDays, Flame } from "lucide-react";
+import { Menu, User, Eye, LogIn, Compass, Home as HomeIcon, Settings, LogOut, Search, MapPin, Share2, CalendarDays, Flame, WashingMachine } from "lucide-react";
 import GlobalSearch from "./GlobalSearch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,7 @@ export default function Navbar() {
                         {user && <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/students")}>Students</span>}
                         <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/clubs")}>Organisations</span>
                         <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/apartments")}>Housing</span>
+                        <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/laundry")}>Laundry</span>
                         {user && <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/timetable")}>Timetable</span>}
                         {user && <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/network")}>Network</span>}
                         <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/campus")}>Campus 3D</span>
@@ -149,6 +150,13 @@ export default function Navbar() {
                     >
                         <span>Housing</span>
                         <HomeIcon className="w-5 h-5 text-zinc-600 group-hover:text-white" />
+                    </button>
+                    <button 
+                        className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
+                        onClick={() => { setMobileMenuOpen(false); router.push("/laundry"); }}
+                    >
+                        <span>Laundry</span>
+                        <WashingMachine className="w-5 h-5 text-zinc-600 group-hover:text-white" />
                     </button>
                     {user && (
                         <button 

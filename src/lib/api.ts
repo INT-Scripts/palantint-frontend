@@ -36,7 +36,8 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
                 "/login",
                 "/clubs",
                 "/apartments",
-                "/campus"
+                "/campus",
+                "/laundry"
             ];
             const isPublic = PUBLIC_ROUTES.some(route => window.location.pathname === route || window.location.pathname.startsWith(route + "/"));
             if (!isPublic && window.location.pathname !== "/login") {

@@ -9,7 +9,8 @@ const PUBLIC_ROUTES = [
     "/login",
     "/clubs",
     "/apartments",
-    "/campus"
+    "/campus",
+    "/laundry"
 ];
 
 const isPublicRoute = (path: string) => {

@@ -99,14 +99,13 @@ export default function LaundryPage() {
 
     // Calculate room stats
     const totalCount = machines.length;
-    const inServiceCount = machines.filter(m => m.machine_in_service).length;
-    const occupiedCount = machines.filter(m => m.machine_in_service && m.machine_state !== "0").length;
-    const availableCount = machines.filter(m => m.machine_in_service && m.machine_state === "0").length;
-    const outOfServiceCount = machines.filter(m => !m.machine_in_service).length;
+    const occupiedCount = machines.filter(m => !!m.started_at).length;
+    const availableCount = machines.filter(m => !m.started_at).length;
+    const outOfServiceCount = 0; // Ignore machine_in_service as it is unreliable
 
-    const malAvailable = machines.filter(m => m.machine_type === "mal" && m.machine_in_service && m.machine_state === "0").length;
+    const malAvailable = machines.filter(m => m.machine_type === "mal" && !m.started_at).length;
     const malTotal = machines.filter(m => m.machine_type === "mal").length;
-    const slAvailable = machines.filter(m => m.machine_type === "sl" && m.machine_in_service && m.machine_state === "0").length;
+    const slAvailable = machines.filter(m => m.machine_type === "sl" && !m.started_at).length;
     const slTotal = machines.filter(m => m.machine_type === "sl").length;
 
     // Helper to format ISO Parisian time to elegant local view
@@ -242,9 +241,9 @@ export default function LaundryPage() {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                     {machines.map((m) => {
-                                        const isAvailable = m.machine_in_service && m.machine_state === "0";
-                                        const isOccupied = m.machine_in_service && m.machine_state !== "0";
-                                        const isOffline = !m.machine_in_service;
+                                        const isAvailable = !m.started_at;
+                                        const isOccupied = !!m.started_at;
+                                        const isOffline = false; // Ignore machine_in_service as it is unreliable
                                         
                                         const priceEur = m.machine_price ? (Number(m.machine_price) / 100).toFixed(2) : "0.00";
                                         const isDryer = m.machine_type === "sl";

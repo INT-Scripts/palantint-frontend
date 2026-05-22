@@ -142,12 +142,26 @@ export default function ApartmentsPage() {
             const link = (e.target as Element).closest?.("a[data-room]");
             if (link) {
                 const roomNum = link.getAttribute("data-room") || "";
-                const containerRect = el.getBoundingClientRect();
                 
                 if (tooltipRef.current) {
                     tooltipRef.current.style.display = 'block';
-                    tooltipRef.current.style.left = `${e.clientX - containerRect.left + 15}px`;
-                    tooltipRef.current.style.top = `${e.clientY - containerRect.top + 15}px`;
+                    
+                    // Fixed viewport coordinates with clamping to prevent off-screen clipping
+                    const tooltipWidth = tooltipRef.current.offsetWidth || 240;
+                    const tooltipHeight = tooltipRef.current.offsetHeight || 280;
+                    
+                    let x = e.clientX + 15;
+                    let y = e.clientY + 15;
+                    
+                    if (x + tooltipWidth > window.innerWidth) {
+                        x = e.clientX - tooltipWidth - 15;
+                    }
+                    if (y + tooltipHeight > window.innerHeight) {
+                        y = e.clientY - tooltipHeight - 15;
+                    }
+                    
+                    tooltipRef.current.style.left = `${x}px`;
+                    tooltipRef.current.style.top = `${y}px`;
 
                     if (hoveredRoomRef.current !== roomNum) {
                         if (hoveredRoomRef.current) {
@@ -160,44 +174,66 @@ export default function ApartmentsPage() {
                         const occupants = occupiedRef.current[roomNum] || [];
                         const occupantsHtml = occupants.length > 0 
                             ? occupants.map((o: any) => `
-                                <div class="flex items-center gap-2 text-xs text-zinc-300 font-mono mt-1 uppercase">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 text-housing-500/50"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                    ${o.first_name?.[0] || ""}. ${o.last_name || ""}
+                                <div class="flex items-center gap-2 text-xs text-zinc-200 font-mono mt-1 bg-zinc-950/60 border border-zinc-800/40 px-2.5 py-1 uppercase rounded-none hover:bg-zinc-900/40 transition-colors">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-housing-500 animate-pulse"></div>
+                                    <span class="font-bold text-zinc-200">${o.first_name?.[0] || ""}. ${o.last_name || ""}</span>
                                 </div>
                             `).join('')
-                            : `<p class="text-[10px] text-zinc-500 font-mono italic uppercase">VACANT</p>`;
+                            : `<div class="text-[10px] text-zinc-500 font-mono italic uppercase px-2 py-1 bg-zinc-950/30 border border-zinc-900/50">No occupants registered</div>`;
                         
                         const logData = apartmentsDetailsRef.current[roomNum];
                         let logHtml = '';
                         if (logData) {
                             logHtml = `
-                                <div class="mt-3 pt-2 border-t border-zinc-800/50 flex flex-col gap-1.5">
-                                    <div class="flex justify-between items-center gap-4 text-[10px] font-mono text-zinc-400">
-                                        <span>TYPE</span> <span class="text-white uppercase font-bold">${logData.Type || '-'}</span>
+                                <div class="mt-3 pt-2 border-t border-zinc-800/50 flex flex-col gap-2">
+                                    <span class="text-[8px] font-mono text-zinc-500 uppercase tracking-widest font-black">Apartment Details</span>
+                                    <div class="grid grid-cols-2 gap-1.5">
+                                        <div class="flex flex-col p-1.5 bg-zinc-950/40 border border-zinc-900">
+                                            <span class="text-[7px] font-mono text-zinc-500 uppercase">Type</span>
+                                            <span class="text-[9px] font-mono text-white font-bold uppercase truncate" title="${logData.Type || '-'}">${logData.Type || '-'}</span>
+                                        </div>
+                                        <div class="flex flex-col p-1.5 bg-zinc-950/40 border border-zinc-900">
+                                            <span class="text-[7px] font-mono text-zinc-500 uppercase">Surface</span>
+                                            <span class="text-[9px] font-mono text-white font-bold">${logData.Superficie || '-'}</span>
+                                        </div>
                                     </div>
-                                    <div class="flex justify-between items-center gap-4 text-[10px] font-mono text-zinc-400">
-                                        <span>SURFACE</span> <span class="text-white uppercase font-bold">${logData.Superficie || '-'}</span>
+                                    
+                                    <div class="flex justify-between items-center p-2 bg-housing-500/5 border border-housing-500/10">
+                                        <span class="text-[8px] font-mono text-zinc-400 uppercase">Monthly Rent</span>
+                                        <span class="text-xs font-mono font-black text-housing-400">${logData.Tarif || '-'}</span>
                                     </div>
-                                    <div class="flex justify-between items-center gap-4 text-[10px] font-mono text-zinc-400">
-                                        <span>TARIF</span> <span class="text-housing-400 font-black">${logData.Tarif || '-'}</span>
-                                    </div>
-                                    <div class="flex justify-between items-center gap-4 text-[10px] font-mono text-zinc-500">
-                                        <span>ALLOC. BOURSIER</span> <span>${logData['Allocation boursier'] || '-'}</span>
-                                    </div>
-                                    <div class="flex justify-between items-center gap-4 text-[10px] font-mono text-zinc-500">
-                                        <span>ALLOC. NON-BOURSIER</span> <span>${logData['Allocation non boursier'] || '-'}</span>
+                                    
+                                    <div class="flex flex-col gap-1 bg-zinc-950/50 border border-zinc-900/50 p-2">
+                                        <div class="flex justify-between items-center gap-4 text-[8px] font-mono text-zinc-500">
+                                            <span>SCHOLARSHIP ALLOC.</span>
+                                            <span class="text-zinc-300 font-bold">${logData['Allocation boursier'] || '-'}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center gap-4 text-[8px] font-mono text-zinc-500">
+                                            <span>REGULAR ALLOC.</span>
+                                            <span class="text-zinc-300 font-bold">${logData['Allocation non boursier'] || '-'}</span>
+                                        </div>
                                     </div>
                                 </div>
                             `;
                         }
-
+ 
                         tooltipRef.current.innerHTML = `
-                            <div class="flex items-center gap-2 mb-2 border-b border-housing-500/30 pb-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-housing-500"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                                <span class="text-xs font-black text-white font-mono uppercase">APT_${roomNum}</span>
+                            <div class="flex flex-col gap-2.5">
+                                <div class="flex items-center justify-between gap-6 border-b border-zinc-800/80 pb-2">
+                                    <div class="flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-housing-400"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                        <span class="text-xs font-black text-white font-mono tracking-wider">APT_${roomNum}</span>
+                                    </div>
+                                    <span class="text-[8px] font-mono font-black px-1.5 py-0.5 bg-housing-500/10 text-housing-400 border border-housing-500/20 uppercase tracking-widest">
+                                        ${occupants.length > 0 ? 'Occupied' : 'Vacant'}
+                                    </span>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-[8px] font-mono text-zinc-500 uppercase tracking-widest font-black">Registered Occupants</span>
+                                    ${occupantsHtml}
+                                </div>
+                                ${logHtml}
                             </div>
-                            ${occupantsHtml}
-                            ${logHtml}
                         `;
                     }
                 }
@@ -405,7 +441,7 @@ export default function ApartmentsPage() {
                             {/* Direct DOM updated tooltip */}
                             <div
                                 ref={tooltipRef}
-                                className="absolute z-50 bg-zinc-950/90 backdrop-blur-md border border-housing-500 px-3 py-2 pointer-events-none rounded-none"
+                                className="fixed z-[9999] pointer-events-none bg-zinc-950/95 backdrop-blur-xl border border-housing-500/40 px-4 py-3 rounded-none shadow-[0_0_30px_rgba(244,63,94,0.25)] hidden min-w-[240px] text-left transition-all duration-75 select-none"
                             />
                         </Box>
 

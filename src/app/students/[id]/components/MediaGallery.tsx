@@ -135,7 +135,7 @@ export default function MediaGallery({ studentId, initialMedia, themeColor }: Me
                 </div>
             </div>
 
-            {error && <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-mono uppercase tracking-widest mb-6">ERROR: {error}</div>}
+            {error && <div className="p-3 bg-comms-500/10 border border-comms-500/30 text-comms-500 text-xs font-mono uppercase tracking-widest mb-6">ERROR: {error}</div>}
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {media.length === 0 ? (
@@ -184,7 +184,7 @@ export default function MediaGallery({ studentId, initialMedia, themeColor }: Me
                                 <div className="flex justify-end">
                                     <button
                                         onClick={(e) => handleDelete(item.id, e)}
-                                        className="p-1.5 bg-red-500/20 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+                                        className="p-1.5 bg-comms-500/20 border border-comms-500/50 text-comms-500 hover:bg-comms-500 hover:text-white transition-colors"
                                         title="PURGE ASSET"
                                     >
                                         <Trash2 className="w-4 h-4" />
@@ -224,7 +224,7 @@ export default function MediaGallery({ studentId, initialMedia, themeColor }: Me
                             </h2>
                         </div>
                         <button
-                            className="p-2 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 transition-colors"
+                            className="p-2 text-zinc-500 hover:text-comms-500 hover:bg-comms-500/10 border border-transparent hover:border-comms-500/30 transition-colors"
                             onClick={(e) => { e.stopPropagation(); setSelectedMedia(null); }}
                         >
                             <X className="w-6 h-6" />
@@ -282,7 +282,7 @@ export default function MediaGallery({ studentId, initialMedia, themeColor }: Me
                                         handleDelete(selectedMedia.id, e);
                                         if (confirm("Delete this asset?")) setSelectedMedia(null);
                                     }}
-                                    className="flex-1 px-4 py-2 bg-red-950/30 border border-red-900/50 hover:border-red-500 hover:bg-red-500 hover:text-white text-red-500 font-black uppercase tracking-widest text-[10px] transition-colors flex items-center justify-center gap-2"
+                                    className="flex-1 px-4 py-2 bg-comms-950/30 border border-comms-900/50 hover:border-comms-500 hover:bg-comms-500 hover:text-white text-comms-500 font-black uppercase tracking-widest text-[10px] transition-colors flex items-center justify-center gap-2"
                                 >
                                     <Trash2 className="w-3 h-3" /> Purge
                                 </button>

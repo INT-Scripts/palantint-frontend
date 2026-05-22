@@ -19,7 +19,7 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({ 
-    placeholder, value, onChange, results, id, className = "", inputClassName = "", accentColorClass = "group-focus-within:bg-blue-500", icon, onFocus, onBlur 
+    placeholder, value, onChange, results, id, className = "", inputClassName = "", accentColorClass = "group-focus-within:bg-student-500", icon, onFocus, onBlur 
 }: SearchBarProps) {
     const [localValue, setLocalValue] = useState(value);
     const inputRef = useRef<HTMLInputElement>(null);

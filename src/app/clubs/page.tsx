@@ -1,4 +1,5 @@
 "use client";
+import { PALETTE } from "@/lib/colors";
 
 import { useEffect, useState } from "react";
 import { fetchAPI } from "@/lib/api";
@@ -48,11 +49,11 @@ export default function ClubsPage() {
     const [hoveredId, setHoveredId] = useState<string | null>(null);
 
     return (
-        <div className="min-h-screen bg-zinc-950 selection:bg-emerald-500/30 font-sans">
+        <div className="min-h-screen bg-zinc-950 selection:bg-orga-500/30 font-sans">
             
             {/* Ambient Background */}
             <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-[15%] left-[10%] w-[35%] h-[45%] bg-emerald-600/10 blur-[150px] rounded-none mix-blend-screen" />
+                <div className="absolute top-[15%] left-[10%] w-[35%] h-[45%] bg-orga-600/10 blur-[150px] rounded-none mix-blend-screen" />
                 <div className="absolute top-[40%] right-[-10%] w-[40%] h-[35%] bg-zinc-800/10 blur-[150px] rounded-none mix-blend-screen" />
             </div>
 
@@ -61,9 +62,9 @@ export default function ClubsPage() {
                     badgeText="Entity Database // Active"
                     title1="Accredited"
                     title2="Organisations"
-                    titleGradient="from-emerald-500 to-teal-400"
+                    titleGradient="from-orga-400 to-orga-600"
                     subtitle="Centralized registry for authorized campus groups."
-                    colorName="emerald"
+                    colorName="orga"
                     searchPlaceholder="QUERY: ORGANISATION NAME"
                     searchValue={search}
                     onSearchChange={setSearch}
@@ -76,14 +77,14 @@ export default function ClubsPage() {
                                 <section key={origin} className="space-y-8 relative">
                                     <div className="flex items-center gap-6 sticky top-24 z-20 bg-zinc-950/80 backdrop-blur-3xl py-4 border-y border-zinc-800/60 rounded-none">
                                         <h2 className="text-2xl md:text-3xl font-black text-white tracking-widest uppercase flex items-center gap-3">
-                                            <span className="text-emerald-500">{origin}</span>
+                                            <span className="text-orga-500">{origin}</span>
                                             <span className="text-xs font-mono text-zinc-500">COUNT: {originClubs.length}</span>
                                         </h2>
-                                        <div className="h-px flex-1 bg-gradient-to-r from-emerald-500/50 to-transparent" />
+                                        <div className="h-px flex-1 bg-gradient-to-r from-orga-500/50 to-transparent" />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                         {originClubs.map((club: any) => {
-                                            const clubColor = club.color_primary || '#10b981';
+                                            const clubColor = club.color_primary || PALETTE.orga[500];
                                             const isHovered = hoveredId === club.id;
                                             
                                             return (

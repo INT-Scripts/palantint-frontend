@@ -8,6 +8,7 @@ import {
     Maximize2, X, Eye, FileText, Layers, MapPin
 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import { Box } from "@/components/ui/box";
 import BuildingModel from "./components/BuildingModel";
 
 const BUILDINGS: Record<string, { label: string; value: string }[]> = {
@@ -52,6 +53,18 @@ export default function ApartmentsPage() {
 
     useEffect(() => {
         document.title = "Apartments | PalantINT";
+        
+        // Handle search params for building and floor
+        const bldgQ = searchParams.get("bldg");
+        const floorQ = searchParams.get("floor");
+        
+        if (bldgQ && BUILDINGS[bldgQ.toUpperCase()]) {
+            setBldg(bldgQ.toUpperCase());
+            if (floorQ && BUILDINGS[bldgQ.toUpperCase()].find(f => f.value === floorQ)) {
+                setFloor(floorQ);
+            }
+        }
+
         fetchAPI("/students/apartments/occupied")
             .then(data => {
                 setOccupied(data || {});
@@ -136,15 +149,15 @@ export default function ApartmentsPage() {
                         const occupantsHtml = occupants.length > 0 
                             ? occupants.map((o: any) => `
                                 <div class="flex items-center gap-2 text-xs text-zinc-300 font-mono mt-1 uppercase">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 text-orange-500/50"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 text-housing-500/50"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                     ${o.first_name?.[0] || ""}. ${o.last_name || ""}
                                 </div>
                             `).join('')
                             : `<p class="text-[10px] text-zinc-500 font-mono italic uppercase">VACANT</p>`;
                         
                         tooltipRef.current.innerHTML = `
-                            <div class="flex items-center gap-2 mb-2 border-b border-orange-500/30 pb-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-orange-500"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                            <div class="flex items-center gap-2 mb-2 border-b border-housing-500/30 pb-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-housing-500"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                                 <span class="text-xs font-black text-white font-mono uppercase">APT_${roomNum}</span>
                             </div>
                             ${occupantsHtml}
@@ -255,9 +268,9 @@ export default function ApartmentsPage() {
                         : "bg-zinc-950/50 border-transparent text-zinc-600 hover:bg-zinc-800 hover:text-zinc-400 hover:border-zinc-700"
                 } ${className}`}
             >
-                <span className={`text-[10px] sm:text-[11px] font-black font-mono tracking-widest mb-1 sm:mb-1.5 transition-colors ${active ? "text-orange-400" : "text-zinc-500"}`}>{label}</span>
+                <span className={`text-[10px] sm:text-[11px] font-black font-mono tracking-widest mb-1 sm:mb-1.5 transition-colors ${active ? "text-housing-400" : "text-zinc-500"}`}>{label}</span>
                 <div className="flex items-center gap-1.5 w-full justify-center">
-                    <div className={`h-1 w-6 sm:w-10 transition-colors ${active ? "bg-orange-500" : "bg-zinc-800 group-hover:bg-zinc-700"}`} />
+                    <div className={`h-1 w-6 sm:w-10 transition-colors ${active ? "bg-housing-500" : "bg-zinc-800 group-hover:bg-zinc-700"}`} />
                     <span className="text-[8px] sm:text-[9px] font-mono font-bold opacity-60">({count})</span>
                 </div>
             </button>
@@ -289,22 +302,22 @@ export default function ApartmentsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-zinc-950 selection:bg-orange-500/30 font-sans">
+        <div className="min-h-screen bg-zinc-950 selection:bg-housing-500/30 font-sans">
             <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-[20%] left-[-10%] w-[30%] h-[50%] bg-orange-600/10 blur-[150px] mix-blend-screen" />
-                <div className="absolute bottom-[10%] right-[-10%] w-[30%] h-[40%] bg-red-600/10 blur-[150px] mix-blend-screen" />
+                <div className="absolute top-[20%] left-[-10%] w-[30%] h-[50%] bg-housing-600/10 blur-[150px] mix-blend-screen" />
+                <div className="absolute bottom-[10%] right-[-10%] w-[30%] h-[40%] bg-comms-600/10 blur-[150px] mix-blend-screen" />
             </div>
 
             <main className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 mt-4 sm:mt-8 pb-32">
                 <div className="space-y-12">
 
                     <PageHeader
-                        badgeText="Orbital radar // Active"
+                        badgeText="Thermal radar // Active"
                         title1="Residential"
                         title2="Overview"
-                        titleGradient="from-orange-500 to-red-600"
+                        titleGradient="from-housing-400 to-housing-600"
                         subtitle="Centralized mapping for student housing assets."
-                        colorName="orange"
+                        colorName="housing"
                         searchPlaceholder="QUERY: APARTMENT NUMBER"
                         searchValue={search}
                         onSearchChange={(v) => {
@@ -325,20 +338,14 @@ export default function ApartmentsPage() {
                     {renderSelectors()}
 
                     <div className="flex gap-6 flex-col lg:flex-row relative">
-                        <div className="flex-1 bg-zinc-900/40 backdrop-blur-3xl border border-zinc-800 overflow-hidden flex flex-col relative shadow-2xl rounded-none min-h-[500px] lg:min-h-[800px]">
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-black/20">
-                                <h3 className="text-[10px] font-black font-mono text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                                    <MapPin className="w-4 h-4 text-orange-500" /> Interactive_Floor_Matrix
-                                </h3>
-                                <div className="flex items-center gap-4 text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
-                                    <span>Signal: 100%</span>
-                                    <div className="w-2 h-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                                </div>
-                            </div>
-
+                        <Box
+                            className="flex-1 min-h-[500px] lg:min-h-[800px]"
+                            icon={<MapPin className="w-4 h-4 text-housing-500" />}
+                            title="Interactive Floor Map"
+                        >
                             <div
                                 ref={svgRef}
-                                className="flex-1 flex overflow-auto relative z-0 scrollbar-thin scrollbar-thumb-zinc-800"
+                                className="flex-1 flex overflow-auto relative z-0 scrollbar-thin scrollbar-thumb-zinc-800 h-full w-full"
                             >
                                 <div 
                                     className="m-auto flex w-full h-full"
@@ -347,13 +354,13 @@ export default function ApartmentsPage() {
                                         className="m-auto flex w-full h-full
                                                    [&_svg]:m-auto [&_svg]:max-w-[95%] [&_svg]:max-h-[95%] [&_svg]:w-auto [&_svg]:h-auto [&_svg]:block
                                                    [&_.room-area]:fill-transparent [&_.room-area]:stroke-zinc-800/50 [&_.room-area]:stroke-[0.5px] [&_.room-area]:transition-none
-                                                   [&_a.group[data-hover='true']_.room-area]:fill-indigo-500/30 [&_a.group[data-hover='true']_.room-area]:stroke-indigo-400 [&_a.group[data-hover='true']_.room-area]:stroke-[1.5px] [&_a.group[data-hover='true']_.room-area]:cursor-crosshair
-                                                   [&_a.group[data-active='true']_.room-area]:fill-orange-500/60 [&_a.group[data-active='true']_.room-area]:stroke-orange-500 [&_a.group[data-active='true']_.room-area]:stroke-2
-                                                   [&_a.group[data-active='true'][data-hover='true']_.room-area]:fill-orange-400/80
+                                                   [&_a.group[data-hover='true']_.room-area]:fill-student-500/30 [&_a.group[data-hover='true']_.room-area]:stroke-student-400 [&_a.group[data-hover='true']_.room-area]:stroke-[1.5px] [&_a.group[data-hover='true']_.room-area]:cursor-crosshair
+                                                   [&_a.group[data-active='true']_.room-area]:fill-housing-500/60 [&_a.group[data-active='true']_.room-area]:stroke-housing-500 [&_a.group[data-active='true']_.room-area]:stroke-2
+                                                   [&_a.group[data-active='true'][data-hover='true']_.room-area]:fill-housing-400/80
                                                    [&_.room-label]:font-sans
                                                    [&_a.group:hover_.room-label]:fill-white [&_a.group:hover_.room-label]:font-black
                                                    [&_a.group[data-active='true']_.room-label]:fill-white [&_a.group[data-active='true']_.room-label]:font-black"
-                                        dangerouslySetInnerHTML={{ __html: svgContent || `<div class="m-auto flex flex-col items-center justify-center text-zinc-600 gap-4 font-mono uppercase tracking-widest"><svg class="w-16 h-16 opacity-30 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="square" stroke-linejoin="miter" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg><span class="text-xs text-red-500/80 text-center">PLAN_NOT_FOUND</span></div>` }}
+                                        dangerouslySetInnerHTML={{ __html: svgContent || `<div class="m-auto flex flex-col items-center justify-center text-zinc-600 gap-4 font-mono uppercase tracking-widest"><svg class="w-16 h-16 opacity-30 text-comms-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="square" stroke-linejoin="miter" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg><span class="text-xs text-comms-500/80 text-center">PLAN_NOT_FOUND</span></div>` }}
                                     />
                                 </div>
                             </div>
@@ -361,19 +368,19 @@ export default function ApartmentsPage() {
                             {/* Direct DOM updated tooltip */}
                             <div
                                 ref={tooltipRef}
-                                className="absolute z-50 bg-zinc-950/90 backdrop-blur-md border border-orange-500 px-3 py-2 pointer-events-none rounded-none"
+                                className="absolute z-50 bg-zinc-950/90 backdrop-blur-md border border-housing-500 px-3 py-2 pointer-events-none rounded-none"
                             />
-                        </div>
+                        </Box>
 
                         <div className="xl:w-[450px] shrink-0 bg-zinc-900/40 backdrop-blur-3xl border border-zinc-800 flex flex-col shadow-2xl relative rounded-none h-[500px] lg:h-[800px]">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-orange-500" />
+                            <div className="absolute top-0 left-0 w-full h-1 bg-housing-500" />
                             <h3 className="text-sm font-black text-white uppercase tracking-widest p-5 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between">
-                                <span className="flex items-center gap-3"><Users className="w-5 h-5 text-orange-500" /> {bldg}</span>
+                                <span className="flex items-center gap-3"><Users className="w-5 h-5 text-housing-500" /> {bldg}</span>
                                 <span className="text-[10px] font-mono opacity-50">{BUILDINGS[bldg].find(f => f.value === floor)?.label}</span>
                             </h3>
                             <div className="flex-1 overflow-y-auto custom-scrollbar">
                                 {currentViewApts.length > 0 ? currentViewApts.map((apt) => (
-                                    <div key={apt} className={`border-b border-zinc-800/30 p-4 transition-all cursor-pointer ${selectedRoom === apt ? "bg-orange-500/5 border-l-2 border-orange-500" : "hover:bg-zinc-900/40 border-l-2 border-transparent"}`} onClick={() => { setSelectedRoom(apt); setSearch(apt); }}>
+                                    <div key={apt} className={`border-b border-zinc-800/30 p-4 transition-all cursor-pointer ${selectedRoom === apt ? "bg-housing-500/5 border-l-2 border-housing-500" : "hover:bg-zinc-900/40 border-l-2 border-transparent"}`} onClick={() => { setSelectedRoom(apt); setSearch(apt); }}>
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm font-bold text-white font-mono">{apt}</span>
                                             <span className="text-[10px] text-zinc-500 font-mono">{occupied[apt]?.length || 0} residents</span>
@@ -381,7 +388,7 @@ export default function ApartmentsPage() {
                                         {occupied[apt]?.length > 0 && (
                                             <div className="mt-3 space-y-1">
                                                 {occupied[apt].map((o: any) => (
-                                                    <button key={o.id} onClick={(e) => { e.stopPropagation(); router.push(`/students/${o.id}`); }} className="w-full text-left text-[11px] font-mono text-zinc-400 hover:text-orange-400 truncate uppercase border border-zinc-800/50 p-1 bg-black/20 hover:bg-black/40 transition-colors">
+                                                    <button key={o.id} onClick={(e) => { e.stopPropagation(); router.push(`/students/${o.id}`); }} className="w-full text-left text-[11px] font-mono text-zinc-400 hover:text-housing-400 truncate uppercase border border-zinc-800/50 p-1 bg-black/20 hover:bg-black/40 transition-colors">
                                                         {o.first_name} {o.last_name}
                                                     </button>
                                                 ))}
@@ -399,46 +406,39 @@ export default function ApartmentsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-zinc-800/60">
                         
                         {/* 3D Skeleton */}
-                        <div className="bg-zinc-900/40 backdrop-blur-3xl border border-zinc-800 p-1 flex flex-col relative group shadow-2xl rounded-none h-[600px]">
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-black/20">
-                                <h3 className="text-[10px] font-black font-mono text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                                    <Layers className="w-4 h-4 text-orange-500" /> Structural_Skeleton_3D
-                                </h3>
-                                <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">3D_Format</span>
-                            </div>
-                            <div className="flex-1 relative overflow-hidden bg-zinc-950/20">
-                                <BuildingModel 
-                                    bldg={bldg} 
-                                    floors={BUILDINGS[bldg]} 
-                                    activeFloor={floor} 
-                                    buildingSvgs={buildingSvgs} 
-                                    buildingMetadata={buildingMetadata} 
-                                />
-                            </div>
-                        </div>
-
+                        <Box
+                            className="h-[600px] p-1"
+                            contentClassName="bg-zinc-950/20"
+                            icon={<Layers className="w-4 h-4 text-housing-500" />}
+                            title="Building Wireframe"
+                        >
+                            <BuildingModel
+                                bldg={bldg}
+                                floors={BUILDINGS[bldg]}
+                                activeFloor={floor}
+                                buildingSvgs={buildingSvgs}
+                                buildingMetadata={buildingMetadata}
+                            />
+                        </Box>
                         {/* Reference PNG */}
-                        <div className="bg-zinc-900/40 backdrop-blur-3xl border border-zinc-800 p-1 flex flex-col relative group shadow-2xl rounded-none h-[600px]">
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-black/20">
-                                <h3 className="text-[10px] font-black font-mono text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                                    <FileText className="w-4 h-4 text-orange-500" /> Static_Blueprint_Ref
-                                </h3>
-                                <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">Raster_Format</span>
-                            </div>
-                            <div className="flex-1 relative overflow-hidden flex items-center justify-center bg-zinc-950/20 p-8">
-                                <a href={getPngPath(bldg, floor)} target="_blank" rel="noopener noreferrer" className="block max-w-full max-h-full cursor-zoom-in">
-                                    <img 
-                                        src={getPngPath(bldg, floor)} 
-                                        alt="Full Plan" 
-                                        className="max-w-full max-h-full object-contain brightness-90 saturate-[0.8] contrast-125 hover:brightness-110 transition-all" 
-                                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} 
-                                    />
-                                </a>
-                                {!getPngPath(bldg, floor) && (
-                                    <div className="text-zinc-800 font-mono text-[10px] uppercase tracking-widest">No blueprint data</div>
-                                )}
-                            </div>
-                        </div>
+                        <Box
+                            className="h-[600px] p-1"
+                            contentClassName="flex items-center justify-center bg-zinc-950/20 p-8"
+                            icon={<FileText className="w-4 h-4 text-housing-500" />}
+                            title="Floor Map Image"
+                        >
+                            <a href={getPngPath(bldg, floor)} target="_blank" rel="noopener noreferrer" className="block max-w-full max-h-full cursor-zoom-in">
+                                <img 
+                                    src={getPngPath(bldg, floor)} 
+                                    alt="Full Plan" 
+                                    className="max-w-full max-h-full object-contain brightness-90 saturate-[0.8] contrast-125 hover:brightness-110 transition-all" 
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} 
+                                />
+                            </a>
+                            {!getPngPath(bldg, floor) && (
+                                <div className="text-zinc-800 font-mono text-[10px] uppercase tracking-widest">No blueprint data</div>
+                            )}
+                        </Box>
 
                     </div>
                 </div>

@@ -190,7 +190,7 @@ export default function RelationshipsList({ studentId, themeColor }: Relationshi
                                     <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: `${themeColor}80` }}>Student Selected</span>
                                     <span className="text-xs font-black uppercase tracking-wider" style={{ color: themeColor }}>{selectedStudent.first_name} {selectedStudent.last_name}</span>
                                 </div>
-                                <button onClick={() => { setSelectedStudent(null); setSearchQuery(""); }} className="p-2 text-zinc-500 hover:text-red-400 transition-colors">
+                                <button onClick={() => { setSelectedStudent(null); setSearchQuery(""); }} className="p-2 text-zinc-500 hover:text-comms-400 transition-colors">
                                     <X className="w-4 h-4" />
                                 </button>
                             </div>
@@ -209,7 +209,7 @@ export default function RelationshipsList({ studentId, themeColor }: Relationshi
                                     ))}
                                 </select>
                             ) : (
-                                <p className="text-[10px] text-red-500 uppercase font-mono tracking-widest p-2 border border-red-500/20 bg-red-500/5">ERROR: CATEGORIES MISSING. CONTACT ADMIN.</p>
+                                <p className="text-[10px] text-comms-500 uppercase font-mono tracking-widest p-2 border border-comms-500/20 bg-comms-500/5">ERROR: CATEGORIES MISSING. CONTACT ADMIN.</p>
                             )}
                             
                             <button
@@ -245,9 +245,9 @@ export default function RelationshipsList({ studentId, themeColor }: Relationshi
                             className="flex items-center gap-4 p-3 bg-zinc-900 border border-zinc-800 group cursor-pointer transition-colors relative overflow-hidden"
                             onClick={() => router.push(`/students/${rel.other_student.id}`)}
                         >
-                            <div className="absolute top-0 left-0 w-1 h-full bg-zinc-700 group-hover:bg-cyan-500 transition-colors" style={{ groupHover: { backgroundColor: themeColor } } as any} />
+                            <div className="absolute top-0 left-0 w-1 h-full bg-zinc-700 group-hover:bg-network-500 transition-colors" style={{ groupHover: { backgroundColor: themeColor } } as any} />
                             
-                            <div className="w-12 h-12 flex items-center justify-center shrink-0 border border-zinc-700 group-hover:border-cyan-500/50 overflow-hidden bg-zinc-950 relative z-10 ml-2" style={{ groupHover: { borderColor: themeColor } } as any}>
+                            <div className="w-12 h-12 flex items-center justify-center shrink-0 border border-zinc-700 group-hover:border-network-500/50 overflow-hidden bg-zinc-950 relative z-10 ml-2" style={{ groupHover: { borderColor: themeColor } } as any}>
                                 <img
                                     src={`${apiUrl}/students/${rel.other_student.id}/image`}
                                     alt="" className="w-full h-full object-cover grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
@@ -257,7 +257,7 @@ export default function RelationshipsList({ studentId, themeColor }: Relationshi
                             </div>
                             
                             <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                <p className="text-sm font-black text-white uppercase tracking-wider truncate mb-1 group-hover:text-cyan-400 transition-colors" style={{ groupHover: { color: themeColor } } as any}>
+                                <p className="text-sm font-black text-white uppercase tracking-wider truncate mb-1 group-hover:text-network-400 transition-colors" style={{ groupHover: { color: themeColor } } as any}>
                                     {rel.other_student.first_name} {rel.other_student.last_name}
                                 </p>
                                 <div className="flex items-center gap-2 mt-0.5 max-w-full">
@@ -272,7 +272,7 @@ export default function RelationshipsList({ studentId, themeColor }: Relationshi
                             
                             <button
                                 onClick={e => { e.stopPropagation(); removeConnection(rel.id); }}
-                                className="opacity-0 group-hover:opacity-100 text-red-500 hover:bg-red-500/10 p-2 transition-all mr-2"
+                                className="opacity-0 group-hover:opacity-100 text-comms-500 hover:bg-comms-500/10 p-2 transition-all mr-2"
                                 title="Sever Link"
                             >
                                 <Trash2 className="w-4 h-4" />

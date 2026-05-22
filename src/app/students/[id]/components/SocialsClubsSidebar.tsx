@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { Link2, Github, Instagram, Linkedin, Twitter, Users, Briefcase, Plus, Trash2, X, Check } from "lucide-react";
+import { Link2, Github, Instagram, Linkedin, Twitter, Users, Briefcase, Plus, Trash2, X, Check, GraduationCap } from "lucide-react";
 
 interface SidebarProps {
     student: any;
@@ -119,16 +119,16 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
             {/* Social Links Block */}
             <div className="bg-zinc-950/80 backdrop-blur-3xl border border-zinc-800 p-5 shadow-[0_0_20px_rgba(0,0,0,0.5)] relative group">
                 {/* Accent Line */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-blue-600" />
+                <div className="absolute top-0 left-0 w-full h-1 bg-student-600" />
 
                 <div className="flex justify-between items-center mb-6 border-b border-zinc-800 pb-3">
                     <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-3">
-                        <Link2 className="w-4 h-4 text-blue-500" />
+                        <Link2 className="w-4 h-4 text-student-500" />
                         Socials info
                     </h3>
                     <button
                         onClick={() => setShowAddSocial(!showAddSocial)}
-                        className="text-zinc-500 hover:text-blue-400 transition font-mono text-xs font-black flex items-center tracking-widest"
+                        className="text-zinc-500 hover:text-student-400 transition font-mono text-xs font-black flex items-center tracking-widest"
                     >
                         {showAddSocial ? "Abort" : "+ Append"}
                     </button>
@@ -138,7 +138,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                 {showAddSocial && (
                     <div className="mb-6 p-4 bg-zinc-900 border border-zinc-800 shadow-inner space-y-4">
                         <div className="flex items-center gap-2 mb-2">
-                            <span className="w-1.5 h-1.5 bg-blue-500 animate-pulse" />
+                            <span className="w-1.5 h-1.5 bg-student-500 animate-pulse" />
                             <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">Initialize New Link</span>
                         </div>
                         <select
@@ -155,7 +155,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                                 }
                                 setSocialForm({ ...socialForm, platform: newPlat, url: newUrl });
                             }}
-                            className="w-full bg-zinc-950/50 border border-zinc-700/50 px-3 py-2 text-xs font-mono text-white outline-none focus:border-blue-500 transition-colors"
+                            className="w-full bg-zinc-950/50 border border-zinc-700/50 px-3 py-2 text-xs font-mono text-white outline-none focus:border-student-500 transition-colors"
                         >
                             {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
                         </select>
@@ -176,19 +176,19 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                                 }
                                 setSocialForm({ ...socialForm, username: newUser, url: newUrl });
                             }}
-                            className="w-full bg-zinc-950/50 border border-zinc-700/50 px-3 py-2 text-xs font-mono text-white placeholder-zinc-600 outline-none focus:border-blue-500 transition-colors"
+                            className="w-full bg-zinc-950/50 border border-zinc-700/50 px-3 py-2 text-xs font-mono text-white placeholder-zinc-600 outline-none focus:border-student-500 transition-colors"
                         />
                         <input
                             type="text"
                             placeholder="Direct URL Route"
                             value={socialForm.url}
                             onChange={e => setSocialForm({ ...socialForm, url: e.target.value })}
-                            className="w-full bg-zinc-950/50 border border-zinc-700/50 px-3 py-2 text-xs font-mono text-white placeholder-zinc-600 outline-none focus:border-blue-500 transition-colors"
+                            className="w-full bg-zinc-950/50 border border-zinc-700/50 px-3 py-2 text-xs font-mono text-white placeholder-zinc-600 outline-none focus:border-student-500 transition-colors"
                         />
                         <button
                             onClick={addSocial}
                             disabled={socialLoading || !socialForm.username || !socialForm.url}
-                            className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white text-xs font-mono tracking-widest uppercase py-3 flex items-center justify-center gap-2 transition-colors mt-2"
+                            className="w-full bg-student-600 hover:bg-student-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white text-xs font-mono tracking-widest uppercase py-3 flex items-center justify-center gap-2 transition-colors mt-2"
                         >
                             <Check className="w-4 h-4" />
                             Execute Link
@@ -203,7 +203,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                         {socials.map((link: any) => (
                             <li key={link.id} className="group relative border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-800 transition-colors">
                                 {/* Hover Line */}
-                                <div className="absolute top-0 left-0 w-0 h-full bg-blue-500 group-hover:w-1 transition-all duration-300" />
+                                <div className="absolute top-0 left-0 w-0 h-full bg-student-500 group-hover:w-1 transition-all duration-300" />
                                 
                                 <div className="flex items-center justify-between p-3 pl-4">
                                     <a
@@ -212,7 +212,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                                         rel="noreferrer"
                                         className="flex items-center gap-4 text-zinc-400 hover:text-white transition-colors"
                                     >
-                                        <div className="text-zinc-500 group-hover:text-blue-400 transition-colors">
+                                        <div className="text-zinc-500 group-hover:text-student-400 transition-colors">
                                             {getIcon(link.platform)}
                                         </div>
                                         <div className="flex flex-col">
@@ -222,7 +222,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                                     </a>
                                     <button
                                         onClick={() => removeSocial(link.id)}
-                                        className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-400 transition-colors p-2"
+                                        className="opacity-0 group-hover:opacity-100 text-comms-500 hover:text-comms-400 transition-colors p-2"
                                         title="Purge Link"
                                     >
                                         <Trash2 className="w-4 h-4" />
@@ -234,21 +234,21 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                 )}
             </div>
 
-            {/* Clubs Block */}
+            {/* Organizations Block */}
             <div className="bg-zinc-950/80 backdrop-blur-3xl border border-zinc-800 p-5 shadow-[0_0_20px_rgba(0,0,0,0.5)] relative group">
                 {/* Accent Line */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500" />
+                <div className="absolute top-0 left-0 w-full h-1 bg-orga-500" />
                 
                 <div className="flex justify-between items-center mb-6 border-b border-zinc-800 pb-3">
                     <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-3">
-                        <Briefcase className="w-4 h-4 text-emerald-500" /> Organization Ties
+                        <Briefcase className="w-4 h-4 text-orga-500" /> Organizations
                     </h3>
                     <button
                         onClick={() => {
                             setShowAddClub(!showAddClub);
                             if (!showAddClub && allClubs.length === 0) loadClubs();
                         }}
-                        className="text-zinc-500 hover:text-emerald-400 transition font-mono text-xs font-black flex items-center tracking-widest"
+                        className="text-zinc-500 hover:text-orga-400 transition font-mono text-xs font-black flex items-center tracking-widest"
                     >
                         {showAddClub ? "Abort" : "+ Append"}
                     </button>
@@ -258,11 +258,11 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                 {showAddClub && (
                     <div className="mb-6 p-4 bg-zinc-900 border border-zinc-800 shadow-inner space-y-4">
                         <div className="flex items-center gap-2 mb-2">
-                            <span className="w-1.5 h-1.5 bg-emerald-500 animate-pulse" />
+                            <span className="w-1.5 h-1.5 bg-orga-500 animate-pulse" />
                             <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">Initialize Org Link</span>
                         </div>
                         {allClubs.length === 0 ? (
-                            <p className="text-xs font-mono text-red-400">FAILURE: NO ASSIGNABLE ORGS FOUND</p>
+                            <p className="text-xs font-mono text-comms-400">FAILURE: NO ASSIGNABLE ORGS FOUND</p>
                         ) : (
                             <>
                                 {(() => {
@@ -287,7 +287,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                                         <select
                                             value={clubForm.club_id}
                                             onChange={e => setClubForm({ ...clubForm, club_id: e.target.value })}
-                                            className="w-full bg-zinc-950/50 border border-zinc-700/50 px-3 py-2 text-xs font-mono text-white outline-none focus:border-emerald-500 transition-colors"
+                                            className="w-full bg-zinc-950/50 border border-zinc-700/50 px-3 py-2 text-xs font-mono text-white outline-none focus:border-orga-500 transition-colors"
                                         >
                                             {sortedOrigins.map(origin => (
                                                 <optgroup key={origin} label={`// ${origin.toUpperCase()}`}>
@@ -304,21 +304,21 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                                     placeholder="Role (e.g. President)"
                                     value={clubForm.role}
                                     onChange={e => setClubForm({ ...clubForm, role: e.target.value })}
-                                    className="w-full bg-zinc-950/50 border border-zinc-700/50 px-3 py-2 text-xs font-mono text-white placeholder-zinc-600 outline-none focus:border-emerald-500 transition-colors"
+                                    className="w-full bg-zinc-950/50 border border-zinc-700/50 px-3 py-2 text-xs font-mono text-white placeholder-zinc-600 outline-none focus:border-orga-500 transition-colors"
                                 />
                                 <label className="flex items-center gap-3 p-2 border border-zinc-800 bg-zinc-900 cursor-pointer hover:border-zinc-700 transition">
                                     <input
                                         type="checkbox"
                                         checked={clubForm.is_mandat}
                                         onChange={e => setClubForm({ ...clubForm, is_mandat: e.target.checked })}
-                                        className="accent-emerald-500 w-4 h-4"
+                                        className="accent-orga-500 w-4 h-4"
                                     />
                                     <span className="text-[10px] font-mono text-zinc-300 uppercase tracking-widest">Board Member</span>
                                 </label>
                                 <button
                                     onClick={addClub}
                                     disabled={clubLoading || !clubForm.club_id}
-                                    className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white text-xs font-mono tracking-widest uppercase py-3 flex items-center justify-center gap-2 transition-colors mt-2"
+                                    className="w-full bg-orga-600 hover:bg-orga-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white text-xs font-mono tracking-widest uppercase py-3 flex items-center justify-center gap-2 transition-colors mt-2"
                                 >
                                     <Check className="w-4 h-4" />
                                     Authorize Assignment
@@ -328,17 +328,17 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                     </div>
                 )}
 
-                {clubs.length === 0 && !showAddClub ? (
+                {clubs.filter((affil: any) => affil.club?.type !== 'Classe' && affil.club_type !== 'Classe').length === 0 && !showAddClub ? (
                     <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest">No Affiliations Detected</p>
                 ) : (
                     <ul className="space-y-2">
-                        {clubs.map((affil: any) => {
+                        {clubs.filter((affil: any) => affil.club?.type !== 'Classe' && affil.club_type !== 'Classe').map((affil: any) => {
                             const clubId = affil.club_id || affil.club?.id;
                             const clubName = affil.club?.name || affil.club_name || `ENTITY_${clubId}`;
                             
                             return (
                                 <li key={clubId} className="group relative border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-800 transition-colors">
-                                    <div className="absolute top-0 left-0 w-0 h-full bg-emerald-500 group-hover:w-1 transition-all duration-300" />
+                                    <div className="absolute top-0 left-0 w-0 h-full bg-orga-500 group-hover:w-1 transition-all duration-300" />
                                     
                                     <div className="flex items-center justify-between p-3 pl-4">
                                         <div
@@ -346,11 +346,11 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                                             className="cursor-pointer flex-1 min-w-0"
                                         >
                                             <div className="flex items-center gap-2 mb-1">
-                                                <h4 className="text-sm font-black text-white uppercase tracking-wider truncate group-hover:text-emerald-400 transition-colors">
+                                                <h4 className="text-sm font-black text-white uppercase tracking-wider truncate group-hover:text-orga-400 transition-colors">
                                                     {clubName}
                                                 </h4>
                                                 {affil.is_mandat && (
-                                                    <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-500 text-[8px] font-mono border border-amber-500/30 uppercase">
+                                                    <span className="px-1.5 py-0.5 bg-housing-500/20 text-housing-500 text-[8px] font-mono border border-housing-500/30 uppercase">
                                                         Exec
                                                     </span>
                                                 )}
@@ -361,7 +361,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                                         </div>
                                         <button
                                             onClick={() => removeClub(clubId)}
-                                            className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-400 transition-colors p-2"
+                                            className="opacity-0 group-hover:opacity-100 text-comms-500 hover:text-comms-400 transition-colors p-2"
                                             title="Sever Link"
                                         >
                                             <Trash2 className="w-4 h-4" />
@@ -373,6 +373,42 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                     </ul>
                 )}
             </div>
+
+            {/* Academic Path Block */}
+            {clubs.some((affil: any) => (affil.club?.type === 'Classe' || affil.club_type === 'Classe')) && (
+                <div className="bg-zinc-950/80 backdrop-blur-3xl border border-zinc-800 p-5 shadow-[0_0_20px_rgba(0,0,0,0.5)] relative group">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-student-500" />
+                    <div className="flex justify-between items-center mb-6 border-b border-zinc-800 pb-3">
+                        <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-3">
+                            <GraduationCap className="w-4 h-4 text-student-500" /> Academic Path
+                        </h3>
+                    </div>
+
+                    <ul className="space-y-2">
+                        {clubs.filter((affil: any) => (affil.club?.type === 'Classe' || affil.club_type === 'Classe')).map((affil: any) => {
+                            const clubId = affil.club_id || affil.club?.id;
+                            const clubName = affil.club?.name || affil.club_name || `ENTITY_${clubId}`;
+                            return (
+                                <li key={clubId} className="group relative border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-800 transition-colors">
+                                    <div className="absolute top-0 left-0 w-0 h-full bg-student-500 group-hover:w-1 transition-all duration-300" />
+                                    <div className="flex items-center justify-between p-3 pl-4">
+                                        <div onClick={() => router.push(`/clubs/${clubId}`)} className="cursor-pointer flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h4 className="text-sm font-black text-white uppercase tracking-wider truncate group-hover:text-student-400 transition-colors">
+                                                    {clubName}
+                                                </h4>
+                                            </div>
+                                            <p className="text-[10px] text-zinc-500 font-mono tracking-widest uppercase truncate border-l border-zinc-700 pl-2">
+                                                {affil.role || "STUDENT"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
+            )}
 
         </div>
     );

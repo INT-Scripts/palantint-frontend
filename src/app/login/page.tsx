@@ -52,12 +52,12 @@ export default function LoginPage() {
             <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg viewBox=\"0 0 200 200\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cfilter id=\"noiseFilter\"%3E%3CfeTurbulence type=\"fractalNoise\" baseFrequency=\"0.65\" numOctaves=\"3\" stitchTiles=\"stitch\"/%3E%3C/filter%3E%3Crect width=\"100%25\" height=\"100%25\" filter=\"url(%23noiseFilter)\"/%3E%3C/svg%3E')" }}></div>
 
             {/* Deep Atmospheric Light Orbs (Color-Dodge & Screen) */}
-            <div className="absolute top-[-25%] left-[-15%] w-[60%] h-[60%] bg-blue-600/15 blur-[140px] rounded-full mix-blend-screen mix-blend-color-dodge z-0 pointer-events-none animate-pulse duration-10000" />
+            <div className="absolute top-[-25%] left-[-15%] w-[60%] h-[60%] bg-student-600/15 blur-[140px] rounded-full mix-blend-screen mix-blend-color-dodge z-0 pointer-events-none animate-pulse duration-10000" />
             <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-violet-600/15 blur-[120px] rounded-full mix-blend-screen mix-blend-color-dodge z-0 pointer-events-none animate-pulse duration-7000" />
 
             {/* Brutalist Glassmorphism Container */}
             <div className="w-full max-w-md bg-zinc-900/40 border border-zinc-800/60 rounded-none p-10 lg:p-12 backdrop-blur-xl shadow-2xl relative z-10 
-                            before:absolute before:pointer-events-none before:inset-0 before:border-l-4 before:border-blue-500/80 before:opacity-0 before:transition-opacity hover:before:opacity-100 group/login">
+                            before:absolute before:pointer-events-none before:inset-0 before:border-l-4 before:border-student-500/80 before:opacity-0 before:transition-opacity hover:before:opacity-100 group/login">
                 
                 {/* Decorative Crosshair / Editorial Detail */}
                 <div className="absolute top-4 left-4 w-4 h-4 border-t border-l border-zinc-700 pointer-events-none opacity-50"></div>
@@ -65,7 +65,7 @@ export default function LoginPage() {
 
                 <div className="text-left mb-10 space-y-2">
                     <h1 className="text-4xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500 tracking-tighter uppercase leading-none drop-shadow-lg">
-                        Palant<span className="text-blue-500">INT</span>
+                        Palant<span className="text-student-500">INT</span>
                     </h1>
                     <p className="text-zinc-500 font-mono text-xs uppercase tracking-[0.2em] border-l-2 border-zinc-700 pl-3">
                         Sign In
@@ -73,8 +73,8 @@ export default function LoginPage() {
                 </div>
 
                 {error && (
-                    <div className="mb-8 p-4 bg-red-950/30 border-l border-red-500 text-red-400 text-xs font-mono uppercase tracking-widest flex items-start gap-3 shadow-inner">
-                        <div className="w-2 h-2 rounded-full bg-red-500 mt-1 flex-shrink-0 animate-pulse"></div>
+                    <div className="mb-8 p-4 bg-comms-950/30 border-l border-comms-500 text-comms-400 text-xs font-mono uppercase tracking-widest flex items-start gap-3 shadow-inner">
+                        <div className="w-2 h-2 rounded-full bg-comms-500 mt-1 flex-shrink-0 animate-pulse"></div>
                         <span>ERROR: {error}</span>
                     </div>
                 )}
@@ -86,14 +86,14 @@ export default function LoginPage() {
                             <span className="text-zinc-800 font-mono">USER</span>
                         </label>
                         <div className="relative">
-                            <div className="absolute inset-y-0 left-0 w-1 bg-zinc-800 group-focus-within:bg-blue-500 transition-colors z-20" />
-                            <User className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600 group-focus-within:text-blue-500 transition-colors pointer-events-none z-10" />
+                            <div className="absolute inset-y-0 left-0 w-1 bg-zinc-800 group-focus-within:bg-student-500 transition-colors z-20" />
+                            <User className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600 group-focus-within:text-student-500 transition-colors pointer-events-none z-10" />
                             <input
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 required
-                                className="w-full h-14 bg-zinc-950/50 backdrop-blur-2xl border-y border-r border-l-0 border-zinc-800/80 rounded-none pl-12 pr-4 text-sm font-mono text-zinc-200 placeholder-zinc-700 shadow-inner focus-visible:ring-0 focus-visible:border-blue-500/50 transition-all hover:bg-zinc-900/60 outline-none"
+                                className="w-full h-14 bg-zinc-950/50 backdrop-blur-2xl border-y border-r border-l-0 border-zinc-800/80 rounded-none pl-12 pr-4 text-sm font-mono text-zinc-200 placeholder-zinc-700 shadow-inner focus-visible:ring-0 focus-visible:border-student-500/50 transition-all hover:bg-zinc-900/60 outline-none"
                                 placeholder="USERNAME"
                             />
                         </div>
@@ -105,14 +105,14 @@ export default function LoginPage() {
                             <span className="text-zinc-800 font-mono">PASS</span>
                         </label>
                         <div className="relative">
-                            <div className="absolute inset-y-0 left-0 w-1 bg-zinc-800 group-focus-within:bg-blue-500 transition-colors z-20" />
-                            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600 group-focus-within:text-blue-500 transition-colors pointer-events-none z-10" />
+                            <div className="absolute inset-y-0 left-0 w-1 bg-zinc-800 group-focus-within:bg-student-500 transition-colors z-20" />
+                            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600 group-focus-within:text-student-500 transition-colors pointer-events-none z-10" />
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="w-full h-14 bg-zinc-950/50 backdrop-blur-2xl border-y border-r border-l-0 border-zinc-800/80 rounded-none pl-12 pr-4 text-sm font-mono text-zinc-200 placeholder-zinc-700 shadow-inner focus-visible:ring-0 focus-visible:border-blue-500/50 transition-all hover:bg-zinc-900/60 outline-none"
+                                className="w-full h-14 bg-zinc-950/50 backdrop-blur-2xl border-y border-r border-l-0 border-zinc-800/80 rounded-none pl-12 pr-4 text-sm font-mono text-zinc-200 placeholder-zinc-700 shadow-inner focus-visible:ring-0 focus-visible:border-student-500/50 transition-all hover:bg-zinc-900/60 outline-none"
                                 placeholder="••••••••••••"
                             />
                         </div>

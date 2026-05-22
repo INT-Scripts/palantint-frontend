@@ -205,7 +205,7 @@ export default function MapCalibrationPage() {
     return (
         <div className="space-y-8 pb-20">
             <header className="animate-in fade-in slide-in-from-top-4 duration-1000 ease-out flex items-end justify-between border-b border-zinc-800/60 pb-6 relative rounded-none">
-                <div className="absolute bottom-0 left-0 w-1/3 h-[1px] bg-gradient-to-r from-orange-500 to-transparent shadow-[0_0_10px_rgba(249,115,22,0.8)]" />
+                <div className="absolute bottom-0 left-0 w-1/3 h-[1px] bg-gradient-to-r from-housing-500 to-transparent shadow-[0_0_10px_rgba(249,115,22,0.8)]" />
                 <div className="flex items-center gap-6">
                     <Link href="/admin">
                         <Button variant="outline" size="icon" className="rounded-none border-zinc-800 bg-zinc-950 hover:bg-zinc-900 transition-colors h-12 w-12 shadow-none">
@@ -213,7 +213,7 @@ export default function MapCalibrationPage() {
                         </Button>
                     </Link>
                     <div>
-                        <div className="flex items-center gap-2 text-orange-500 mb-2">
+                        <div className="flex items-center gap-2 text-housing-500 mb-2">
                             <Compass className="w-4 h-4" />
                             <span className="font-mono text-xs tracking-[0.3em] font-bold">STRUCTURAL CALIBRATION</span>
                         </div>
@@ -238,13 +238,13 @@ export default function MapCalibrationPage() {
                         <span className="text-[10px] font-black font-mono text-white px-2">{(zoom * 100).toFixed(0)}%</span>
                     </div>
 
-                    <Button variant="outline" size="sm" onClick={() => setShowGhost(!showGhost)} className={`font-mono text-[10px] uppercase tracking-widest h-9 px-4 rounded-none transition-all ${showGhost ? 'bg-orange-500/10 border-orange-500/40 text-orange-400 shadow-none' : 'bg-zinc-950 border-zinc-800 text-zinc-600'}`}>
+                    <Button variant="outline" size="sm" onClick={() => setShowGhost(!showGhost)} className={`font-mono text-[10px] uppercase tracking-widest h-9 px-4 rounded-none transition-all ${showGhost ? 'bg-housing-500/10 border-housing-500/40 text-housing-400 shadow-none' : 'bg-zinc-950 border-zinc-800 text-zinc-600'}`}>
                         <Ghost className="w-3.5 h-3.5 mr-2" /> Reference: {showGhost ? 'VISIBLE' : 'HIDDEN'}
                     </Button>
                     
                     <div className="w-px h-6 bg-zinc-800 mx-1" />
 
-                    <Button size="sm" onClick={save} className="bg-orange-600 hover:bg-orange-500 text-white font-mono text-[10px] uppercase tracking-widest h-9 px-6 rounded-none border border-orange-400/30 shadow-none">
+                    <Button size="sm" onClick={save} className="bg-housing-600 hover:bg-housing-500 text-white font-mono text-[10px] uppercase tracking-widest h-9 px-6 rounded-none border border-housing-400/30 shadow-none">
                         <Save className="w-3.5 h-3.5 mr-2" /> Commit Changes
                     </Button>
                 </div>
@@ -260,7 +260,7 @@ export default function MapCalibrationPage() {
                                     <button 
                                         key={b} 
                                         onClick={() => setBldg(b)}
-                                        className={`h-10 text-[11px] font-black font-mono border transition-all rounded-none ${bldg === b ? 'bg-orange-600/20 border-red-500 text-white shadow-none' : 'bg-black/40 border-zinc-800 text-zinc-600 hover:border-zinc-600'}`}
+                                        className={`h-10 text-[11px] font-black font-mono border transition-all rounded-none ${bldg === b ? 'bg-housing-600/20 border-comms-500 text-white shadow-none' : 'bg-black/40 border-zinc-800 text-zinc-600 hover:border-zinc-600'}`}
                                     >
                                         {b}
                                     </button>
@@ -298,15 +298,15 @@ export default function MapCalibrationPage() {
                                     </button>
                                     <button 
                                         onClick={() => setSnapMode(true)}
-                                        className={`p-1 transition-all ${snapMode ? 'bg-orange-600 text-white shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'text-zinc-600 hover:text-zinc-400'}`}
+                                        className={`p-1 transition-all ${snapMode ? 'bg-housing-600 text-white shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'text-zinc-600 hover:text-zinc-400'}`}
                                         title="Auto-Snap to Vertex"
                                     >
                                         <Magnet className="w-3.5 h-3.5" />
                                     </button>
                                 </div>
                             </div>
-                            <div className={`p-4 border flex items-center gap-4 transition-all ${snapMode ? 'bg-orange-500/5 border-orange-500/20' : 'bg-zinc-950 border-zinc-800'}`}>
-                                {snapMode ? <Magnet className="w-6 h-6 text-orange-500 animate-pulse" /> : <MousePointer className="w-6 h-6 text-zinc-600" />}
+                            <div className={`p-4 border flex items-center gap-4 transition-all ${snapMode ? 'bg-housing-500/5 border-housing-500/20' : 'bg-zinc-950 border-zinc-800'}`}>
+                                {snapMode ? <Magnet className="w-6 h-6 text-housing-500 animate-pulse" /> : <MousePointer className="w-6 h-6 text-zinc-600" />}
                                 <div className="flex flex-col">
                                     <span className="text-[10px] font-black text-white uppercase tracking-tighter leading-tight">
                                         {snapMode ? "Auto-Snap Active" : "Manual Placement"}
@@ -324,7 +324,7 @@ export default function MapCalibrationPage() {
                                 {metadata.pillars.length === 2 && (
                                     <button 
                                         onClick={swapPillars}
-                                        className="text-[9px] font-bold font-mono text-orange-500 hover:text-white flex items-center gap-1.5 transition-colors uppercase px-2 py-0.5 border border-orange-500/20 hover:bg-orange-500/10"
+                                        className="text-[9px] font-bold font-mono text-housing-500 hover:text-white flex items-center gap-1.5 transition-colors uppercase px-2 py-0.5 border border-housing-500/20 hover:bg-housing-500/10"
                                     >
                                         <ArrowUpDown className="w-3 h-3" /> Interchange
                                     </button>
@@ -334,11 +334,11 @@ export default function MapCalibrationPage() {
                                 {[0, 1].map((i) => {
                                     const p = metadata.pillars[i];
                                     return (
-                                        <div key={i} className="flex items-center justify-between bg-black/40 border border-zinc-800/50 p-2.5 group transition-all hover:border-orange-500/30 rounded-none min-h-[40px]">
+                                        <div key={i} className="flex items-center justify-between bg-black/40 border border-zinc-800/50 p-2.5 group transition-all hover:border-housing-500/30 rounded-none min-h-[40px]">
                                             {p ? (
                                                 <>
                                                     <span className="text-[9px] font-mono text-zinc-400 tracking-wider flex-1">PILLAR_{i+1} ➔ {p.x.toFixed(2)}%, {p.y.toFixed(2)}%</span>
-                                                    <button onClick={() => removePillar(i)} className="text-zinc-700 hover:text-red-500 transition-colors ml-2"><Trash2 className="w-3.5 h-3.5" /></button>
+                                                    <button onClick={() => removePillar(i)} className="text-zinc-700 hover:text-comms-500 transition-colors ml-2"><Trash2 className="w-3.5 h-3.5" /></button>
                                                 </>
                                             ) : (
                                                 <span className="text-[9px] font-mono text-zinc-700 italic uppercase tracking-widest">Awaiting Pillar {i+1}...</span>
@@ -372,7 +372,7 @@ export default function MapCalibrationPage() {
                     
                     {loading && (
                         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center rounded-none">
-                            <div className="w-12 h-12 border-2 border-orange-500 border-t-transparent animate-spin rounded-none" />
+                            <div className="w-12 h-12 border-2 border-housing-500 border-t-transparent animate-spin rounded-none" />
                         </div>
                     )}
 
@@ -415,9 +415,9 @@ export default function MapCalibrationPage() {
                                         className="absolute w-10 h-10 flex items-center justify-center group/pillar z-20"
                                         style={{ left: `${p.x}%`, top: `${p.y}%`, transform: 'translate(-50%, -50%)' }}
                                     >
-                                        <div className="absolute w-full h-[1px] bg-orange-500/40" />
-                                        <div className="absolute h-full w-[1px] bg-orange-500/40" />
-                                        <div className="absolute w-2 h-2 border border-orange-500 bg-orange-500/30 shadow-[0_0_10px_rgba(249,115,22,0.5)]" />
+                                        <div className="absolute w-full h-[1px] bg-housing-500/40" />
+                                        <div className="absolute h-full w-[1px] bg-housing-500/40" />
+                                        <div className="absolute w-2 h-2 border border-housing-500 bg-housing-500/30 shadow-[0_0_10px_rgba(249,115,22,0.5)]" />
                                         <span className="absolute text-[10px] font-black text-white font-mono drop-shadow-[0_0_4px_rgba(0,0,0,1)]">{i+1}</span>
                                     </div>
                                 ))}

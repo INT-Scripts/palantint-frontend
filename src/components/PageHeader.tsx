@@ -7,7 +7,7 @@ interface PageHeaderProps {
   title2: string;
   titleGradient: string;
   subtitle: string;
-  colorName: "blue" | "emerald" | "orange" | "zinc";
+  colorName: "student" | "orga" | "housing" | "zinc" | "campus" | "network" | "timetable" | "media" | "comms";
   bottomContent?: ReactNode;
   rightContent?: ReactNode;
   searchPlaceholder?: string;
@@ -17,21 +17,41 @@ interface PageHeaderProps {
 }
 
 const colorMap = {
-  blue: {
-    border: "border-blue-500",
-    bg: "bg-blue-500",
+  student: {
+    border: "border-student-500",
+    bg: "bg-student-500",
   },
-  emerald: {
-    border: "border-emerald-500",
-    bg: "bg-emerald-500",
+  orga: {
+    border: "border-orga-500",
+    bg: "bg-orga-500",
   },
-  orange: {
-    border: "border-orange-500",
-    bg: "bg-orange-500",
+  housing: {
+    border: "border-housing-500",
+    bg: "bg-housing-500",
+  },
+  campus: {
+    border: "border-campus-500",
+    bg: "bg-campus-500",
+  },
+  network: {
+    border: "border-network-500",
+    bg: "bg-network-500",
   },
   zinc: {
     border: "border-zinc-500",
     bg: "bg-zinc-500",
+  },
+  timetable: {
+    border: "border-timetable-500",
+    bg: "bg-timetable-500",
+  },
+  media: {
+    border: "border-media-500",
+    bg: "bg-media-500",
+  },
+  comms: {
+    border: "border-comms-500",
+    bg: "bg-comms-500",
   }
 };
 

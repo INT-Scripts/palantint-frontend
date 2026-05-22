@@ -120,7 +120,7 @@ export default function NotesList({ studentId, themeColor }: NotesListProps) {
                         {submitting ? "ENCODING..." : "COMMIT_LOG"}
                     </button>
                 </div>
-                {error && <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-mono uppercase tracking-widest mt-2">ERROR: {error}</div>}
+                {error && <div className="p-3 bg-comms-500/10 border border-comms-500/30 text-comms-500 text-xs font-mono uppercase tracking-widest mt-2">ERROR: {error}</div>}
             </div>
 
             {/* Notes List */}
@@ -154,7 +154,7 @@ export default function NotesList({ studentId, themeColor }: NotesListProps) {
                                 </div>
                                 <button
                                     onClick={() => handleDelete(note.id)}
-                                    className="opacity-0 group-hover:opacity-100 p-2 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/30 absolute right-0 bottom-0"
+                                    className="opacity-0 group-hover:opacity-100 p-2 text-zinc-500 hover:text-comms-500 hover:bg-comms-500/10 transition-all border border-transparent hover:border-comms-500/30 absolute right-0 bottom-0"
                                     title="PURGE LOG"
                                 >
                                     <Trash2 className="w-4 h-4" />

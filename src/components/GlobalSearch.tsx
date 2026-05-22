@@ -32,16 +32,16 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
         return () => clearTimeout(timer);
     }, [search]);
 
-    const renderResultItem = (icon: any, title: string, subtitle: string, url: string, color: "blue" | "orange" | "emerald") => {
+    const renderResultItem = (icon: any, title: string, subtitle: string, url: string, color: "student" | "housing" | "orga") => {
         const borderColors = {
-            blue: "hover:border-blue-500",
-            orange: "hover:border-orange-500",
-            emerald: "hover:border-emerald-500"
+            student: "hover:border-student-500",
+            housing: "hover:border-housing-500",
+            orga: "hover:border-orga-500"
         };
         const iconContainerBorders = {
-            blue: "group-hover:border-blue-500/50",
-            orange: "group-hover:border-orange-500/50",
-            emerald: "group-hover:border-emerald-500/50"
+            student: "group-hover:border-student-500/50",
+            housing: "group-hover:border-housing-500/50",
+            orga: "group-hover:border-orga-500/50"
         };
 
         return (
@@ -85,11 +85,11 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
                 <div>
                     <div className="px-4 py-2 bg-zinc-900/50 border-y border-zinc-800/50 text-[9px] font-black text-zinc-500 font-mono uppercase tracking-[0.2em]">Students</div>
                     {results.students.map(s => renderResultItem(
-                        <User className="w-4 h-4 text-blue-500" />,
+                        <User className="w-4 h-4 text-student-500" />,
                         `${s.first_name} ${s.last_name}`,
                         `ID: ${s.trombint_id} ${s.apartment ? `// APT: ${s.apartment}` : ''}`,
                         `/students/${s.id}`,
-                        'blue'
+                        'student'
                     ))}
                 </div>
             )}
@@ -98,11 +98,11 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
                 <div>
                     <div className="px-4 py-2 bg-zinc-900/50 border-y border-zinc-800/50 text-[9px] font-black text-zinc-500 font-mono uppercase tracking-[0.2em]">Apartments</div>
                     {results.apartments.map(a => renderResultItem(
-                        <Home className="w-4 h-4 text-orange-500" />,
+                        <Home className="w-4 h-4 text-housing-500" />,
                         `Apartment ${a.apartment_id}`,
                         `Resident: ${a.student_name}`,
                         `/apartments?room=${a.apartment_id}`,
-                        'orange'
+                        'housing'
                     ))}
                 </div>
             )}
@@ -111,11 +111,11 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
                 <div>
                     <div className="px-4 py-2 bg-zinc-900/50 border-y border-zinc-800/50 text-[9px] font-black text-zinc-500 font-mono uppercase tracking-[0.2em]">Organizations</div>
                     {results.clubs.map(c => renderResultItem(
-                        <Users className="w-4 h-4 text-emerald-500" />,
+                        <Users className="w-4 h-4 text-orga-500" />,
                         c.name,
                         `Slug: ${c.slug}`,
                         `/clubs/${c.id}`,
-                        'emerald'
+                        'orga'
                     ))}
                 </div>
             )}
@@ -133,8 +133,8 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
             inputClassName={`h-10 ${inputClassName}`}
             onFocus={() => setShowResults(true)}
             onBlur={() => setTimeout(() => setShowResults(false), 200)}
-            icon={<Search className="h-4 w-4 text-zinc-600 transition-colors group-focus-within:text-blue-500" />}
-            accentColorClass="group-focus-within:bg-blue-500"
+            icon={<Search className="h-4 w-4 text-zinc-600 transition-colors group-focus-within:text-student-500" />}
+            accentColorClass="group-focus-within:bg-student-500"
         />
     );
 }

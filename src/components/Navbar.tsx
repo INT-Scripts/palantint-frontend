@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchAPI } from "@/lib/api";
-import { Menu, User, Eye, LogIn, Compass, Home as HomeIcon, Settings, LogOut, Search } from "lucide-react";
+import { Menu, User, Eye, LogIn, Compass, Home as HomeIcon, Settings, LogOut, Search, MapPin, Share2, CalendarDays } from "lucide-react";
 import GlobalSearch from "./GlobalSearch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,9 @@ export default function Navbar() {
                         <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/")}>Students</span>
                         <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/clubs")}>Organisations</span>
                         <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/apartments")}>Housing</span>
+                        <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/timetable")}>Timetable</span>
+                        <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/network")}>Network</span>
+                        <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/campus")}>Campus 3D</span>
                     </div>
 
                     <div className="lg:hidden">
@@ -88,7 +91,7 @@ export default function Navbar() {
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="hidden sm:flex text-zinc-500 hover:text-red-500 hover:bg-red-500/10 bg-zinc-950 border border-zinc-800 rounded-none h-[42px] w-[42px] sm:h-[50px] sm:w-[50px] transition-all shrink-0 cursor-pointer hover:border-red-500/50"
+                                className="hidden sm:flex text-zinc-500 hover:text-comms-500 hover:bg-comms-500/10 bg-zinc-950 border border-zinc-800 rounded-none h-[42px] w-[42px] sm:h-[50px] sm:w-[50px] transition-all shrink-0 cursor-pointer hover:border-comms-500/50"
                                 onClick={() => {
                                     localStorage.removeItem("palantint_token");
                                     window.location.reload();
@@ -135,6 +138,27 @@ export default function Navbar() {
                         <span>Housing</span>
                         <HomeIcon className="w-5 h-5 text-zinc-600 group-hover:text-white" />
                     </button>
+                    <button 
+                        className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
+                        onClick={() => { setMobileMenuOpen(false); router.push("/timetable"); }}
+                    >
+                        <span>Timetable</span>
+                        <CalendarDays className="w-5 h-5 text-zinc-600 group-hover:text-white" />
+                    </button>
+                    <button 
+                        className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
+                        onClick={() => { setMobileMenuOpen(false); router.push("/network"); }}
+                    >
+                        <span>Network</span>
+                        <Share2 className="w-5 h-5 text-zinc-600 group-hover:text-white" />
+                    </button>
+                    <button 
+                        className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
+                        onClick={() => { setMobileMenuOpen(false); router.push("/campus"); }}
+                    >
+                        <span>Campus 3D</span>
+                        <MapPin className="w-5 h-5 text-zinc-600 group-hover:text-white" />
+                    </button>
                 </div>
                 
                 <div className="mt-auto pb-8">
@@ -147,7 +171,7 @@ export default function Navbar() {
                                  <p className="text-base font-bold text-white uppercase tracking-wider truncate">{user.username}</p>
                                  <p className="text-xs text-zinc-500 font-mono uppercase tracking-widest">{user.is_admin ? "SYS_ADMIN" : "OPERATIVE"}</p>
                              </div>
-                             <Button variant="ghost" size="icon" className="text-zinc-500 hover:text-red-500" onClick={() => {
+                             <Button variant="ghost" size="icon" className="text-zinc-500 hover:text-comms-500" onClick={() => {
                                  localStorage.removeItem("palantint_token");
                                  window.location.reload();
                              }}>

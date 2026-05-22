@@ -1,4 +1,5 @@
 "use client";
+import { PALETTE } from "@/lib/colors";
 
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
@@ -89,14 +90,19 @@ function FloorPlate({
     return (
         <group position={[0, yOffset, 0]} scale={[scale, -scale, scale]} rotation={[Math.PI / 2, 0, 0]}>
             {lines.map((geometry, i) => (
-                <line key={i} geometry={geometry} position={[tx, ty, 0]}>
-                    <lineBasicMaterial 
-                        color={isActive ? "#f97316" : "#ffffff"} 
-                        transparent 
-                        opacity={0.9}
-                        linewidth={1}
-                    />
-                </line>
+                <primitive 
+                    key={i} 
+                    object={new THREE.Line(
+                        geometry, 
+                        new THREE.LineBasicMaterial({
+                            color: isActive ? PALETTE.housing[500] : PALETTE.white,
+                            transparent: true,
+                            opacity: 0.9,
+                            linewidth: 1
+                        })
+                    )} 
+                    position={[tx, ty, 0]} 
+                />
             ))}
         </group>
     );
@@ -104,23 +110,10 @@ function FloorPlate({
 
 function SceneContent({ floors, activeFloor, buildingSvgs, buildingMetadata }: any) {
     const groupRef = useRef<THREE.Group>(null);
-    
-    // Use THREE.Timer as requested by the deprecation warning
-    // Note: Timer is usually used manually in a requestAnimationFrame loop,
-    // but here we can utilize the useFrame delta which is derived from Fiber's internal loop.
-    // However, to strictly follow "use THREE.Timer", we can instantiate one.
-    const timer = useMemo(() => {
-        // @ts-ignore - THREE.Timer might not be in the @types/three yet
-        return new THREE.Timer();
-    }, []);
 
-    useFrame((state) => {
+    useFrame((state, delta) => {
         if (groupRef.current) {
-            timer.update(state.clock.elapsedTime * 1000); // Timer usually takes ms
-            // Actually, state.clock is deprecated, but Fiber still uses it.
-            // If the user wants us to avoid Clock, we use the timestamp from state.
-            const time = state.clock.getElapsedTime();
-            groupRef.current.rotation.y = time * 0.15;
+            groupRef.current.rotation.y += delta * 0.15;
         }
     });
 
@@ -214,7 +207,7 @@ function SceneContent({ floors, activeFloor, buildingSvgs, buildingMetadata }: a
             if (!d1 || !d2) continue;
 
             d1.vertices.forEach((v1: any) => {
-                let closest = null;
+                let closest: any = null;
                 let minDist = Infinity;
                 d2.vertices.forEach((v2: any) => {
                     const d = Math.pow(v1.x - v2.x, 2) + Math.pow(v1.z - v2.z, 2);
@@ -256,7 +249,7 @@ function SceneContent({ floors, activeFloor, buildingSvgs, buildingMetadata }: a
                 })}
 
                 <lineSegments geometry={skeletonGeometry}>
-                    <lineBasicMaterial color="#ffffff" transparent opacity={0.9} linewidth={1} />
+                    <lineBasicMaterial color={PALETTE.white} transparent opacity={0.9} linewidth={1} />
                 </lineSegments>
             </group>
         </group>

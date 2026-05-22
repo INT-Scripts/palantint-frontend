@@ -1,4 +1,5 @@
 "use client";
+import { PALETTE } from "@/lib/colors";
 
 import { useEffect, useState } from "react";
 import { fetchAPI } from "@/lib/api";
@@ -77,7 +78,7 @@ export default function AgendaCalendar({ studentId, themeColor }: AgendaCalendar
                     <div className="w-12 h-12 border-2 border-zinc-800 border-t-zinc-400 animate-spin" />
                 </div>
             ) : error ? (
-                <div className="flex-1 flex items-center justify-center text-red-500 font-mono uppercase tracking-widest text-xs">
+                <div className="flex-1 flex items-center justify-center text-comms-500 font-mono uppercase tracking-widest text-xs">
                     ACCESS DENIED: {error}
                 </div>
             ) : (
@@ -110,8 +111,8 @@ export default function AgendaCalendar({ studentId, themeColor }: AgendaCalendar
                                     <div 
                                         className={`text-center py-2 border-b sticky top-0 z-20 h-[60px] flex flex-col justify-center transition-colors`}
                                         style={{ 
-                                            backgroundColor: isToday ? '#18181b' : '#18181b', // zinc-900
-                                            borderColor: isToday ? `${themeColor}50` : '#27272a' // zinc-800
+                                            backgroundColor: isToday ? PALETTE.zinc[850] : PALETTE.zinc[850], // zinc-900
+                                            borderColor: isToday ? `${themeColor}50` : PALETTE.zinc[800] // zinc-800
                                         }}
                                     >
                                         <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-1">{format(day, "EEEE")}</p>
@@ -145,7 +146,7 @@ export default function AgendaCalendar({ studentId, themeColor }: AgendaCalendar
                                             if (endMinutes <= 480 || startMinutes >= 1260) return null;
 
                                             const isClubEvent = !!evt.club_name;
-                                            const eventColor = isClubEvent ? (evt.club_color || '#a855f7') : themeColor;
+                                            const eventColor = isClubEvent ? (evt.club_color || PALETTE.student[500]) : themeColor;
 
                                             return (
                                                 <div

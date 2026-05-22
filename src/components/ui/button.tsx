@@ -4,13 +4,13 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none text-xs font-mono font-bold uppercase tracking-widest transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-zinc-500/50 focus-visible:ring-1 aria-invalid:ring-red-500/20 aria-invalid:border-red-500",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none text-xs font-mono font-bold uppercase tracking-widest transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-zinc-500/50 focus-visible:ring-1 aria-invalid:ring-comms-500/20 aria-invalid:border-comms-500",
   {
     variants: {
       variant: {
         default: "bg-white text-black hover:bg-zinc-200 border border-white shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]",
         destructive:
-          "bg-red-600 text-white hover:bg-red-500 border border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)] hover:shadow-[0_0_20px_rgba(220,38,38,0.6)]",
+          "bg-comms-600 text-white hover:bg-comms-500 border border-comms-500 shadow-[0_0_15px_rgba(220,38,38,0.3)] hover:shadow-[0_0_20px_rgba(220,38,38,0.6)]",
         outline:
           "border border-zinc-700 bg-zinc-900 text-zinc-400 hover:text-white hover:border-zinc-500 hover:bg-zinc-800",
         secondary:

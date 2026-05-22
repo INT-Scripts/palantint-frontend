@@ -1,4 +1,5 @@
 "use client";
+import { PALETTE } from "@/lib/colors";
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -149,7 +150,7 @@ export default function ClubDetailsPage() {
             <div className="min-h-screen bg-zinc-950 text-white flex flex-col font-mono uppercase text-xs tracking-widest">
                 <div className="flex-1 flex flex-col items-center justify-center pt-20">
                     <p className="text-zinc-500">{error || "ENTITY_OFFLINE"}</p>
-                    <button onClick={() => router.push("/clubs")} className="mt-4 text-emerald-500 hover:text-white transition-colors border border-emerald-500/30 px-4 py-2 bg-emerald-500/5">Return to entities</button>
+                    <button onClick={() => router.push("/clubs")} className="mt-4 text-orga-500 hover:text-white transition-colors border border-orga-500/30 px-4 py-2 bg-orga-500/5">Return to entities</button>
                 </div>
             </div>
         );
@@ -159,44 +160,44 @@ export default function ClubDetailsPage() {
     const mandats = club.members?.filter((m: any) => m.is_mandat) || [];
     const regularMembers = club.members?.filter((m: any) => !m.is_mandat) || [];
 
-    const primaryColor = club.color_primary || "#10b981"; // Fallback to emerald-500
+    const primaryColor = club.color_primary || PALETTE.orga[500]; // Fallback to orga-500
 
     const MemberCard = ({ member }: { member: any }) => (
         <Card
             onClick={() => router.push(`/students/${member.student_id}`)}
-            className="p-0 border-zinc-800 hover:border-emerald-500 transition-all cursor-pointer group flex flex-col relative overflow-hidden rounded-none bg-zinc-900/40 backdrop-blur-xl"
+            className="p-0 border-zinc-800 hover:border-orga-500 transition-all cursor-pointer group flex flex-col relative overflow-hidden rounded-none bg-zinc-900/40 backdrop-blur-xl"
         >
-            <div className="absolute top-0 left-0 w-1 h-full bg-zinc-800 group-hover:bg-emerald-500 transition-colors z-10" />
+            <div className="absolute top-0 left-0 w-1 h-full bg-zinc-800 group-hover:bg-orga-500 transition-colors z-10" />
             
             <CardContent className="p-0 flex flex-col h-full">
                 <div className="flex items-center gap-4 p-4 border-b border-zinc-800/60 flex-1 relative">
                     {isAdmin && (
                         <button 
                             onClick={(e) => openEditModal(member, e)}
-                            className="absolute top-2 right-2 p-1.5 bg-zinc-950 border border-zinc-800 text-zinc-500 hover:text-emerald-500 hover:border-emerald-500/50 transition-all opacity-0 group-hover:opacity-100 z-20"
+                            className="absolute top-2 right-2 p-1.5 bg-zinc-950 border border-zinc-800 text-zinc-500 hover:text-orga-500 hover:border-orga-500/50 transition-all opacity-0 group-hover:opacity-100 z-20"
                         >
                             <Edit2 className="w-3 h-3" />
                         </button>
                     )}
                     
-                    <Avatar className="w-12 h-12 bg-zinc-900 shrink-0 border border-zinc-800 group-hover:border-emerald-500/50 transition-all rounded-none">
+                    <Avatar className="w-12 h-12 bg-zinc-900 shrink-0 border border-zinc-800 group-hover:border-orga-500/50 transition-all rounded-none">
                         <AvatarImage src={`${process.env.NEXT_PUBLIC_API_URL || "/api"}/students/${member.student_id}/image`} alt={member.first_name} className="object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all rounded-none" />
                         <AvatarFallback className="bg-transparent rounded-none">
-                            <User className="w-6 h-6 text-zinc-600 group-hover:text-emerald-500 transition-colors" />
+                            <User className="w-6 h-6 text-zinc-600 group-hover:text-orga-500 transition-colors" />
                         </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0 text-left">
-                        <h4 className="text-sm font-black text-white leading-tight uppercase tracking-wide truncate group-hover:text-emerald-400 transition-colors">
+                        <h4 className="text-sm font-black text-white leading-tight uppercase tracking-wide truncate group-hover:text-orga-400 transition-colors">
                             {member.first_name} {member.last_name}
                         </h4>
                         <div className="flex items-center gap-2 mt-1">
-                            {member.is_mandat && <Crown className="w-3 h-3 text-amber-500 shrink-0" />}
-                            <p className="text-[10px] text-emerald-500 font-mono tracking-widest uppercase truncate">{member.role || "MEMBER"}</p>
+                            {member.is_mandat && <Crown className="w-3 h-3 text-housing-500 shrink-0" />}
+                            <p className="text-[10px] text-orga-500 font-mono tracking-widest uppercase truncate">{member.role || "MEMBER"}</p>
                         </div>
                     </div>
                 </div>
                 
-                <div className="px-4 py-2 bg-zinc-950/40 flex justify-between items-center group-hover:bg-emerald-500/5 transition-colors">
+                <div className="px-4 py-2 bg-zinc-950/40 flex justify-between items-center group-hover:bg-orga-500/5 transition-colors">
                     <span className="text-[9px] text-zinc-500 font-mono uppercase tracking-tight">LEVEL_{member.promo || "XX"}</span>
                     <span className="text-[9px] text-zinc-500 font-mono uppercase truncate max-w-[100px] tracking-tight" title={member.ecole}>{member.ecole || "N/A"}</span>
                 </div>
@@ -205,7 +206,7 @@ export default function ClubDetailsPage() {
     );
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-white pb-24 selection:bg-emerald-500/30 font-sans">
+        <div className="min-h-screen bg-zinc-950 text-white pb-24 selection:bg-orga-500/30 font-sans">
             {/* Ambient Background */}
             <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
                 <div 
@@ -296,9 +297,9 @@ export default function ClubDetailsPage() {
                     <section className="mb-20">
                         <div className="flex items-center gap-6 mb-10">
                             <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-4 text-white">
-                                <Crown className="w-6 h-6 text-amber-500" /> Executive Council
+                                <Crown className="w-6 h-6 text-housing-500" /> Executive Council
                             </h2>
-                            <div className="h-px flex-1 bg-gradient-to-r from-amber-500/20 to-transparent" />
+                                <div className="h-px flex-1 bg-gradient-to-r from-housing-500/20 to-transparent" />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {mandats.map((m: any) => <MemberCard key={m.student_id} member={m} />)}
@@ -541,7 +542,7 @@ export default function ClubDetailsPage() {
                             <button 
                                 onClick={handleRemoveMember}
                                 disabled={submitting}
-                                className="w-full py-3 flex items-center justify-center gap-2 text-[10px] font-mono text-red-500/50 hover:text-red-500 transition-colors uppercase tracking-widest"
+                                className="w-full py-3 flex items-center justify-center gap-2 text-[10px] font-mono text-comms-500/50 hover:text-comms-500 transition-colors uppercase tracking-widest"
                             >
                                 <Trash2 className="w-3 h-3" /> Revoke Operative Credentials
                             </button>

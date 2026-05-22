@@ -10,6 +10,48 @@
   --font-sans: var(--font-space-grotesk);
   --font-mono: var(--font-jetbrains-mono);
   --color-zinc-950: #09090b;
+
+  /* Domain Semantic Colors */
+  --color-student-300: var(--color-blue-300);
+  --color-student-400: var(--color-blue-400);
+  --color-student-500: var(--color-blue-500);
+  --color-student-600: var(--color-blue-600);
+
+  --color-orga-300: var(--color-emerald-300);
+  --color-orga-400: var(--color-emerald-400);
+  --color-orga-500: var(--color-emerald-500);
+  --color-orga-600: var(--color-emerald-600);
+
+  --color-housing-300: var(--color-orange-300);
+  --color-housing-400: var(--color-orange-400);
+  --color-housing-500: var(--color-orange-500);
+  --color-housing-600: var(--color-orange-600);
+
+  --color-network-300: var(--color-cyan-300);
+  --color-network-400: var(--color-cyan-400);
+  --color-network-500: var(--color-cyan-500);
+  --color-network-600: var(--color-cyan-600);
+
+  --color-campus-300: var(--color-purple-300);
+  --color-campus-400: var(--color-purple-400);
+  --color-campus-500: var(--color-purple-500);
+  --color-campus-600: var(--color-purple-600);
+
+  --color-timetable-300: var(--color-yellow-300);
+  --color-timetable-400: var(--color-yellow-400);
+  --color-timetable-500: var(--color-yellow-500);
+  --color-timetable-600: var(--color-yellow-600);
+
+  --color-media-300: var(--color-fuchsia-300);
+  --color-media-400: var(--color-fuchsia-400);
+  --color-media-500: var(--color-fuchsia-500);
+  --color-media-600: var(--color-fuchsia-600);
+
+  --color-comms-300: var(--color-red-300);
+  --color-comms-400: var(--color-red-400);
+  --color-comms-500: var(--color-red-500);
+  --color-comms-600: var(--color-red-600);
+
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-accent: var(--sidebar-accent);

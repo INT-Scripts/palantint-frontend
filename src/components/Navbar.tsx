@@ -17,10 +17,15 @@ export default function Navbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
-        fetchAPI("/users/me")
-            .then((data) => setUser(data))
-            .catch(() => {})
-            .finally(() => setAuthLoading(false));
+        const token = typeof window !== "undefined" ? localStorage.getItem("palantint_token") : null;
+        if (token) {
+            fetchAPI("/users/me")
+                .then((data) => setUser(data))
+                .catch(() => {})
+                .finally(() => setAuthLoading(false));
+        } else {
+            setAuthLoading(false);
+        }
             
         const handleScroll = () => {
             setScrolled(window.scrollY > 20);
@@ -39,7 +44,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-4 sm:gap-12">
                     <div
                         className="text-xl sm:text-2xl font-black tracking-tighter cursor-pointer hover:opacity-80 transition flex items-center gap-3 sm:gap-4 text-white group uppercase leading-none"
-                        onClick={() => router.push("/")}
+                        onClick={() => router.push(user ? "/" : "/clubs")}
                     >
                         <div className="relative w-10 h-10 border border-zinc-800 flex items-center justify-center overflow-hidden">
                             <img src="/palantint.svg" alt="PalantINT Logo" className="w-6 h-6 relative z-10 invert brightness-0" />
@@ -52,11 +57,11 @@ export default function Navbar() {
 
                 <div className="flex items-center gap-4 sm:gap-8 shrink-0">
                     <div className="hidden lg:flex items-center gap-6 text-sm font-mono tracking-widest text-zinc-500 uppercase">
-                        <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/")}>Students</span>
+                        {user && <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/")}>Students</span>}
                         <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/clubs")}>Organisations</span>
                         <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/apartments")}>Housing</span>
                         <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/timetable")}>Timetable</span>
-                        <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/network")}>Network</span>
+                        {user && <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/network")}>Network</span>}
                         <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/campus")}>Campus 3D</span>
                     </div>
 
@@ -117,13 +122,15 @@ export default function Navbar() {
         {mobileMenuOpen && (
             <div className="fixed inset-0 top-[73px] z-40 bg-zinc-950/95 backdrop-blur-3xl border-t border-zinc-900 lg:hidden flex flex-col p-6">
                 <div className="flex flex-col gap-6 text-lg font-mono tracking-widest text-zinc-400 uppercase">
-                    <button 
-                        className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                        onClick={() => { setMobileMenuOpen(false); router.push("/"); }}
-                    >
-                        <span>Students</span>
-                        <Search className="w-5 h-5 text-zinc-600 group-hover:text-white" />
-                    </button>
+                    {user && (
+                        <button 
+                            className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
+                            onClick={() => { setMobileMenuOpen(false); router.push("/"); }}
+                        >
+                            <span>Students</span>
+                            <Search className="w-5 h-5 text-zinc-600 group-hover:text-white" />
+                        </button>
+                    )}
                     <button 
                         className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
                         onClick={() => { setMobileMenuOpen(false); router.push("/clubs"); }}
@@ -145,13 +152,15 @@ export default function Navbar() {
                         <span>Timetable</span>
                         <CalendarDays className="w-5 h-5 text-zinc-600 group-hover:text-white" />
                     </button>
-                    <button 
-                        className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                        onClick={() => { setMobileMenuOpen(false); router.push("/network"); }}
-                    >
-                        <span>Network</span>
-                        <Share2 className="w-5 h-5 text-zinc-600 group-hover:text-white" />
-                    </button>
+                    {user && (
+                        <button 
+                            className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
+                            onClick={() => { setMobileMenuOpen(false); router.push("/network"); }}
+                        >
+                            <span>Network</span>
+                            <Share2 className="w-5 h-5 text-zinc-600 group-hover:text-white" />
+                        </button>
+                    )}
                     <button 
                         className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
                         onClick={() => { setMobileMenuOpen(false); router.push("/campus"); }}

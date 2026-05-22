@@ -31,7 +31,15 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
         // Unauthorized: Clear token and redirect to login
         if (typeof window !== "undefined") {
             localStorage.removeItem("palantint_token");
-            if (window.location.pathname !== "/login") {
+            const PUBLIC_ROUTES = [
+                "/login",
+                "/clubs",
+                "/apartments",
+                "/campus",
+                "/timetable"
+            ];
+            const isPublic = PUBLIC_ROUTES.some(route => window.location.pathname === route || window.location.pathname.startsWith(route + "/"));
+            if (!isPublic && window.location.pathname !== "/login") {
                 window.location.href = "/login";
             }
         }

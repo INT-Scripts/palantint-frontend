@@ -49,9 +49,14 @@ export default function ClubDetailsPage() {
 
     useEffect(() => {
         loadClub();
-        fetchAPI("/users/me")
-            .then(user => setIsAdmin(user.is_admin))
-            .catch(() => setIsAdmin(false));
+        const token = typeof window !== "undefined" ? localStorage.getItem("palantint_token") : null;
+        if (token) {
+            fetchAPI("/users/me")
+                .then(user => setIsAdmin(user.is_admin))
+                .catch(() => setIsAdmin(false));
+        } else {
+            setIsAdmin(false);
+        }
     }, [id, loadClub]);
 
     // Student Search Logic

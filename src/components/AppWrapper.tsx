@@ -4,6 +4,18 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 
+const PUBLIC_ROUTES = [
+    "/login",
+    "/clubs",
+    "/apartments",
+    "/campus",
+    "/timetable"
+];
+
+const isPublicRoute = (path: string) => {
+    return PUBLIC_ROUTES.some(route => path === route || path.startsWith(route + "/"));
+};
+
 export default function AppWrapper({ children }: { children: React.ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
     const router = useRouter();
@@ -12,11 +24,16 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
     useEffect(() => {
         const checkAuth = () => {
             const token = localStorage.getItem("palantint_token");
+            const isPublic = isPublicRoute(pathname);
             
-            if (!token && pathname !== "/login") {
-                router.replace("/login");
+            if (!token && !isPublic) {
+                if (pathname === "/") {
+                    router.replace("/clubs");
+                } else {
+                    router.replace("/login");
+                }
             } else {
-                setIsAuthenticated(true);
+                setIsAuthenticated(!!token);
             }
         };
 
@@ -30,8 +47,8 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
         }
     }, [pathname, isAuthenticated]);
 
-    // Don't render anything until we've checked auth to prevent flashing
-    if (isAuthenticated === null && pathname !== "/login") {
+    // Don't render anything until we've checked auth to prevent flashing for private routes
+    if (isAuthenticated === null && !isPublicRoute(pathname)) {
         return <div className="min-h-screen bg-zinc-950" />;
     }
 

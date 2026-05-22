@@ -13,7 +13,7 @@ export default function LoginPage() {
     const router = useRouter();
 
     useEffect(() => {
-        document.title = "Login | PalantINT";
+        document.title = "Login | INT PORTAL";
     }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -65,7 +65,7 @@ export default function LoginPage() {
 
                 <div className="text-left mb-10 space-y-2">
                     <h1 className="text-4xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500 tracking-tighter uppercase leading-none drop-shadow-lg">
-                        Palant<span className="text-student-500">INT</span>
+                        INT <span className="text-student-500">PORTAL</span>
                     </h1>
                     <p className="text-zinc-500 font-mono text-xs uppercase tracking-[0.2em] border-l-2 border-zinc-700 pl-3">
                         Sign In

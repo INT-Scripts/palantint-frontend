@@ -468,7 +468,7 @@ export default function ApartmentsPage() {
                                 <img 
                                     src={getPngPath(bldg, floor)} 
                                     alt="Full Plan" 
-                                    className="w-full h-full object-fill brightness-90 saturate-[0.8] contrast-125 hover:brightness-110 transition-all" 
+                                    className="w-full h-full object-contain brightness-90 saturate-[0.8] contrast-125 hover:brightness-110 transition-all" 
                                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} 
                                 />
                             </a>

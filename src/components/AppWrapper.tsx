@@ -5,11 +5,11 @@ import { useRouter, usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 
 const PUBLIC_ROUTES = [
+    "/",
     "/login",
     "/clubs",
     "/apartments",
-    "/campus",
-    "/timetable"
+    "/campus"
 ];
 
 const isPublicRoute = (path: string) => {
@@ -27,11 +27,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
             const isPublic = isPublicRoute(pathname);
             
             if (!token && !isPublic) {
-                if (pathname === "/") {
-                    router.replace("/clubs");
-                } else {
-                    router.replace("/login");
-                }
+                router.replace("/login");
             } else {
                 setIsAuthenticated(!!token);
             }

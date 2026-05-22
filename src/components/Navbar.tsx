@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchAPI } from "@/lib/api";
-import { Menu, User, Eye, LogIn, Compass, Home as HomeIcon, Settings, LogOut, Search, MapPin, Share2, CalendarDays } from "lucide-react";
+import { Menu, User, Eye, LogIn, Compass, Home as HomeIcon, Settings, LogOut, Search, MapPin, Share2, CalendarDays, Flame } from "lucide-react";
 import GlobalSearch from "./GlobalSearch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -44,12 +44,16 @@ export default function Navbar() {
                 <div className="flex items-center gap-4 sm:gap-12">
                     <div
                         className="text-xl sm:text-2xl font-black tracking-tighter cursor-pointer hover:opacity-80 transition flex items-center gap-3 sm:gap-4 text-white group uppercase leading-none"
-                        onClick={() => router.push(user ? "/" : "/clubs")}
+                        onClick={() => router.push("/")}
                     >
                         <div className="relative w-10 h-10 border border-zinc-800 flex items-center justify-center overflow-hidden">
-                            <img src="/palantint.svg" alt="PalantINT Logo" className="w-6 h-6 relative z-10 invert brightness-0" />
+                            <img src="/palantint.svg" alt={user ? "PalantINT Logo" : "INT Logo"} className="w-6 h-6 relative z-10 invert brightness-0" />
                         </div>
-                        <span className="bg-clip-text text-white">Palant<span className="text-zinc-500">INT</span></span>
+                        {user ? (
+                            <span className="bg-clip-text text-white">Palant<span className="text-zinc-500">INT</span></span>
+                        ) : (
+                            <span className="bg-clip-text text-white">INT<span className="text-zinc-500"> PORTAL</span></span>
+                        )}
                     </div>
 
                         <GlobalSearch className="hidden md:flex" inputClassName="w-85" />
@@ -57,12 +61,13 @@ export default function Navbar() {
 
                 <div className="flex items-center gap-4 sm:gap-8 shrink-0">
                     <div className="hidden lg:flex items-center gap-6 text-sm font-mono tracking-widest text-zinc-500 uppercase">
-                        {user && <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/")}>Students</span>}
+                        {user && <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/students")}>Students</span>}
                         <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/clubs")}>Organisations</span>
                         <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/apartments")}>Housing</span>
-                        <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/timetable")}>Timetable</span>
+                        {user && <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/timetable")}>Timetable</span>}
                         {user && <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/network")}>Network</span>}
                         <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/campus")}>Campus 3D</span>
+                        {user && <span className="cursor-pointer hover:text-white transition-colors" onClick={() => router.push("/pay5vend")}>PAY5VEND</span>}
                     </div>
 
                     <div className="lg:hidden">
@@ -125,7 +130,7 @@ export default function Navbar() {
                     {user && (
                         <button 
                             className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                            onClick={() => { setMobileMenuOpen(false); router.push("/"); }}
+                            onClick={() => { setMobileMenuOpen(false); router.push("/students"); }}
                         >
                             <span>Students</span>
                             <Search className="w-5 h-5 text-zinc-600 group-hover:text-white" />
@@ -145,20 +150,22 @@ export default function Navbar() {
                         <span>Housing</span>
                         <HomeIcon className="w-5 h-5 text-zinc-600 group-hover:text-white" />
                     </button>
-                    <button 
-                        className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                        onClick={() => { setMobileMenuOpen(false); router.push("/timetable"); }}
-                    >
-                        <span>Timetable</span>
-                        <CalendarDays className="w-5 h-5 text-zinc-600 group-hover:text-white" />
-                    </button>
                     {user && (
                         <button 
                             className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                            onClick={() => { setMobileMenuOpen(false); router.push("/network"); }}
+                            onClick={() => { setMobileMenuOpen(false); router.push("/timetable"); }}
                         >
-                            <span>Network</span>
-                            <Share2 className="w-5 h-5 text-zinc-600 group-hover:text-white" />
+                            <span>Timetable</span>
+                            <CalendarDays className="w-5 h-5 text-zinc-600 group-hover:text-white" />
+                        </button>
+                    )}
+                    {user && (
+                        <button 
+                            className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
+                            onClick={() => { setMobileMenuOpen(false); router.push("/pay5vend"); }}
+                        >
+                            <span>PAY5VEND</span>
+                            <Flame className="w-5 h-5 text-zinc-600 group-hover:text-white" />
                         </button>
                     )}
                     <button 

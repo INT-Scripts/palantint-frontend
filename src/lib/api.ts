@@ -32,11 +32,11 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
         if (typeof window !== "undefined") {
             localStorage.removeItem("palantint_token");
             const PUBLIC_ROUTES = [
+                "/",
                 "/login",
                 "/clubs",
                 "/apartments",
-                "/campus",
-                "/timetable"
+                "/campus"
             ];
             const isPublic = PUBLIC_ROUTES.some(route => window.location.pathname === route || window.location.pathname.startsWith(route + "/"));
             if (!isPublic && window.location.pathname !== "/login") {

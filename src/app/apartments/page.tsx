@@ -38,6 +38,7 @@ export default function ApartmentsPage() {
     const [bldg, setBldg] = useState("U7");
     const [floor, setFloor] = useState("1");
     const [occupied, setOccupied] = useState<Record<string, any>>({});
+    const [apartmentsDetails, setApartmentsDetails] = useState<Record<string, any>>({});
     const [search, setSearch] = useState("");
     const [svgContent, setSvgContent] = useState<string>("");
     const [buildingSvgs, setBuildingSvgs] = useState<Record<string, string>>({});
@@ -64,6 +65,12 @@ export default function ApartmentsPage() {
                 setFloor(floorQ);
             }
         }
+
+        fetchAPI("/students/apartments/details")
+            .then(data => {
+                setApartmentsDetails(data || {});
+            })
+            .catch(console.error);
 
         fetchAPI("/students/apartments/occupied")
             .then(data => {
@@ -121,6 +128,11 @@ export default function ApartmentsPage() {
         occupiedRef.current = occupied;
     }, [occupied]);
 
+    const apartmentsDetailsRef = useRef(apartmentsDetails);
+    useEffect(() => {
+        apartmentsDetailsRef.current = apartmentsDetails;
+    }, [apartmentsDetails]);
+
     // 1. Direct DOM manipulation for fast tooltips & highlights
     useEffect(() => {
         const el = svgRef.current;
@@ -155,12 +167,37 @@ export default function ApartmentsPage() {
                             `).join('')
                             : `<p class="text-[10px] text-zinc-500 font-mono italic uppercase">VACANT</p>`;
                         
+                        const logData = apartmentsDetailsRef.current[roomNum];
+                        let logHtml = '';
+                        if (logData) {
+                            logHtml = `
+                                <div class="mt-3 pt-2 border-t border-zinc-800/50 flex flex-col gap-1.5">
+                                    <div class="flex justify-between items-center gap-4 text-[10px] font-mono text-zinc-400">
+                                        <span>TYPE</span> <span class="text-white uppercase font-bold">${logData.Type || '-'}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center gap-4 text-[10px] font-mono text-zinc-400">
+                                        <span>SURFACE</span> <span class="text-white uppercase font-bold">${logData.Superficie || '-'}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center gap-4 text-[10px] font-mono text-zinc-400">
+                                        <span>TARIF</span> <span class="text-housing-400 font-black">${logData.Tarif || '-'}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center gap-4 text-[10px] font-mono text-zinc-500">
+                                        <span>ALLOC. BOURSIER</span> <span>${logData['Allocation boursier'] || '-'}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center gap-4 text-[10px] font-mono text-zinc-500">
+                                        <span>ALLOC. NON-BOURSIER</span> <span>${logData['Allocation non boursier'] || '-'}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
                         tooltipRef.current.innerHTML = `
                             <div class="flex items-center gap-2 mb-2 border-b border-housing-500/30 pb-1">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-housing-500"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                                 <span class="text-xs font-black text-white font-mono uppercase">APT_${roomNum}</span>
                             </div>
                             ${occupantsHtml}
+                            ${logHtml}
                         `;
                     }
                 }
@@ -427,11 +464,11 @@ export default function ApartmentsPage() {
                             icon={<FileText className="w-4 h-4 text-housing-500" />}
                             title="Floor Map Image"
                         >
-                            <a href={getPngPath(bldg, floor)} target="_blank" rel="noopener noreferrer" className="block max-w-full max-h-full cursor-zoom-in">
+                            <a href={getPngPath(bldg, floor)} target="_blank" rel="noopener noreferrer" className="absolute inset-0 p-4">
                                 <img 
                                     src={getPngPath(bldg, floor)} 
                                     alt="Full Plan" 
-                                    className="max-w-full max-h-full object-contain brightness-90 saturate-[0.8] contrast-125 hover:brightness-110 transition-all" 
+                                    className="w-full h-full object-fill brightness-90 saturate-[0.8] contrast-125 hover:brightness-110 transition-all" 
                                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} 
                                 />
                             </a>

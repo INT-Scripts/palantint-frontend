@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, getStudentImageUrl } from "@/lib/api";
 import { Share2, Plus, X, Check, Trash2, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -159,7 +159,7 @@ export default function RelationshipsList({ studentId, themeColor }: Relationshi
                                     >
                                         <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-zinc-700 group-hover:border-white transition-colors overflow-hidden bg-zinc-900" style={{ groupHover: { borderColor: themeColor } } as any}>
                                             <img
-                                                src={`${apiUrl}/students/${s.id}/image`}
+                                                src={getStudentImageUrl(s.id)}
                                                 alt=""
                                                 className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all"
                                                 onError={(e: any) => { e.target.style.display = 'none'; }}
@@ -181,7 +181,7 @@ export default function RelationshipsList({ studentId, themeColor }: Relationshi
                             <div className="flex items-center gap-3 p-3 bg-zinc-950 border" style={{ backgroundColor: `${themeColor}10`, borderColor: `${themeColor}40` }}>
                                 <div className="w-8 h-8 flex items-center justify-center shrink-0 border overflow-hidden bg-zinc-900" style={{ borderColor: `${themeColor}60` }}>
                                     <img
-                                        src={`${apiUrl}/students/${selectedStudent.id}/image`}
+                                        src={getStudentImageUrl(selectedStudent.id)}
                                         alt="" className="w-full h-full object-cover"
                                         onError={(e: any) => { e.target.style.display = 'none'; }}
                                     />
@@ -249,7 +249,7 @@ export default function RelationshipsList({ studentId, themeColor }: Relationshi
                             
                             <div className="w-12 h-12 flex items-center justify-center shrink-0 border border-zinc-700 group-hover:border-network-500/50 overflow-hidden bg-zinc-950 relative z-10 ml-2" style={{ groupHover: { borderColor: themeColor } } as any}>
                                 <img
-                                    src={`${apiUrl}/students/${rel.other_student.id}/image`}
+                                    src={getStudentImageUrl(rel.other_student.id)}
                                     alt="" className="w-full h-full object-cover grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
                                     onError={(e: any) => { e.target.style.display = 'none'; }}
                                 />

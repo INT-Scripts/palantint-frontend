@@ -8,7 +8,7 @@ import LocalPhotogrammetryMap from "./components/LocalPhotogrammetryMap";
 
 export default function Campus3DPage() {
     useEffect(() => {
-        document.title = "Campus 3D | PalantINT";
+        document.title = "Campus 3D";
     }, []);
 
     return (
@@ -25,7 +25,7 @@ export default function Campus3DPage() {
                         title1="Campus"
                         title2="Digital Twin"
                         titleGradient="from-campus-400 to-campus-600"
-                        subtitle="High-density 3D geometric reconstruction of the campus environment from PalantINT's space telescope data."
+                        subtitle="High-density 3D reconstruction of the campus."
                         colorName="campus"
                     />
 

@@ -162,7 +162,7 @@ export default function AdminDashboardPage() {
                 <div className="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/60 p-6 relative overflow-hidden group rounded-none">
                     <div className="absolute top-0 left-0 w-1 h-8 bg-orga-500/50" />
                     <Database className="w-6 h-6 text-orga-500 mb-4 opacity-50 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                    <p className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">Organizations</p>
+                    <p className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">Associations</p>
                     <p className="text-3xl font-mono font-bold text-white mt-1">{telemetry?.counts.clubs || "---"}</p>
                 </div>
                 <div className="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/60 p-6 relative overflow-hidden group rounded-none">

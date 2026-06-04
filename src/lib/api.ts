@@ -58,3 +58,9 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
 
     return data;
 }
+
+export const getStudentImageUrl = (studentId: string): string => {
+    if (!studentId) return "";
+    const token = typeof window !== "undefined" ? localStorage.getItem("palantint_token") : null;
+    return `${API_BASE_URL}/students/${studentId}/image${token ? `?token=${token}` : ""}`;
+};

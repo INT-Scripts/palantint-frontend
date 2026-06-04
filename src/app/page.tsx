@@ -23,12 +23,12 @@ export default function Homepage() {
     setHasToken(tokenValid);
     
     if (tokenValid) {
-      document.title = "PalantINT | Central Database & Visualisation Portal";
+      document.title = "PalantINT";
       fetchAPI("/users/me")
         .then(res => setUser(res))
         .catch(() => {});
     } else {
-      document.title = "INT Portal | Campus Gateway";
+      document.title = "INT Portal";
     }
 
     fetchAPI("/admin/telemetry")
@@ -165,7 +165,7 @@ export default function Homepage() {
                 onClick={() => router.push("/clubs")}
                 className="bg-zinc-100 hover:bg-white text-zinc-950 font-mono font-bold uppercase tracking-widest h-12 px-8 rounded-none transition-all border-none"
               >
-                Browse Organisations
+                Browse Associations
               </Button>
               <Button
                 variant="outline"
@@ -217,10 +217,10 @@ export default function Homepage() {
                       </svg>
                     </div>
                     <h3 className="text-2xl font-black text-white uppercase tracking-wide group-hover:text-emerald-400 transition-colors">
-                      Organisations & Clubs
+                      Associations & Clubs
                     </h3>
                     <p className="text-zinc-400 text-xs font-mono uppercase tracking-tight leading-relaxed">
-                      Discover accredited campus organizations, student clubs, active associations, and upcoming events.
+                      Discover accredited campus associations, student clubs, active teams, and upcoming events.
                     </p>
                   </div>
                   <div className="pt-6 flex justify-end items-center text-[10px] font-mono tracking-widest uppercase border-t border-zinc-800/60 mt-8 group-hover:border-emerald-500/20 transition-colors">
@@ -252,10 +252,10 @@ export default function Homepage() {
                       </svg>
                     </div>
                     <h3 className="text-2xl font-black text-white uppercase tracking-wide group-hover:text-amber-400 transition-colors">
-                      Housing blueprints
+                      Apartment blueprints
                     </h3>
                     <p className="text-zinc-400 text-xs font-mono uppercase tracking-tight leading-relaxed">
-                      Interactive building blueprints and room size specifications. Explore floor layouts and housing configurations.
+                      Interactive building blueprints and room size specifications. Explore floor layouts and apartment configurations.
                     </p>
                   </div>
                   <div className="pt-6 flex justify-end items-center text-[10px] font-mono tracking-widest uppercase border-t border-zinc-800/60 mt-8 group-hover:border-amber-500/20 transition-colors">
@@ -450,7 +450,7 @@ export default function Homepage() {
                     </svg>
                   </div>
                   <h3 className="text-2xl font-black text-white uppercase tracking-wide group-hover:text-emerald-400 transition-colors">
-                    Organisations & Clubs
+                    Associations & Clubs
                   </h3>
                   <p className="text-zinc-400 text-xs font-mono uppercase tracking-tight leading-relaxed">
                     A comprehensive registry of associations, clubs, and active operational teams. Unauthenticated public access permits exploring groups, descriptions, and upcoming timelines.
@@ -488,7 +488,7 @@ export default function Homepage() {
                     </svg>
                   </div>
                   <h3 className="text-2xl font-black text-white uppercase tracking-wide group-hover:text-amber-400 transition-colors">
-                    Housing Blueprints
+                    Apartment Blueprints
                   </h3>
                   <p className="text-zinc-400 text-xs font-mono uppercase tracking-tight leading-relaxed">
                     Spatial campus housing charts. Explore apartment layout specifications and unit numbers publicly. Occupant details are dynamically stripped for privacy control.

@@ -13,7 +13,7 @@ export default function LoginPage() {
     const router = useRouter();
 
     useEffect(() => {
-        document.title = "Login | INT PORTAL";
+        document.title = "Login";
     }, []);
 
     const handleLogin = async (e: React.FormEvent) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { fetchAPI } from "@/lib/api";
 import { 
@@ -28,7 +28,7 @@ function getPngPath(bldg: string, floor: string) {
     return `/api/assets/plans/${bldg}-${f}.png`;
 }
 
-export default function ApartmentsPage() {
+function ApartmentsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const svgRef = useRef<HTMLDivElement>(null);
@@ -46,14 +46,9 @@ export default function ApartmentsPage() {
     const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (!BUILDINGS[bldg].find(f => f.value === floor)) {
-            setFloor(BUILDINGS[bldg][0].value);
-        }
-    }, [bldg, floor]);
 
     useEffect(() => {
-        document.title = "Apartments | PalantINT";
+        document.title = "Apartments";
         
         // Handle search params for building and floor
         const bldgQ = searchParams.get("bldg");
@@ -66,6 +61,29 @@ export default function ApartmentsPage() {
             }
         }
 
+        // Process room query param synchronously for instant plan loading
+        const roomQ = searchParams.get("room");
+        if (roomQ) {
+            const cleanRoom = roomQ.replace(/\D/g, "");
+            if (cleanRoom.length === 4) {
+                setSearch(cleanRoom);
+                setSelectedRoom(cleanRoom);
+                
+                const b = `U${cleanRoom[0]}`;
+                if (BUILDINGS[b]) {
+                    let f = cleanRoom[1];
+                    if (b === "U5" && f === "0") {
+                        const roomNum = parseInt(cleanRoom.substring(2)) || 0;
+                        f = roomNum >= 10 ? "0.5" : "-0.5";
+                    }
+                    if (BUILDINGS[b].find(fl => fl.value === f)) {
+                        setBldg(b);
+                        setFloor(f);
+                    }
+                }
+            }
+        }
+
         fetchAPI("/students/apartments/details")
             .then(data => {
                 setApartmentsDetails(data || {});
@@ -75,28 +93,18 @@ export default function ApartmentsPage() {
         fetchAPI("/students/apartments/occupied")
             .then(data => {
                 setOccupied(data || {});
-                const roomQ = searchParams.get("room");
-                if (roomQ && roomQ.length === 4) {
-                    setSearch(roomQ);
-                    setSelectedRoom(roomQ);
-                    const b = `U${roomQ[0]}`;
-                    if (BUILDINGS[b]) {
-                        setBldg(b);
-                        let f = roomQ[1];
-                        if (b === "U5" && f === "0") f = "0.5";
-                        if (BUILDINGS[b].find(fl => fl.value === f)) setFloor(f);
-                    }
-                }
             })
             .catch(console.error)
             .finally(() => setLoading(false));
     }, [searchParams]);
 
     useEffect(() => {
-        fetch(`/api/assets/plans/${bldg}_${floor}.svg`)
+        const controller = new AbortController();
+        fetch(`/api/assets/plans/${bldg}_${floor}.svg`, { signal: controller.signal })
             .then(r => r.ok ? r.text() : "")
-            .then(setSvgContent)
-            .catch(() => setSvgContent(""));
+            .then(text => { if (text !== undefined) setSvgContent(text); })
+            .catch(e => { if (e.name !== "AbortError") setSvgContent(""); });
+        return () => controller.abort();
     }, [bldg, floor]);
 
     useEffect(() => {
@@ -282,17 +290,25 @@ export default function ApartmentsPage() {
     }, [svgContent]); 
 
     // 2. Visual State Sync Hook (Only Selection)
+    // Uses rAF to ensure dangerouslySetInnerHTML has committed to DOM before querying
     useEffect(() => {
         const el = svgRef.current;
-        if (!el) return;
+        if (!el || !selectedRoom) return;
 
-        el.querySelectorAll("a.group").forEach(a => {
-            if (a.getAttribute("data-room") === selectedRoom) {
-                a.setAttribute("data-active", "true");
-            } else {
-                a.removeAttribute("data-active");
-            }
-        });
+        const apply = () => {
+            el.querySelectorAll("a[data-room]").forEach(a => {
+                if (a.getAttribute("data-room") === selectedRoom) {
+                    a.setAttribute("data-active", "true");
+                } else {
+                    a.removeAttribute("data-active");
+                }
+            });
+        };
+
+        // Run immediately in case SVG is already in DOM, then once more after paint
+        apply();
+        const raf = requestAnimationFrame(apply);
+        return () => cancelAnimationFrame(raf);
     }, [selectedRoom, svgContent]);
 
     const belongsToCurrentView = (aptNum: string) => {
@@ -354,7 +370,12 @@ export default function ApartmentsPage() {
                 <ControlBox label="Buildings" currentLabel="Current" currentValue={bldg} className="col-span-12 md:col-span-5 lg:col-span-4 xl:col-span-5">
                     <div className="grid grid-cols-4 sm:grid-cols-7 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-7 gap-1.5">
                         {Object.keys(BUILDINGS).map(b => (
-                            <ControlButton key={b} active={bldg === b} onClick={() => setBldg(b)} label={b} count={getBuildingResidentCount(b)} />
+                            <ControlButton key={b} active={bldg === b} onClick={() => {
+                                setBldg(b);
+                                if (!BUILDINGS[b].find(f => f.value === floor)) {
+                                    setFloor(BUILDINGS[b][0].value);
+                                }
+                            }} label={b} count={getBuildingResidentCount(b)} />
                         ))}
                     </div>
                 </ControlBox>
@@ -389,20 +410,26 @@ export default function ApartmentsPage() {
                         title1="Residential"
                         title2="Overview"
                         titleGradient="from-housing-400 to-housing-600"
-                        subtitle="Centralized mapping for student housing assets."
+                        subtitle="Centralized mapping for student apartment assets."
                         colorName="housing"
                         searchPlaceholder="QUERY: APARTMENT NUMBER"
                         searchValue={search}
                         onSearchChange={(v) => {
                             setSearch(v);
-                            const val = v.trim();
-                            if (val.length === 4 && !isNaN(Number(val))) {
+                            const val = v.trim().replace(/\D/g, "");
+                            if (val.length === 4) {
                                 setSelectedRoom(val);
                                 const b = `U${val[0]}`;
                                 if (BUILDINGS[b]) {
-                                    setBldg(b);
-                                    const f = val[1];
-                                    if (BUILDINGS[b].find(fl => fl.value === f)) setFloor(f);
+                                    let f = val[1];
+                                    if (b === "U5" && f === "0") {
+                                        const roomNum = parseInt(val.substring(2)) || 0;
+                                        f = roomNum >= 10 ? "0.5" : "-0.5";
+                                    }
+                                    if (BUILDINGS[b].find(fl => fl.value === f)) {
+                                        setBldg(b);
+                                        setFloor(f);
+                                    }
                                 }
                             }
                         }}
@@ -517,5 +544,17 @@ export default function ApartmentsPage() {
                 </div>
             </main>
         </div>
+    );
+}
+
+export default function ApartmentsPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center text-zinc-500 font-mono text-[10px] uppercase tracking-widest">
+                Loading assets...
+            </div>
+        }>
+            <ApartmentsContent />
+        </Suspense>
     );
 }

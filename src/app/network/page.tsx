@@ -39,7 +39,7 @@ export default function NetworkPage() {
     }, [onlyConnected, showClubs]);
 
     useEffect(() => {
-        document.title = "Network | PalantINT";
+        document.title = "Network";
         fetchAPI("/graph")
             .then(data => {
                 setRawGraphData(data || { nodes: [], links: [] });
@@ -212,7 +212,7 @@ export default function NetworkPage() {
                                                 checked={showClubs}
                                                 onChange={(e) => setShowClubs(e.target.checked)}
                                             />
-                                            <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest group-hover:text-zinc-300">Show Organisations</span>
+                                            <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest group-hover:text-zinc-300">Show Associations</span>
                                         </label>
                                     </div>
                                 </div>

@@ -32,7 +32,7 @@ export default function StudentProfilePage() {
             .then(data => {
                 setStudent(data);
                 if (data && data.first_name) {
-                    document.title = `${data.first_name} ${data.last_name} | PalantINT`;
+                    document.title = `${data.first_name} ${data.last_name}`;
                     fetchAPI(`/students/${id}/recently-viewed`, { method: "POST" }).catch(() => { });
                 }
             })
@@ -81,7 +81,8 @@ export default function StudentProfilePage() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
     if (!student) return <div className="min-h-screen bg-zinc-950" />;
 
-    const imgUrl = `${apiUrl}/students/${student.id}/image`;
+    const token = typeof window !== "undefined" ? localStorage.getItem("palantint_token") : null;
+    const imgUrl = `${apiUrl}/students/${student.id}/image${token ? `?token=${token}` : ""}`;
 
     return (
         <div className="min-h-screen bg-zinc-950 selection:bg-student-500/30 font-sans">

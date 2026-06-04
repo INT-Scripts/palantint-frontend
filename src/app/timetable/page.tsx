@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, getStudentImageUrl } from "@/lib/api";
 import PageHeader from "@/components/PageHeader";
 import { PALETTE } from "@/lib/colors";
 import { 
@@ -79,7 +79,7 @@ export default function TimetableComparePage() {
     const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
     useEffect(() => {
-        document.title = "Timetable Synchronizer | PalantINT";
+        document.title = "Timetable Compare";
         // Fetch all rooms for selector
         fetchAPI("/agenda/rooms/list").then(setAllRooms).catch(console.error);
     }, []);
@@ -284,7 +284,7 @@ export default function TimetableComparePage() {
                                         <div className="bg-zinc-900 border border-zinc-800 divide-y divide-zinc-800 shadow-2xl">
                                             {searchResults.map(s => (
                                                 <div key={s.id} className="p-3 flex items-center gap-3 hover:bg-timetable-500/10 cursor-pointer group transition-all" onClick={() => addStudent(s)}>
-                                                    <Avatar className="h-8 w-8 rounded-none border border-zinc-800"><AvatarImage src={`${process.env.NEXT_PUBLIC_API_URL || "/api"}/students/${s.id}/image`} className="object-cover grayscale group-hover:grayscale-0" /><AvatarFallback>{s.first_name[0]}</AvatarFallback></Avatar>
+                                                    <Avatar className="h-8 w-8 rounded-none border border-zinc-800"><AvatarImage src={getStudentImageUrl(s.id)} className="object-cover grayscale group-hover:grayscale-0" /><AvatarFallback>{s.first_name[0]}</AvatarFallback></Avatar>
                                                     <div className="flex-1 min-w-0"><p className="text-[10px] font-black text-white uppercase truncate">{s.first_name} {s.last_name}</p></div>
                                                     <UserPlus className="w-3 h-3 text-zinc-700 group-hover:text-timetable-500" />
                                                 </div>
@@ -295,7 +295,7 @@ export default function TimetableComparePage() {
                                     <div className="space-y-2">
                                         {selectedStudents.map(s => (
                                             <div key={s.id} className="flex items-center gap-3 bg-zinc-950 border border-zinc-800 p-2 group transition-all hover:border-zinc-600">
-                                                <Avatar className="h-6 w-6 rounded-none"><AvatarImage src={`${process.env.NEXT_PUBLIC_API_URL || "/api"}/students/${s.id}/image`} className="grayscale" /><AvatarFallback>{s.first_name[0]}</AvatarFallback></Avatar>
+                                                <Avatar className="h-6 w-6 rounded-none"><AvatarImage src={getStudentImageUrl(s.id)} className="grayscale" /><AvatarFallback>{s.first_name[0]}</AvatarFallback></Avatar>
                                                 <span className="flex-1 text-[10px] font-bold text-zinc-300 uppercase truncate">{s.first_name} {s.last_name}</span>
                                                 <button onClick={() => removeStudent(s.id)} className="text-zinc-700 hover:text-red-500"><X className="w-3 h-3" /></button>
                                             </div>

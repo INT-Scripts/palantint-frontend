@@ -3,19 +3,19 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { fetchAPI } from "@/lib/api";
-import { User, Users, Home, ArrowRight, Loader2, Search } from "lucide-react";
+import { User, Users, Home, ArrowRight, Loader2, Search, GraduationCap } from "lucide-react";
 import SearchBar from "./ui/SearchBar";
 
 export default function GlobalSearch({ className = "", inputClassName = "" }: { className?: string, inputClassName?: string }) {
     const router = useRouter();
     const [search, setSearch] = useState("");
-    const [results, setResults] = useState<{students: any[], clubs: any[], apartments: any[]}>({students: [], clubs: [], apartments: []});
+    const [results, setResults] = useState<{students: any[], clubs: any[], class_groups: any[], apartments: any[]}>({students: [], clubs: [], class_groups: [], apartments: []});
     const [isSearching, setIsSearching] = useState(false);
     const [showResults, setShowResults] = useState(false);
 
     useEffect(() => {
         if (!search || search.length < 2) {
-            setResults({students: [], clubs: [], apartments: []});
+            setResults({students: [], clubs: [], class_groups: [], apartments: []});
             return;
         }
 
@@ -23,7 +23,7 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
             setIsSearching(true);
             fetchAPI(`/search?q=${search}`)
                 .then(res => {
-                    setResults(res || {students: [], clubs: [], apartments: []});
+                    setResults(res || {students: [], clubs: [], class_groups: [], apartments: []});
                     setShowResults(true);
                 })
                 .finally(() => setIsSearching(false));
@@ -75,7 +75,7 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
                 </div>
             )}
             
-            {!isSearching && results.students.length === 0 && results.clubs.length === 0 && results.apartments.length === 0 && (
+            {!isSearching && results.students.length === 0 && results.clubs.length === 0 && (!results.class_groups || results.class_groups.length === 0) && results.apartments.length === 0 && (
                 <div className="p-6 text-[10px] text-zinc-600 font-mono text-center uppercase tracking-[0.2em] italic">
                     No matches found for "{search}"
                 </div>
@@ -109,13 +109,26 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
 
             {results.clubs.length > 0 && (
                 <div>
-                    <div className="px-4 py-2 bg-zinc-900/50 border-y border-zinc-800/50 text-[9px] font-black text-zinc-500 font-mono uppercase tracking-[0.2em]">Organizations</div>
+                    <div className="px-4 py-2 bg-zinc-900/50 border-y border-zinc-800/50 text-[9px] font-black text-zinc-500 font-mono uppercase tracking-[0.2em]">Associations</div>
                     {results.clubs.map(c => renderResultItem(
                         <Users className="w-4 h-4 text-orga-500" />,
                         c.name,
                         `Slug: ${c.slug}`,
                         `/clubs/${c.id}`,
                         'orga'
+                    ))}
+                </div>
+            )}
+
+            {results.class_groups && results.class_groups.length > 0 && (
+                <div>
+                    <div className="px-4 py-2 bg-zinc-900/50 border-y border-zinc-800/50 text-[9px] font-black text-zinc-500 font-mono uppercase tracking-[0.2em]">Academic Classes</div>
+                    {results.class_groups.map(cg => renderResultItem(
+                        <GraduationCap className="w-4 h-4 text-student-500" />,
+                        cg.name,
+                        `Academic cohort`,
+                        `/class-groups/${cg.id}`,
+                        'student'
                     ))}
                 </div>
             )}

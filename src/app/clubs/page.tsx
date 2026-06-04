@@ -15,7 +15,7 @@ export default function ClubsPage() {
     const router = useRouter();
 
     useEffect(() => {
-        document.title = "Associations | PalantINT";
+        document.title = "Associations";
         fetchAPI("/clubs")
             .then(data => setClubs(data))
             .catch(err => console.error("Error fetching clubs:", err))
@@ -61,11 +61,11 @@ export default function ClubsPage() {
                 <PageHeader
                     badgeText="Entity Database // Active"
                     title1="Accredited"
-                    title2="Organisations"
+                    title2="Associations"
                     titleGradient="from-orga-400 to-orga-600"
                     subtitle="Centralized registry for authorized campus groups."
                     colorName="orga"
-                    searchPlaceholder="QUERY: ORGANISATION NAME"
+                    searchPlaceholder="QUERY: ASSOCIATION NAME"
                     searchValue={search}
                     onSearchChange={setSearch}
                 />

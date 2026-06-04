@@ -11,6 +11,7 @@ interface MediaGalleryProps {
 }
 
 export default function MediaGallery({ studentId, initialMedia, themeColor }: MediaGalleryProps) {
+    const token = typeof window !== "undefined" ? localStorage.getItem("palantint_token") : null;
     const [media, setMedia] = useState(initialMedia || []);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState("");
@@ -155,7 +156,7 @@ export default function MediaGallery({ studentId, initialMedia, themeColor }: Me
                             
                             {item.type === "IMAGE" ? (
                                 <img
-                                    src={`${API_BASE_URL}/media/${item.id}/file`}
+                                    src={`${API_BASE_URL}/media/${item.id}/file${token ? `?token=${token}` : ""}`}
                                     alt="Student upload"
                                     className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105 group-hover:brightness-110 grayscale group-hover:grayscale-0"
                                     onError={(e) => { e.currentTarget.src = "/fallback-image.png" }}
@@ -163,7 +164,7 @@ export default function MediaGallery({ studentId, initialMedia, themeColor }: Me
                             ) : item.type === "VIDEO" ? (
                                 <div className="w-full h-full relative">
                                     <video
-                                        src={`${API_BASE_URL}/media/${item.id}/file`}
+                                        src={`${API_BASE_URL}/media/${item.id}/file${token ? `?token=${token}` : ""}`}
                                         className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
                                     />
                                     <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-transparent transition-colors">
@@ -237,13 +238,13 @@ export default function MediaGallery({ studentId, initialMedia, themeColor }: Me
                     >
                         {selectedMedia.type === "IMAGE" ? (
                             <img
-                                src={`${API_BASE_URL}/media/${selectedMedia.id}/file`}
+                                src={`${API_BASE_URL}/media/${selectedMedia.id}/file${token ? `?token=${token}` : ""}`}
                                 alt="Enlarged media"
                                 className="max-w-full max-h-full object-contain border border-zinc-800 shadow-[0_0_50px_rgba(0,0,0,0.8)]"
                             />
                         ) : selectedMedia.type === "VIDEO" ? (
                             <video
-                                src={`${API_BASE_URL}/media/${selectedMedia.id}/file`}
+                                src={`${API_BASE_URL}/media/${selectedMedia.id}/file${token ? `?token=${token}` : ""}`}
                                 className="max-w-full max-h-full border border-zinc-800 shadow-[0_0_50px_rgba(0,0,0,0.8)]"
                                 controls
                                 autoPlay
@@ -268,7 +269,7 @@ export default function MediaGallery({ studentId, initialMedia, themeColor }: Me
 
                             <div className="flex gap-2">
                                 <a
-                                    href={`${API_BASE_URL}/media/${selectedMedia.id}/file`}
+                                    href={`${API_BASE_URL}/media/${selectedMedia.id}/file${token ? `?token=${token}` : ""}`}
                                     download={`media-${selectedMedia.id}`}
                                     target="_blank"
                                     rel="noopener noreferrer"

@@ -13,6 +13,7 @@ interface SidebarProps {
 export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps) {
     const [socials, setSocials] = useState(student.social_links || []);
     const [clubs, setClubs] = useState(student.clubs || []);
+    const [classGroups, setClassGroups] = useState(student.class_groups || []);
 
     const router = useRouter();
 
@@ -92,6 +93,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
             // Re-fetch the student to get the full club info with name
             const updatedStudent = await fetchAPI(`/students/${student.id}`);
             setClubs(updatedStudent.clubs || []);
+            setClassGroups(updatedStudent.class_groups || []);
             onUpdate(updatedStudent);
             setClubForm({ club_id: allClubs[0]?.id || "", role: "Member", is_mandat: false });
             setShowAddClub(false);
@@ -241,7 +243,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                 
                 <div className="flex justify-between items-center mb-6 border-b border-zinc-800 pb-3">
                     <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-3">
-                        <Briefcase className="w-4 h-4 text-orga-500" /> Organizations
+                        <Briefcase className="w-4 h-4 text-orga-500" /> Associations
                     </h3>
                     <button
                         onClick={() => {
@@ -328,11 +330,11 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                     </div>
                 )}
 
-                {clubs.filter((affil: any) => affil.club?.type !== 'Classe' && affil.club_type !== 'Classe').length === 0 && !showAddClub ? (
+                {clubs.length === 0 && !showAddClub ? (
                     <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest">No Affiliations Detected</p>
                 ) : (
                     <ul className="space-y-2">
-                        {clubs.filter((affil: any) => affil.club?.type !== 'Classe' && affil.club_type !== 'Classe').map((affil: any) => {
+                        {clubs.map((affil: any) => {
                             const clubId = affil.club_id || affil.club?.id;
                             const clubName = affil.club?.name || affil.club_name || `ENTITY_${clubId}`;
                             
@@ -375,7 +377,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
             </div>
 
             {/* Academic Path Block */}
-            {clubs.some((affil: any) => (affil.club?.type === 'Classe' || affil.club_type === 'Classe')) && (
+            {classGroups.length > 0 && (
                 <div className="bg-zinc-950/80 backdrop-blur-3xl border border-zinc-800 p-5 shadow-[0_0_20px_rgba(0,0,0,0.5)] relative group">
                     <div className="absolute top-0 left-0 w-full h-1 bg-student-500" />
                     <div className="flex justify-between items-center mb-6 border-b border-zinc-800 pb-3">
@@ -385,17 +387,17 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                     </div>
 
                     <ul className="space-y-2">
-                        {clubs.filter((affil: any) => (affil.club?.type === 'Classe' || affil.club_type === 'Classe')).map((affil: any) => {
-                            const clubId = affil.club_id || affil.club?.id;
-                            const clubName = affil.club?.name || affil.club_name || `ENTITY_${clubId}`;
+                        {classGroups.map((affil: any) => {
+                            const classGroupId = affil.class_group_id || affil.class_group?.id;
+                            const groupName = affil.class_group?.name || affil.class_group_name || `CLASS_${classGroupId}`;
                             return (
-                                <li key={clubId} className="group relative border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-800 transition-colors">
+                                <li key={classGroupId} className="group relative border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-800 transition-colors">
                                     <div className="absolute top-0 left-0 w-0 h-full bg-student-500 group-hover:w-1 transition-all duration-300" />
                                     <div className="flex items-center justify-between p-3 pl-4">
-                                        <div onClick={() => router.push(`/clubs/${clubId}`)} className="cursor-pointer flex-1 min-w-0">
+                                        <div onClick={() => router.push(`/class-groups/${classGroupId}`)} className="cursor-pointer flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <h4 className="text-sm font-black text-white uppercase tracking-wider truncate group-hover:text-student-400 transition-colors">
-                                                    {clubName}
+                                                    {groupName}
                                                 </h4>
                                             </div>
                                             <p className="text-[10px] text-zinc-500 font-mono tracking-widest uppercase truncate border-l border-zinc-700 pl-2">

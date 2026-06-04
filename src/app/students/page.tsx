@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, getStudentImageUrl } from "@/lib/api";
 import { User, Search, MapPin, Briefcase, Eye, Clock, ChevronRight } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { useRouter } from "next/navigation";
@@ -21,12 +21,36 @@ export default function DashboardPage() {
 
   const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
 
-  const loadStudents = (currentSkip: number, currentSearch: string, append: boolean = false) => {
+  // Filter States
+  const [selectedPromo, setSelectedPromo] = useState("");
+  const [selectedEcole, setSelectedEcole] = useState("");
+  const [selectedBldg, setSelectedBldg] = useState("");
+  
+  const [availablePromos, setAvailablePromos] = useState<string[]>([]);
+  const [availableEcoles, setAvailableEcoles] = useState<string[]>([]);
+
+  const loadStudents = (
+    currentSkip: number, 
+    currentSearch: string, 
+    promoFilter: string = selectedPromo, 
+    ecoleFilter: string = selectedEcole, 
+    bldgFilter: string = selectedBldg, 
+    append: boolean = false
+  ) => {
     if (!append) setLoading(true);
 
     let url = `/students?limit=24&skip=${currentSkip}`;
     if (currentSearch) {
-      url += `&q=${currentSearch}`;
+      url += `&q=${encodeURIComponent(currentSearch)}`;
+    }
+    if (promoFilter) {
+      url += `&promo=${encodeURIComponent(promoFilter)}`;
+    }
+    if (ecoleFilter) {
+      url += `&ecole=${encodeURIComponent(ecoleFilter)}`;
+    }
+    if (bldgFilter) {
+      url += `&bldg=${encodeURIComponent(bldgFilter)}`;
     }
 
     fetchAPI(url)
@@ -34,7 +58,7 @@ export default function DashboardPage() {
         if (append) {
           setStudents(prev => [...prev, ...res]);
         } else {
-          setStudents(res);
+          setStudents(res || []);
         }
       })
       .catch(err => console.error(err))
@@ -42,14 +66,15 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    loadStudents(0, search, false);
-  }, [search]);
+    setSkip(0);
+    loadStudents(0, search, selectedPromo, selectedEcole, selectedBldg, false);
+  }, [search, selectedPromo, selectedEcole, selectedBldg]);
 
   useEffect(() => {
-    if (!loading && skip === 0 && !search) {
+    if (!loading && skip === 0 && !search && !selectedPromo && !selectedEcole && !selectedBldg) {
       window.scrollTo(0, 0);
     }
-  }, [loading, skip, search]);
+  }, [loading, skip, search, selectedPromo, selectedEcole, selectedBldg]);
 
   useEffect(() => {
     fetchAPI("/admin/telemetry")
@@ -59,12 +84,21 @@ export default function DashboardPage() {
     fetchAPI("/students/recent")
       .then(res => setRecentlyViewed(res))
       .catch(() => { });
+
+    fetchAPI("/students/filters")
+      .then(res => {
+        if (res) {
+          setAvailablePromos(res.promos || []);
+          setAvailableEcoles(res.ecoles || []);
+        }
+      })
+      .catch(() => { });
   }, []);
 
   const handleLoadMore = () => {
     const nextSkip = skip + 24;
     setSkip(nextSkip);
-    loadStudents(nextSkip, search, true);
+    loadStudents(nextSkip, search, selectedPromo, selectedEcole, selectedBldg, true);
   };
 
   return (
@@ -94,6 +128,79 @@ export default function DashboardPage() {
             }}
           />
 
+          {/* Brutalist Futuristic Filters Panel */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-1.5 bg-zinc-900/40 border border-zinc-800 shadow-2xl overflow-hidden backdrop-blur-3xl p-1.5 rounded-none relative">
+            {/* Design accents */}
+            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-student-500/50 m-1" />
+            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-student-500/50 m-1" />
+            
+            {/* Division Select */}
+            <div className="col-span-12 md:col-span-4 border border-zinc-800/80 bg-zinc-950/40 p-4 relative group">
+              <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-black block mb-2 group-focus-within:text-student-400 transition-colors">
+                Academic Division
+              </span>
+              <div className="relative">
+                <select
+                  value={selectedEcole}
+                  onChange={(e) => setSelectedEcole(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-850 hover:border-zinc-700 text-zinc-300 text-xs font-mono py-3 pl-4 pr-10 rounded-none outline-none focus:border-student-500 appearance-none cursor-pointer hover:bg-zinc-900/40 transition-all uppercase tracking-wider"
+                >
+                  <option value="">[ALL_DIVISIONS]</option>
+                  {availableEcoles.map((ecole) => (
+                    <option key={ecole} value={ecole}>{ecole}</option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500 text-[10px] font-mono font-bold">
+                  ▼
+                </div>
+              </div>
+            </div>
+
+            {/* Promo Select */}
+            <div className="col-span-12 md:col-span-4 border border-zinc-800/80 bg-zinc-950/40 p-4 relative group">
+              <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-black block mb-2 group-focus-within:text-student-400 transition-colors">
+                Academic Promotion
+              </span>
+              <div className="relative">
+                <select
+                  value={selectedPromo}
+                  onChange={(e) => setSelectedPromo(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-850 hover:border-zinc-700 text-zinc-300 text-xs font-mono py-3 pl-4 pr-10 rounded-none outline-none focus:border-student-500 appearance-none cursor-pointer hover:bg-zinc-900/40 transition-all uppercase tracking-wider"
+                >
+                  <option value="">[ALL_PROMOTIONS]</option>
+                  {availablePromos.map((promo) => (
+                    <option key={promo} value={promo}>{promo}</option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500 text-[10px] font-mono font-bold">
+                  ▼
+                </div>
+              </div>
+            </div>
+
+            {/* Building Select */}
+            <div className="col-span-12 md:col-span-4 border border-zinc-800/80 bg-zinc-950/40 p-4 relative group">
+              <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-black block mb-2 group-focus-within:text-student-400 transition-colors">
+                Housing Facility
+              </span>
+              <div className="relative">
+                <select
+                  value={selectedBldg}
+                  onChange={(e) => setSelectedBldg(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-850 hover:border-zinc-700 text-zinc-300 text-xs font-mono py-3 pl-4 pr-10 rounded-none outline-none focus:border-student-500 appearance-none cursor-pointer hover:bg-zinc-900/40 transition-all uppercase tracking-wider"
+                >
+                  <option value="">[ALL_BUILDINGS]</option>
+                  {["U1", "U2", "U3", "U4", "U5", "U6", "U7"].map((b) => (
+                    <option key={b} value={b}>{b} RESIDENCE</option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500 text-[10px] font-mono font-bold">
+                  ▼
+                </div>
+              </div>
+            </div>
+          </div>
+
           {loading && students.length === 0 ? (
             <div className="min-h-[400px] flex items-center justify-center">
               <div className="p-4 bg-zinc-900 border border-zinc-800 text-zinc-500 font-mono text-xs uppercase tracking-widest animate-pulse">
@@ -121,7 +228,7 @@ export default function DashboardPage() {
                     <CardContent className="p-4 flex items-center gap-4 relative">
                       <div className="absolute top-0 right-0 p-1.5 bg-zinc-900 border-b border-l border-zinc-800 text-[9px] font-mono text-zinc-600 uppercase tracking-widest">REF:{student.id.slice(0, 8)}</div>
                       <Avatar className="h-14 w-14 rounded-none border border-zinc-700 ring-1 ring-zinc-800 group-hover:ring-student-500/50 transition-all overflow-hidden">
-                        <AvatarImage src={`${process.env.NEXT_PUBLIC_API_URL || "/api"}/students/${student.id}/image`} alt={student.first_name} className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                        <AvatarImage src={getStudentImageUrl(student.id)} alt={student.first_name} className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                         <AvatarFallback className="bg-zinc-900 text-zinc-500 rounded-none font-mono">
                           {student.first_name?.[0] || <User className="w-5 h-5" />}
                         </AvatarFallback>
@@ -173,7 +280,7 @@ export default function DashboardPage() {
                     
                     <CardContent className="p-0 flex flex-col items-center">
                       <Avatar className="h-32 w-32 border border-zinc-700 group-hover:border-student-500 transition-all duration-500 mt-12 mb-6 shadow-2xl z-10 rounded-none group-hover:scale-105 overflow-hidden">
-                        <AvatarImage src={`${process.env.NEXT_PUBLIC_API_URL || "/api"}/students/${student.id}/image`} alt={student.first_name} className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                        <AvatarImage src={getStudentImageUrl(student.id)} alt={student.first_name} className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                         <AvatarFallback className="bg-zinc-900 text-zinc-500 text-3xl font-black rounded-none">
                           {student.first_name?.[0]}{student.last_name?.[0]}
                         </AvatarFallback>

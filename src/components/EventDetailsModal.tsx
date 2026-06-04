@@ -2,7 +2,7 @@
 import { PALETTE } from "@/lib/colors";
 
 import { useEffect, useState } from "react";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, getStudentImageUrl } from "@/lib/api";
 import { format, parseISO } from "date-fns";
 import { X, Users, MapPin, User as UserIcon, Search, Activity, Clock, Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -166,7 +166,7 @@ export default function EventDetailsModal({ eventId, onClose }: EventDetailsModa
                                             className="flex items-center gap-4 p-4 bg-black/40 border border-zinc-800/60 hover:border-student-500/30 cursor-pointer transition-all group/s"
                                         >
                                             <Avatar className="h-12 w-12 rounded-none border border-zinc-800 grayscale group-hover/s:grayscale-0 transition-all">
-                                                <AvatarImage src={`${process.env.NEXT_PUBLIC_API_URL || "/api"}/students/${student.id}/image`} />
+                                                <AvatarImage src={getStudentImageUrl(student.id)} />
                                                 <AvatarFallback className="bg-zinc-900 text-zinc-500 text-sm font-black rounded-none">?</AvatarFallback>
                                             </Avatar>
                                             <div className="min-w-0">

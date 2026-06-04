@@ -3,7 +3,7 @@ import { PALETTE } from "@/lib/colors";
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, getStudentImageUrl } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ export default function ClubDetailsPage() {
         fetchAPI(`/clubs/${id}`)
             .then(data => {
                 setClub(data);
-                document.title = `${data.name} | PalantINT`;
+                document.title = `${data.name}`;
             })
             .catch(err => {
                 console.error("Error fetching club details", err);
@@ -186,7 +186,7 @@ export default function ClubDetailsPage() {
                     )}
                     
                     <Avatar className="w-12 h-12 bg-zinc-900 shrink-0 border border-zinc-800 group-hover:border-orga-500/50 transition-all rounded-none">
-                        <AvatarImage src={`${process.env.NEXT_PUBLIC_API_URL || "/api"}/students/${member.student_id}/image`} alt={member.first_name} className="object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all rounded-none" />
+                        <AvatarImage src={getStudentImageUrl(member.student_id)} alt={member.first_name} className="object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all rounded-none" />
                         <AvatarFallback className="bg-transparent rounded-none">
                             <User className="w-6 h-6 text-zinc-600 group-hover:text-orga-500 transition-colors" />
                         </AvatarFallback>
@@ -414,7 +414,7 @@ export default function ClubDetailsPage() {
                                                 className="w-full p-3 text-left hover:bg-white/5 flex items-center gap-3 transition-colors group"
                                             >
                                                 <Avatar className="w-8 h-8 rounded-none border border-zinc-800 grayscale group-hover:grayscale-0 transition-all">
-                                                    <AvatarImage src={`${process.env.NEXT_PUBLIC_API_URL || "/api"}/students/${s.id}/image`} />
+                                                    <AvatarImage src={getStudentImageUrl(s.id)} />
                                                     <AvatarFallback className="bg-zinc-900 text-[10px]">?</AvatarFallback>
                                                 </Avatar>
                                                 <div>
@@ -491,7 +491,7 @@ export default function ClubDetailsPage() {
                             {/* Member Info (Read-only) */}
                             <div className="flex items-center gap-4 p-4 bg-zinc-950 border border-zinc-800">
                                 <Avatar className="w-12 h-12 rounded-none border border-zinc-800 grayscale">
-                                    <AvatarImage src={`${process.env.NEXT_PUBLIC_API_URL || "/api"}/students/${editingMember.student_id}/image`} />
+                                    <AvatarImage src={getStudentImageUrl(editingMember.student_id)} />
                                     <AvatarFallback className="bg-zinc-900 text-xs">?</AvatarFallback>
                                 </Avatar>
                                 <div>

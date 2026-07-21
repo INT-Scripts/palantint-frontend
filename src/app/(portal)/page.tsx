@@ -108,14 +108,24 @@ export default function PortalHomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-200 dark:border-stone-850/40 bg-white/40 dark:bg-stone-950/20 py-8 mt-auto transition-colors duration-300">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-zinc-500 dark:text-stone-500">
-          <div>&copy; {new Date().getFullYear()} INT Portal. All rights reserved.</div>
-          <div className="flex gap-6">
-            <a href="#" className="hover:text-zinc-800 dark:hover:text-stone-300 transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-zinc-800 dark:hover:text-stone-300 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-zinc-800 dark:hover:text-stone-300 transition-colors">Support</a>
+      <footer className="border-t border-zinc-200/60 dark:border-stone-850/40 bg-transparent py-16 mt-auto transition-colors duration-300 relative overflow-hidden">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-stone-500 mb-8 z-10 relative">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+            <span>INT PORTAL PUBLIC SPACE</span>
           </div>
+          <div className="flex gap-6 text-zinc-500 dark:text-stone-500">
+            <Link href="/clubs" className="hover:text-zinc-950 dark:hover:text-stone-300 transition-colors">Clubs</Link>
+            <Link href="/apartments" className="hover:text-zinc-950 dark:hover:text-stone-300 transition-colors">Apartments</Link>
+            <Link href="/laundry" className="hover:text-zinc-950 dark:hover:text-stone-300 transition-colors">Laundry</Link>
+          </div>
+        </div>
+        
+        {/* Massive graphic watermark text */}
+        <div className="w-full text-center select-none pointer-events-none mt-4 -mb-10 opacity-30 dark:opacity-20 transition-opacity">
+          <span className="text-[14vw] font-black tracking-tighter leading-none text-zinc-400/20 dark:text-stone-900/40 uppercase font-sans">
+            INT PORTAL
+          </span>
         </div>
       </footer>
     </>

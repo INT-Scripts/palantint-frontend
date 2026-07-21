@@ -39,7 +39,7 @@ export default function PortalHomePage() {
         </div>
 
         {/* Feature Grid - Minimal Editorial Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-y-12 md:gap-y-0 md:gap-x-12 divide-y md:divide-y-0 md:divide-x divide-zinc-200/60 dark:divide-stone-800/30 border-t border-b border-zinc-200/60 dark:border-stone-800/30 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-y-12 md:gap-y-0 md:gap-x-12 divide-y md:divide-y-0 md:divide-x divide-zinc-200/60 dark:divide-stone-800/30 border border-zinc-200/80 dark:border-stone-800/50 bg-stone-50/90 dark:bg-stone-900/90 backdrop-blur-sm rounded-2xl p-8 sm:p-12 shadow-sm relative z-10">
           
           {/* Laundry Column */}
           <Link href="/laundry" className="group flex flex-col justify-between h-full md:pr-0">
@@ -122,8 +122,8 @@ export default function PortalHomePage() {
         </div>
         
         {/* Massive graphic watermark text */}
-        <div className="w-full text-center select-none pointer-events-none mt-4 -mb-10 opacity-30 dark:opacity-20 transition-opacity">
-          <span className="text-[14vw] font-black tracking-tighter leading-none text-zinc-400/20 dark:text-stone-900/40 uppercase font-sans">
+        <div className="w-full text-center select-none pointer-events-none mt-4 -mb-10 transition-colors">
+          <span className="text-[14vw] font-black tracking-tighter leading-none text-stone-300 dark:text-stone-800 uppercase font-sans">
             INT PORTAL
           </span>
         </div>

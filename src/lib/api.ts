@@ -102,7 +102,8 @@ export async function fetchPrivate(endpoint: string, options: RequestInit = {}):
     const data = isJson ? await response.json() : await response.text();
 
     if (!response.ok) {
-        throw new Error(data.detail || data.message || "An error occurred");
+        const detail = (typeof data === "object" && data !== null) ? (data.detail || data.message) : data;
+        throw new Error(`fetchPrivate "${endpoint}" failed with status ${response.status}: ${detail || "An error occurred"}`);
     }
 
     return data;
@@ -129,7 +130,8 @@ export async function fetchPublic(endpoint: string, options: RequestInit = {}) {
     const data = isJson ? await response.json() : await response.text();
 
     if (!response.ok) {
-        throw new Error(data.detail || data.message || "An error occurred");
+        const detail = (typeof data === "object" && data !== null) ? (data.detail || data.message) : data;
+        throw new Error(`fetchPublic "${endpoint}" failed with status ${response.status}: ${detail || "An error occurred"}`);
     }
 
     return data;

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchPublic } from "@/lib/api";
+import { fetchPublic, fetchPrivate } from "@/lib/api";
 import { 
     WashingMachine, RefreshCw, Clock, Euro, ShieldAlert, 
-    CheckCircle2, AlertTriangle, Activity, Database, Heart, Terminal
+    CheckCircle2, AlertTriangle, Activity, Database, Heart, Terminal,
+    Bell, BellRing
 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 
@@ -41,6 +42,25 @@ export default function LaundryPage() {
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [logs, setLogs] = useState<LogEntry[]>([]);
+    const [subscribingMap, setSubscribingMap] = useState<Record<string, boolean>>({});
+
+    const handleSubscribe = async (machineNbr: number) => {
+        const key = `${selectedBuilding}_${machineNbr}`;
+        try {
+            await fetchPrivate("/notifications/laundry/subscribe", {
+                method: "POST",
+                body: JSON.stringify({
+                    building: selectedBuilding,
+                    machine_nbr: machineNbr
+                })
+            });
+            setSubscribingMap(prev => ({ ...prev, [key]: true }));
+            addLog("SUCCESS", `Availability alarm set for machine ${machineNbr} in ${selectedBuilding.toUpperCase()}`);
+        } catch (err: any) {
+            console.error(err);
+            addLog("WARN", `Failed to register alarm: ${err.message || "Unknown error"}`);
+        }
+    };
 
     const addLog = (level: "INFO" | "SUCCESS" | "WARN", message: string) => {
         const time = new Date().toLocaleTimeString("fr-FR");
@@ -336,6 +356,30 @@ export default function LaundryPage() {
                                                                         <div className="absolute inset-0 bg-white/20 animate-pulse" />
                                                                     </div>
                                                                 </div>
+                                                            </div>
+                                                            {/* Subscribe to availability */}
+                                                            <div className="pt-2">
+                                                                <button
+                                                                    onClick={() => handleSubscribe(Number(m.machine_nbr))}
+                                                                    disabled={subscribingMap[`${selectedBuilding}_${m.machine_nbr}`]}
+                                                                    className={`w-full py-2 border text-[9px] font-mono font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 rounded-none ${
+                                                                        subscribingMap[`${selectedBuilding}_${m.machine_nbr}`]
+                                                                            ? "bg-emerald-950/20 border-emerald-500/30 text-emerald-400 cursor-default"
+                                                                            : "bg-zinc-950 hover:bg-media-500/10 border-zinc-800 hover:border-media-500/50 text-zinc-400 hover:text-white active:scale-[0.98]"
+                                                                    }`}
+                                                                >
+                                                                    {subscribingMap[`${selectedBuilding}_${m.machine_nbr}`] ? (
+                                                                        <>
+                                                                            <BellRing className="w-3.5 h-3.5 animate-pulse text-emerald-400" />
+                                                                            <span>Alarm Armed</span>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <Bell className="w-3.5 h-3.5 text-zinc-500" />
+                                                                            <span>Tell me when available</span>
+                                                                        </>
+                                                                    )}
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     )}

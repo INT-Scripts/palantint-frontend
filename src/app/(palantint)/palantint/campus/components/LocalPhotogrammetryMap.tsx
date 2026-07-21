@@ -68,7 +68,14 @@ function ScannedModel({ url, onClick, mapping }: {
     onClick: (url: string) => void,
     mapping?: string 
 }) {
-    const { scene } = useGLTF(url);
+    const { scene } = useGLTF(url, true, true, (loader: any) => {
+        const token = typeof window !== "undefined" ? localStorage.getItem("palantint_token") : null;
+        if (token) {
+            loader.setRequestHeader({
+                Authorization: `Bearer ${token}`
+            });
+        }
+    });
     const tileId = useMemo(() => url.split('/').pop()?.replace('.gltf', '') || "unknown", [url]);
     
     // Optimize: Mutate the cached scene directly instead of cloning it.

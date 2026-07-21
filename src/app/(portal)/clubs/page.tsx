@@ -322,7 +322,7 @@ export default function PublicClubsPage() {
                     Student Privacy Shield
                   </span>
                   <p className="leading-normal">
-                    Roster lists, office roles, and membership details are hidden to protect student privacy. Accessing individual directories requires an authenticated operator session.
+                    Roster lists, office roles, and membership details are hidden to protect student privacy.
                   </p>
                 </div>
               </div>

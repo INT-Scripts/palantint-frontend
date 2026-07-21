@@ -4,17 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 
-const PUBLIC_ROUTES = [
-    "/",
-    "/login",
-    "/clubs",
-    "/apartments",
-    "/campus",
-    "/laundry"
-];
-
 const isPublicRoute = (path: string) => {
-    return PUBLIC_ROUTES.some(route => path === route || path.startsWith(route + "/"));
+    return !path.startsWith("/palantint");
 };
 
 export default function AppWrapper({ children }: { children: React.ReactNode }) {

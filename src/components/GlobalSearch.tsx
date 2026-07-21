@@ -2,29 +2,67 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { fetchAPI } from "@/lib/api";
+import { fetchPrivate, fetchPublic } from "@/lib/api";
 import { User, Users, Home, ArrowRight, Loader2, Search, GraduationCap } from "lucide-react";
 import SearchBar from "./ui/SearchBar";
+
+interface SearchStudent {
+    id: number;
+    first_name: string;
+    last_name: string;
+    trombint_id: string;
+    apartment?: string | null;
+}
+
+interface SearchClub {
+    id: number;
+    name: string;
+    slug: string;
+}
+
+interface SearchClassGroup {
+    id: number;
+    name: string;
+}
+
+interface SearchApartment {
+    apartment_id: string;
+    student_name: string;
+}
 
 export default function GlobalSearch({ className = "", inputClassName = "" }: { className?: string, inputClassName?: string }) {
     const router = useRouter();
     const [search, setSearch] = useState("");
-    const [results, setResults] = useState<{students: any[], clubs: any[], class_groups: any[], apartments: any[]}>({students: [], clubs: [], class_groups: [], apartments: []});
+    const [results, setResults] = useState<{
+        students: SearchStudent[];
+        clubs: SearchClub[];
+        class_groups: SearchClassGroup[];
+        apartments: SearchApartment[];
+    }>({students: [], clubs: [], class_groups: [], apartments: []});
     const [isSearching, setIsSearching] = useState(false);
     const [showResults, setShowResults] = useState(false);
+    const hasToken = typeof window !== "undefined" && !!localStorage.getItem("palantint_token");
+    const prefix = hasToken ? "/palantint" : "";
 
     useEffect(() => {
         if (!search || search.length < 2) {
-            setResults({students: [], clubs: [], class_groups: [], apartments: []});
+            Promise.resolve().then(() => {
+                setResults({students: [], clubs: [], class_groups: [], apartments: []});
+            });
             return;
         }
 
         const timer = setTimeout(() => {
             setIsSearching(true);
-            fetchAPI(`/search?q=${search}`)
+            const fetchHelper = hasToken ? fetchPrivate : fetchPublic;
+            fetchHelper(`/search?q=${search}`)
                 .then(res => {
                     setResults(res || {students: [], clubs: [], class_groups: [], apartments: []});
                     setShowResults(true);
+                })
+                .catch(err => {
+                    console.error("GlobalSearch query error:", err);
+                    setResults({students: [], clubs: [], class_groups: [], apartments: []});
                 })
                 .finally(() => setIsSearching(false));
         }, 300);
@@ -32,7 +70,7 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
         return () => clearTimeout(timer);
     }, [search]);
 
-    const renderResultItem = (icon: any, title: string, subtitle: string, url: string, color: "student" | "housing" | "orga") => {
+    const renderResultItem = (icon: React.ReactNode, title: string, subtitle: string, url: string, color: "student" | "housing" | "orga") => {
         const borderColors = {
             student: "hover:border-student-500",
             housing: "hover:border-housing-500",
@@ -77,7 +115,7 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
             
             {!isSearching && results.students.length === 0 && results.clubs.length === 0 && (!results.class_groups || results.class_groups.length === 0) && results.apartments.length === 0 && (
                 <div className="p-6 text-[10px] text-zinc-600 font-mono text-center uppercase tracking-[0.2em] italic">
-                    No matches found for "{search}"
+                    No matches found for &quot;{search}&quot;
                 </div>
             )}
 
@@ -88,7 +126,7 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
                         <User className="w-4 h-4 text-student-500" />,
                         `${s.first_name} ${s.last_name}`,
                         `ID: ${s.trombint_id} ${s.apartment ? `// APT: ${s.apartment}` : ''}`,
-                        `/students/${s.id}`,
+                        `${prefix}/students/${s.id}`,
                         'student'
                     ))}
                 </div>
@@ -101,7 +139,7 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
                         <Home className="w-4 h-4 text-housing-500" />,
                         `Apartment ${a.apartment_id}`,
                         `Resident: ${a.student_name}`,
-                        `/apartments?room=${a.apartment_id}`,
+                        `${prefix}/apartments?room=${a.apartment_id}`,
                         'housing'
                     ))}
                 </div>
@@ -114,7 +152,7 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
                         <Users className="w-4 h-4 text-orga-500" />,
                         c.name,
                         `Slug: ${c.slug}`,
-                        `/clubs/${c.id}`,
+                        `${prefix}/clubs/${c.id}`,
                         'orga'
                     ))}
                 </div>
@@ -127,7 +165,7 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
                         <GraduationCap className="w-4 h-4 text-student-500" />,
                         cg.name,
                         `Academic cohort`,
-                        `/class-groups/${cg.id}`,
+                        `${prefix}/class-groups/${cg.id}`,
                         'student'
                     ))}
                 </div>

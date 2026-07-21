@@ -2,36 +2,29 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchAPI } from "@/lib/api";
-import { Menu, User, Eye, LogIn, Compass, Home as HomeIcon, Settings, LogOut, Search, MapPin, Share2, CalendarDays, Flame, WashingMachine, ChevronDown } from "lucide-react";
+import { fetchPrivate } from "@/lib/api";
+import { Menu, User, LogIn, Compass, Home as HomeIcon, LogOut, Search, MapPin, Share2, CalendarDays, Flame, WashingMachine, ChevronDown } from "lucide-react";
 import GlobalSearch from "./GlobalSearch";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Navbar() {
     const router = useRouter();
     const [user, setUser] = useState<{ username: string, is_admin: boolean } | null>(null);
     const [authLoading, setAuthLoading] = useState(true);
-    const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         const token = typeof window !== "undefined" ? localStorage.getItem("palantint_token") : null;
         if (token) {
-            fetchAPI("/users/me")
+            fetchPrivate("/users/me")
                 .then((data) => setUser(data))
                 .catch(() => {})
                 .finally(() => setAuthLoading(false));
         } else {
-            setAuthLoading(false);
+            Promise.resolve().then(() => {
+                setAuthLoading(false);
+            });
         }
-            
-        const handleScroll = () => {
-            setScrolled(window.scrollY > 20);
-        };
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
 
@@ -44,7 +37,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-4 sm:gap-12">
                     <div
                         className="text-xl sm:text-2xl font-black tracking-tighter cursor-pointer hover:opacity-80 transition flex items-center gap-3 sm:gap-4 text-white group uppercase leading-none"
-                        onClick={() => router.push("/")}
+                        onClick={() => router.push(user ? "/palantint" : "/")}
                     >
                         <div className="relative w-10 h-10 border border-zinc-800 flex items-center justify-center overflow-hidden">
                             <img src="/palantint.svg" alt={user ? "PalantINT Logo" : "INT Logo"} className="w-6 h-6 relative z-10 invert brightness-0" />
@@ -70,7 +63,7 @@ export default function Navbar() {
                             <div className="absolute top-full left-0 mt-2 w-64 bg-zinc-950/95 backdrop-blur-3xl border border-zinc-800 shadow-2xl p-2 rounded-none opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-50 flex flex-col gap-1">
                                 <span 
                                     className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                    onClick={() => router.push("/clubs")}
+                                    onClick={() => router.push(user ? "/palantint/clubs" : "/clubs")}
                                 >
                                     <Compass className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
                                     <div>
@@ -80,7 +73,7 @@ export default function Navbar() {
                                 </span>
                                 <span 
                                     className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                    onClick={() => router.push("/campus")}
+                                    onClick={() => router.push(user ? "/palantint/campus" : "/campus")}
                                 >
                                     <MapPin className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
                                     <div>
@@ -90,7 +83,7 @@ export default function Navbar() {
                                 </span>
                                 <span 
                                     className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                    onClick={() => router.push("/apartments")}
+                                    onClick={() => router.push(user ? "/palantint/apartments" : "/apartments")}
                                 >
                                     <HomeIcon className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
                                     <div>
@@ -111,7 +104,7 @@ export default function Navbar() {
                                 <div className="absolute top-full left-0 mt-2 w-64 bg-zinc-950/95 backdrop-blur-3xl border border-zinc-800 shadow-2xl p-2 rounded-none opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-50 flex flex-col gap-1">
                                     <span 
                                         className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                        onClick={() => router.push("/students")}
+                                        onClick={() => router.push("/palantint/students")}
                                     >
                                         <User className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
                                         <div>
@@ -121,7 +114,7 @@ export default function Navbar() {
                                     </span>
                                     <span 
                                         className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                        onClick={() => router.push("/network")}
+                                        onClick={() => router.push("/palantint/network")}
                                     >
                                         <Share2 className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
                                         <div>
@@ -142,7 +135,7 @@ export default function Navbar() {
                             <div className="absolute top-full left-0 mt-2 w-64 bg-zinc-950/95 backdrop-blur-3xl border border-zinc-800 shadow-2xl p-2 rounded-none opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-50 flex flex-col gap-1">
                                 <span 
                                     className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                    onClick={() => router.push("/laundry")}
+                                    onClick={() => router.push(user ? "/palantint/laundry" : "/laundry")}
                                 >
                                     <WashingMachine className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
                                     <div>
@@ -154,7 +147,7 @@ export default function Navbar() {
                                     <>
                                         <span 
                                             className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                            onClick={() => router.push("/timetable")}
+                                            onClick={() => router.push("/palantint/timetable")}
                                         >
                                             <CalendarDays className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
                                             <div>
@@ -164,7 +157,7 @@ export default function Navbar() {
                                         </span>
                                         <span 
                                             className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                            onClick={() => router.push("/pay5vend")}
+                                            onClick={() => router.push("/palantint/pay5vend")}
                                         >
                                             <Flame className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
                                             <div>
@@ -193,7 +186,7 @@ export default function Navbar() {
                         <div className="flex items-center gap-2">
                             <div
                                 className="flex items-center gap-2 sm:gap-4 bg-zinc-950 p-1 sm:p-2 sm:pr-6 border border-zinc-800 cursor-pointer hover:border-zinc-500 transition-all group rounded-none"
-                                onClick={() => router.push(`/account`)}
+                                onClick={() => router.push(`/palantint/account`)}
                             >
                                 <div className="w-8 h-8 bg-zinc-800 flex items-center justify-center text-xs font-mono font-bold text-white shrink-0 group-hover:bg-zinc-700 transition-colors">
                                     {user.username.charAt(0).toUpperCase()}
@@ -212,6 +205,7 @@ export default function Navbar() {
                                 className="hidden sm:flex text-zinc-500 hover:text-comms-500 hover:bg-comms-500/10 bg-zinc-950 border border-zinc-800 rounded-none h-[42px] w-[42px] sm:h-[50px] sm:w-[50px] transition-all shrink-0 cursor-pointer hover:border-comms-500/50"
                                 onClick={() => {
                                     localStorage.removeItem("palantint_token");
+                                    document.cookie = "palantint_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
                                     window.location.reload();
                                 }}
                                 title="Log Out"
@@ -238,7 +232,7 @@ export default function Navbar() {
                     {user && (
                         <button 
                             className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                            onClick={() => { setMobileMenuOpen(false); router.push("/students"); }}
+                            onClick={() => { setMobileMenuOpen(false); router.push("/palantint/students"); }}
                         >
                             <span>Students</span>
                             <Search className="w-5 h-5 text-zinc-600 group-hover:text-white" />
@@ -246,21 +240,21 @@ export default function Navbar() {
                     )}
                     <button 
                         className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                        onClick={() => { setMobileMenuOpen(false); router.push("/clubs"); }}
+                        onClick={() => { setMobileMenuOpen(false); router.push(user ? "/palantint/clubs" : "/clubs"); }}
                     >
                         <span>Associations</span>
                         <Compass className="w-5 h-5 text-zinc-600 group-hover:text-white" />
                     </button>
                     <button 
                         className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                        onClick={() => { setMobileMenuOpen(false); router.push("/apartments"); }}
+                        onClick={() => { setMobileMenuOpen(false); router.push(user ? "/palantint/apartments" : "/apartments"); }}
                     >
                         <span>Apartments</span>
                         <HomeIcon className="w-5 h-5 text-zinc-600 group-hover:text-white" />
                     </button>
                     <button 
                         className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                        onClick={() => { setMobileMenuOpen(false); router.push("/laundry"); }}
+                        onClick={() => { setMobileMenuOpen(false); router.push(user ? "/palantint/laundry" : "/laundry"); }}
                     >
                         <span>Laundry</span>
                         <WashingMachine className="w-5 h-5 text-zinc-600 group-hover:text-white" />
@@ -268,7 +262,7 @@ export default function Navbar() {
                     {user && (
                         <button 
                             className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                            onClick={() => { setMobileMenuOpen(false); router.push("/timetable"); }}
+                            onClick={() => { setMobileMenuOpen(false); router.push("/palantint/timetable"); }}
                         >
                             <span>Timetable</span>
                             <CalendarDays className="w-5 h-5 text-zinc-600 group-hover:text-white" />
@@ -277,7 +271,7 @@ export default function Navbar() {
                     {user && (
                         <button 
                             className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                            onClick={() => { setMobileMenuOpen(false); router.push("/network"); }}
+                            onClick={() => { setMobileMenuOpen(false); router.push("/palantint/network"); }}
                         >
                             <span>Network</span>
                             <Share2 className="w-5 h-5 text-zinc-600 group-hover:text-white" />
@@ -286,7 +280,7 @@ export default function Navbar() {
                     {user && (
                         <button 
                             className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                            onClick={() => { setMobileMenuOpen(false); router.push("/pay5vend"); }}
+                            onClick={() => { setMobileMenuOpen(false); router.push("/palantint/pay5vend"); }}
                         >
                             <span>PAY5VEND</span>
                             <Flame className="w-5 h-5 text-zinc-600 group-hover:text-white" />
@@ -294,7 +288,7 @@ export default function Navbar() {
                     )}
                     <button 
                         className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                        onClick={() => { setMobileMenuOpen(false); router.push("/campus"); }}
+                        onClick={() => { setMobileMenuOpen(false); router.push(user ? "/palantint/campus" : "/campus"); }}
                     >
                         <span>Campus 3D</span>
                         <MapPin className="w-5 h-5 text-zinc-600 group-hover:text-white" />
@@ -313,6 +307,7 @@ export default function Navbar() {
                              </div>
                              <Button variant="ghost" size="icon" className="text-zinc-500 hover:text-comms-500" onClick={() => {
                                  localStorage.removeItem("palantint_token");
+                                 document.cookie = "palantint_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
                                  window.location.reload();
                              }}>
                                  <LogOut className="w-5 h-5" />

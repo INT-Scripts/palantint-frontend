@@ -31,12 +31,12 @@ export default function PortalHomePage() {
             All your campus services in one unified place.
           </h1>
           <p className="text-lg sm:text-xl text-zinc-600 mb-10 leading-relaxed max-w-2xl">
-            Check the live laundry room occupancy, browse academic class group listings, find information about campus housing pricing, and discover student clubs.
+            Check the live laundry room occupancy, find information about campus housing pricing, and discover student clubs.
           </p>
         </div>
 
         {/* Feature Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
           <Link href="/laundry" className="group p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-sm hover:shadow-md hover:border-zinc-300 transition-all duration-300 flex flex-col justify-between">
             <div>
               <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform duration-300">
@@ -79,21 +79,6 @@ export default function PortalHomePage() {
             </div>
             <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-semibold uppercase tracking-wider mt-6 group-hover:text-amber-600 transition-colors">
               Housing info →
-            </div>
-          </Link>
-
-          <Link href="/class-groups" className="group p-6 rounded-2xl bg-white border border-zinc-200/80 shadow-sm hover:shadow-md hover:border-zinc-300 transition-all duration-300 flex flex-col justify-between">
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform duration-300">
-                🎓
-              </div>
-              <h3 className="font-semibold text-lg text-zinc-900 group-hover:text-emerald-600 transition-colors">Class Groups</h3>
-              <p className="text-zinc-500 text-sm mt-2 leading-snug">
-                Browse academic cohorts, sections, and division structures on campus.
-              </p>
-            </div>
-            <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-semibold uppercase tracking-wider mt-6 group-hover:text-emerald-600 transition-colors">
-              Browse classes →
             </div>
           </Link>
         </div>

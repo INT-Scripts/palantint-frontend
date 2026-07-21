@@ -205,7 +205,7 @@ export default function PublicLaundryPage() {
 
               return (
                 <div 
-                  key={m.serial_number}
+                  key={`${m.machine_type}_${m.machine_nbr}`}
                   className={`border rounded-xl p-5 flex flex-col justify-between transition-all duration-300 relative overflow-hidden bg-white/40 dark:bg-stone-950/20 ${
                     isOccupied 
                       ? "border-zinc-200/50 dark:border-stone-850" 

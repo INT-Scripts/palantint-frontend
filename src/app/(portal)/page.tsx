@@ -27,10 +27,6 @@ export default function PortalHomePage() {
       {/* Hero Section */}
       <section className="flex-1 max-w-6xl mx-auto w-full px-4 py-20 sm:py-28 flex flex-col justify-center relative z-10">
         <div className="max-w-3xl mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-200/50 dark:bg-stone-800/40 border border-zinc-200 dark:border-stone-800/80 text-xs font-semibold text-zinc-700 dark:text-stone-300 mb-6 transition-colors">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-            Welcome to the Campus Portal
-          </div>
           <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-zinc-950 dark:text-stone-50 mb-6 leading-none">
             All your campus services <br className="hidden sm:inline" /> in one unified place.
           </h1>
@@ -109,19 +105,7 @@ export default function PortalHomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-200/60 dark:border-stone-850/40 bg-transparent py-16 mt-auto transition-colors duration-300 relative overflow-hidden">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-stone-500 mb-8 z-10 relative">
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-            <span>INT PORTAL PUBLIC SPACE</span>
-          </div>
-          <div className="flex gap-6 text-zinc-500 dark:text-stone-500">
-            <Link href="/clubs" className="hover:text-zinc-950 dark:hover:text-stone-300 transition-colors">Clubs</Link>
-            <Link href="/apartments" className="hover:text-zinc-950 dark:hover:text-stone-300 transition-colors">Apartments</Link>
-            <Link href="/laundry" className="hover:text-zinc-950 dark:hover:text-stone-300 transition-colors">Laundry</Link>
-          </div>
-        </div>
-        
+      <footer className="border-t border-zinc-200/85 dark:border-stone-800/80 bg-transparent py-16 mt-auto transition-colors duration-300 relative overflow-hidden">
         {/* Massive graphic watermark text */}
         <div className="w-full text-center select-none pointer-events-none mt-4 -mb-10 transition-colors">
           <span className="text-[14vw] font-black tracking-tighter leading-none text-stone-300 dark:text-stone-800 uppercase font-sans">

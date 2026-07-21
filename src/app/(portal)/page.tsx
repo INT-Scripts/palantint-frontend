@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Layers } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 export default function PortalHomePage() {
@@ -8,8 +9,8 @@ export default function PortalHomePage() {
       <header className="border-b border-zinc-200/85 dark:border-stone-800/80 bg-white/70 dark:bg-stone-950/70 backdrop-blur-md sticky top-0 z-50 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-zinc-900 dark:bg-stone-100 flex items-center justify-center font-bold text-white dark:text-zinc-950 shadow-sm transition-colors">
-              I
+            <div className="w-8 h-8 rounded-lg bg-zinc-900 dark:bg-stone-100 flex items-center justify-center text-white dark:text-zinc-950 shadow-sm transition-colors">
+              <Layers className="w-4 h-4" />
             </div>
             <span className="font-semibold text-lg tracking-tight text-zinc-900 dark:text-stone-50">INT Portal</span>
           </div>

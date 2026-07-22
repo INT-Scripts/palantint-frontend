@@ -65,9 +65,9 @@ export default function Navbar() {
                                     className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
                                     onClick={() => router.push(user ? "/palantint/clubs" : "/clubs")}
                                 >
-                                    <Compass className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
+                                    <Users className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
                                     <div>
-                                        <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">Associations</p>
+                                        <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">Clubs & Associations</p>
                                         <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-normal">Student clubs & organisations</p>
                                     </div>
                                 </span>
@@ -93,12 +93,12 @@ export default function Navbar() {
                                 </span>
                                 <span 
                                     className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                    onClick={() => router.push(user ? "/palantint/clubs" : "/clubs")}
+                                    onClick={() => router.push(user ? "/palantint/foyer" : "/foyer")}
                                 >
-                                    <Users className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
+                                    <MapPin className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
                                     <div>
-                                        <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">Clubs & Foyers</p>
-                                        <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-normal">Locaux associatifs et foyers</p>
+                                        <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">Foyer Map</p>
+                                        <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-normal">Locaux associatifs interactifs</p>
                                     </div>
                                 </span>
                             </div>
@@ -252,8 +252,15 @@ export default function Navbar() {
                         className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
                         onClick={() => { setMobileMenuOpen(false); router.push(user ? "/palantint/clubs" : "/clubs"); }}
                     >
-                        <span>Associations</span>
-                        <Compass className="w-5 h-5 text-zinc-600 group-hover:text-white" />
+                        <span>Clubs & Associations</span>
+                        <Users className="w-5 h-5 text-zinc-600 group-hover:text-white" />
+                    </button>
+                    <button 
+                        className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
+                        onClick={() => { setMobileMenuOpen(false); router.push(user ? "/palantint/foyer" : "/foyer"); }}
+                    >
+                        <span>Foyer Map</span>
+                        <MapPin className="w-5 h-5 text-zinc-600 group-hover:text-white" />
                     </button>
                     <button 
                         className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"

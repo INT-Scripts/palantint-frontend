@@ -99,8 +99,6 @@ export default function RelationshipsList({ studentId, themeColor }: Relationshi
         }
     };
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
-
     return (
         <div className="h-full flex flex-col pt-2">
             {/* Header */}

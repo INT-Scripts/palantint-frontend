@@ -1,4 +1,4 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
+export const API_BASE_URL = "/api";
 
 export const getAuthHeaders = (): HeadersInit => {
     const token = typeof window !== "undefined" ? localStorage.getItem("palantint_token") : null;

@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { fetchPublic } from "@/lib/api";
 import { 
   Building2, Info, AlertTriangle, X,
-  Layers, FileText
+  Layers, FileText, Users
 } from "lucide-react";
 import PortalHeader from "@/components/PortalHeader";
 import PublicFloorViewer from "./components/PublicFloorViewer";
@@ -175,58 +175,69 @@ export default function PublicApartmentsPage() {
       />
 
       {/* Control Bar: Building & Floor Selectors */}
-      <div className="bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border border-zinc-200/80 dark:border-stone-800/80 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          
-          {/* Building Buttons */}
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs font-mono font-bold text-zinc-400 dark:text-stone-500 uppercase tracking-wider">
-              Bâtiment:
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {Object.keys(BUILDINGS).map((b) => (
-                <button
-                  key={b}
-                  onClick={() => {
-                    setActiveBuilding(b);
-                    if (!BUILDINGS[b].find(f => f.value === activeFloor)) {
-                      setActiveFloor(BUILDINGS[b][0].value);
-                    }
-                  }}
-                  className={`px-3.5 py-1.5 text-xs font-bold font-mono rounded-xl transition-all cursor-pointer ${
-                    activeBuilding === b
-                      ? "bg-amber-500 text-white shadow-sm shadow-amber-500/20"
-                      : "bg-stone-100 dark:bg-stone-800/60 text-zinc-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-800"
-                  }`}
-                >
-                  {b}
-                </button>
-              ))}
+      <div className="bg-white dark:bg-stone-900 border-2 border-zinc-200/90 dark:border-stone-800 rounded-3xl overflow-hidden shadow-sm">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-200/80 dark:border-stone-800/80 bg-stone-50/80 dark:bg-stone-950/60">
+          <h3 className="text-[10px] font-black font-mono text-zinc-600 dark:text-stone-400 uppercase tracking-[0.2em] flex items-center gap-2.5">
+            <Layers className="w-4 h-4 text-amber-500" />
+            Sélection du Bâtiment & Étage
+          </h3>
+          <span className="text-[10px] font-mono text-zinc-500 dark:text-stone-500 uppercase tracking-widest font-bold hidden sm:inline">
+            Sélection: <span className="text-zinc-950 dark:text-stone-100">{activeBuilding} — {BUILDINGS[activeBuilding]?.find(f => f.value === activeFloor)?.label || activeFloor}</span>
+          </span>
+        </div>
+        <div className="p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            
+            {/* Building Buttons */}
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs font-mono font-bold text-zinc-400 dark:text-stone-500 uppercase tracking-wider">
+                Bâtiment:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {Object.keys(BUILDINGS).map((b) => (
+                  <button
+                    key={b}
+                    onClick={() => {
+                      setActiveBuilding(b);
+                      if (!BUILDINGS[b].find(f => f.value === activeFloor)) {
+                        setActiveFloor(BUILDINGS[b][0].value);
+                      }
+                    }}
+                    className={`px-3.5 py-1.5 text-xs font-bold font-mono rounded-xl transition-all cursor-pointer ${
+                      activeBuilding === b
+                        ? "bg-amber-500 text-white shadow-sm shadow-amber-500/20"
+                        : "bg-stone-100 dark:bg-stone-800/60 text-zinc-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-800"
+                    }`}
+                  >
+                    {b}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Floor Buttons */}
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs font-mono font-bold text-zinc-400 dark:text-stone-500 uppercase tracking-wider">
-              Étage:
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {(BUILDINGS[activeBuilding] || []).map((f) => (
-                <button
-                  key={f.value}
-                  onClick={() => { setActiveFloor(f.value); setSelectedRoomId(null); }}
-                  className={`px-3.5 py-1.5 text-xs font-bold font-mono rounded-xl transition-all cursor-pointer ${
-                    activeFloor === f.value
-                      ? "bg-zinc-950 dark:bg-stone-100 text-white dark:text-zinc-950 shadow-sm"
-                      : "bg-stone-100 dark:bg-stone-800/60 text-zinc-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-800"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
+            {/* Floor Buttons */}
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs font-mono font-bold text-zinc-400 dark:text-stone-500 uppercase tracking-wider">
+                Étage:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {(BUILDINGS[activeBuilding] || []).map((f) => (
+                  <button
+                    key={f.value}
+                    onClick={() => { setActiveFloor(f.value); setSelectedRoomId(null); }}
+                    className={`px-3.5 py-1.5 text-xs font-bold font-mono rounded-xl transition-all cursor-pointer ${
+                      activeFloor === f.value
+                        ? "bg-zinc-950 dark:bg-stone-100 text-white dark:text-zinc-950 shadow-sm"
+                        : "bg-stone-100 dark:bg-stone-800/60 text-zinc-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-800"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
+          </div>
         </div>
       </div>
 
@@ -342,17 +353,18 @@ export default function PublicApartmentsPage() {
           })()}
 
           {/* Directory of All Apartments with Data */}
-          <div className="bg-white dark:bg-stone-900 border-2 border-zinc-200/90 dark:border-stone-800 rounded-3xl p-5 shadow-sm min-h-[450px] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-200/80 dark:border-stone-800 shrink-0">
-              <div>
-                <h2 className="text-base font-extrabold text-zinc-950 dark:text-stone-50 font-mono">
-                  {activeBuilding} — Étage {activeFloor} Logements
-                </h2>
-                <p className="text-xs text-zinc-500 dark:text-stone-400 font-mono">
-                  {currentFloorApartments.length} logements répertoriés
-                </p>
-              </div>
+          <div className="bg-white dark:bg-stone-900 border-2 border-zinc-200/90 dark:border-stone-800 rounded-3xl overflow-hidden shadow-sm min-h-[450px] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-200/80 dark:border-stone-800 bg-stone-50/80 dark:bg-stone-950/60 shrink-0">
+              <h3 className="text-[10px] font-black font-mono text-zinc-600 dark:text-stone-400 uppercase tracking-[0.2em] flex items-center gap-2.5">
+                <Users className="w-4 h-4 text-amber-500" />
+                Directory — {activeBuilding} Étage {activeFloor}
+              </h3>
+              <span className="text-[10px] font-mono text-zinc-500 dark:text-stone-500 uppercase tracking-widest font-bold">
+                {currentFloorApartments.length} Logements
+              </span>
             </div>
+
+            <div className="p-5 flex-1 flex flex-col">
 
             {loading ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3 flex-1">
@@ -429,6 +441,7 @@ export default function PublicApartmentsPage() {
                 </table>
               </div>
             )}
+            </div>
           </div>
 
         </div>

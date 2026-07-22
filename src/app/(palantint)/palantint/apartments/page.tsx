@@ -472,6 +472,26 @@ function ApartmentsContent() {
                             className="flex-1 min-h-[500px] lg:min-h-[800px]"
                             icon={<MapPin className="w-4 h-4 text-housing-500" />}
                             title="Interactive Floor Map"
+                            rightContent={
+                                <div className="hidden sm:flex items-center gap-3 text-[10px] font-mono">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="w-2.5 h-2.5 bg-orange-500/32 border border-orange-500 inline-block" />
+                                        <span className="text-zinc-300">Occupé</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="w-2.5 h-2.5 bg-zinc-800/40 border border-zinc-700 inline-block" />
+                                        <span className="text-zinc-400">Vacant</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="w-2.5 h-2.5 bg-blue-600/80 border border-blue-500 inline-block" />
+                                        <span className="text-zinc-300">Sélectionné</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="w-2.5 h-2.5 bg-blue-500/55 border border-blue-400 inline-block" />
+                                        <span className="text-zinc-300">Survol</span>
+                                    </div>
+                                </div>
+                            }
                         >
                             <div
                                 ref={svgRef}
@@ -565,11 +585,15 @@ function ApartmentsContent() {
                         </Box>
 
                         <div className="xl:w-[450px] shrink-0 bg-zinc-900/40 backdrop-blur-3xl border border-zinc-800 flex flex-col shadow-2xl relative rounded-none h-[500px] lg:h-[800px]">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-housing-500" />
-                            <h3 className="text-sm font-black text-white uppercase tracking-widest p-5 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between">
-                                <span className="flex items-center gap-3"><Users className="w-5 h-5 text-housing-500" /> {bldg}</span>
-                                <span className="text-[10px] font-mono opacity-50">{BUILDINGS[bldg].find(f => f.value === floor)?.label}</span>
-                            </h3>
+                            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-zinc-800 bg-black/20 shrink-0">
+                                <h3 className="text-[10px] font-black font-mono text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                                    <Users className="w-4 h-4 text-housing-500" />
+                                    Logements — {bldg}
+                                </h3>
+                                <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest font-bold">
+                                    {BUILDINGS[bldg].find(f => f.value === floor)?.label || floor}
+                                </div>
+                            </div>
 
                             {/* Selected Apartment Full Specs Card (with occupancy info) */}
                             {selectedRoom && apartmentsDetails[selectedRoom] && (() => {

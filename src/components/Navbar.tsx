@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchPrivate } from "@/lib/api";
-import { Menu, User, LogIn, Compass, Home as HomeIcon, LogOut, Search, MapPin, Share2, CalendarDays, Flame, WashingMachine, ChevronDown } from "lucide-react";
+import { Menu, User, LogIn, Compass, Home as HomeIcon, LogOut, Search, MapPin, Share2, CalendarDays, Flame, WashingMachine, ChevronDown, Users } from "lucide-react";
 import GlobalSearch from "./GlobalSearch";
 import { Button } from "@/components/ui/button";
 
@@ -89,6 +89,16 @@ export default function Navbar() {
                                     <div>
                                         <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">Apartments</p>
                                         <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-normal">On-campus housing registry</p>
+                                    </div>
+                                </span>
+                                <span 
+                                    className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
+                                    onClick={() => router.push(user ? "/palantint/clubs" : "/clubs")}
+                                >
+                                    <Users className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">Clubs & Foyers</p>
+                                        <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-normal">Locaux associatifs et foyers</p>
                                     </div>
                                 </span>
                             </div>

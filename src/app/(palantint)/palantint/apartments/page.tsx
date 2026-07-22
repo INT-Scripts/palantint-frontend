@@ -369,38 +369,36 @@ function ApartmentsContent() {
 
     const renderSelectors = () => {
         const ControlBox = ({ label, currentLabel, currentValue, children, className = "" }: any) => (
-            <div className={`p-4 sm:p-6 space-y-4 ${className}`}>
-                <div className="flex items-center justify-between border-b border-zinc-800/50 pb-3">
-                    <label className="text-[10px] font-bold font-mono text-zinc-500 uppercase tracking-[0.2em]">{label}</label>
+            <div className={`p-3.5 space-y-2.5 ${className}`}>
+                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
+                    <label className="text-[10px] font-extrabold font-mono text-zinc-400 uppercase tracking-widest">{label}</label>
                     <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest hidden sm:block">
                         {currentLabel}: <span className="text-white font-black">{currentValue}</span>
                     </span>
                 </div>
-                <div className="pt-2">{children}</div>
+                <div className="pt-0.5">{children}</div>
             </div>
         );
 
         const ControlButton = ({ active, onClick, label, count, className = "" }: any) => (
             <button
+                type="button"
                 onClick={onClick}
-                className={`group relative w-full h-full flex flex-col items-center justify-center p-3 sm:p-4 border transition-all duration-300 rounded-none ${
+                className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold font-mono border transition-all cursor-pointer ${
                     active 
-                        ? "bg-zinc-800 text-white border-zinc-500 shadow-inner" 
-                        : "bg-zinc-950/50 border-transparent text-zinc-600 hover:bg-zinc-800 hover:text-zinc-400 hover:border-zinc-700"
+                        ? "bg-housing-500/20 text-white border-housing-500 shadow-sm shadow-housing-500/20" 
+                        : "bg-zinc-950/60 border-zinc-800/80 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 hover:border-zinc-700"
                 } ${className}`}
             >
-                <span className={`text-[10px] sm:text-[11px] font-black font-mono tracking-widest mb-1 sm:mb-1.5 transition-colors ${active ? "text-housing-400" : "text-zinc-500"}`}>{label}</span>
-                <div className="flex items-center gap-1.5 w-full justify-center">
-                    <div className={`h-1 w-6 sm:w-10 transition-colors ${active ? "bg-housing-500" : "bg-zinc-800 group-hover:bg-zinc-700"}`} />
-                    <span className="text-[8px] sm:text-[9px] font-mono font-bold opacity-60">({count})</span>
-                </div>
+                <span>{label}</span>
+                <span className={`text-[9px] font-mono font-normal opacity-70 ${active ? "text-housing-300" : "text-zinc-500"}`}>({count})</span>
             </button>
         );
 
         return (
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-1.5 bg-zinc-900/50 border border-zinc-800 shadow-2xl overflow-hidden backdrop-blur-3xl rounded-none">
-                <ControlBox label="Buildings" currentLabel="Current" currentValue={bldg} className="col-span-12 md:col-span-5 lg:col-span-4 xl:col-span-5">
-                    <div className="grid grid-cols-4 sm:grid-cols-7 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-7 gap-1.5">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-1.5 bg-zinc-900/50 border border-zinc-800 shadow-xl overflow-hidden backdrop-blur-3xl rounded-none">
+                <ControlBox label="Bâtiments" currentLabel="Selection" currentValue={bldg} className="col-span-12 md:col-span-5 lg:col-span-4 xl:col-span-5">
+                    <div className="flex flex-wrap gap-1.5">
                         {Object.keys(BUILDINGS).map(b => (
                             <ControlButton key={b} active={bldg === b} onClick={() => {
                                 setBldg(b);
@@ -412,12 +410,12 @@ function ApartmentsContent() {
                     </div>
                 </ControlBox>
                 <ControlBox 
-                    label="Floors" 
-                    currentLabel="Current" 
+                    label="Étages" 
+                    currentLabel="Selection" 
                     currentValue={BUILDINGS[bldg].find(f => f.value === floor)?.label || floor}
                     className="col-span-12 md:col-span-7 lg:col-span-8 xl:col-span-7 border-t md:border-t-0 md:border-l border-zinc-800"
                 >
-                    <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-5 2xl:grid-cols-6 gap-1.5">
+                    <div className="flex flex-wrap gap-1.5">
                         {BUILDINGS[bldg].map(f => (
                             <ControlButton key={f.value} active={floor === f.value} onClick={() => { setFloor(f.value); setSelectedRoom(null); }} label={f.label} count={getFloorResidentCount(bldg, f.value)} />
                         ))}

@@ -266,9 +266,25 @@ export default function PublicFloorViewer({
             {building} — Étage {floor} Plan Architectural
           </span>
         </div>
-        <div className="flex items-center gap-1.5 text-[11px] font-mono text-stone-500 dark:text-stone-400 font-bold">
-          <MousePointerClick className="w-3.5 h-3.5 text-amber-500" />
-          <span>Survoler un logement / Cliquer pour sélectionner</span>
+        
+        {/* IntPortal Header Color Legend */}
+        <div className="hidden sm:flex items-center gap-4 text-[10px] font-mono text-stone-600 dark:text-stone-400">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 bg-stone-200 dark:bg-stone-500/20 border border-stone-300 dark:border-stone-400 rounded-2xs inline-block" />
+            <span className="text-stone-900 dark:text-stone-200 font-bold">Standard</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 bg-rose-500/30 border border-rose-500 rounded-2xs inline-block" />
+            <span className="text-stone-900 dark:text-stone-200 font-bold">Sans fiche</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 bg-blue-600/80 border border-blue-500 rounded-2xs inline-block" />
+            <span className="text-stone-900 dark:text-stone-200 font-bold">Sélectionné</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 bg-blue-500/55 border border-blue-400 rounded-2xs inline-block" />
+            <span className="text-stone-900 dark:text-stone-200 font-bold">Survol</span>
+          </div>
         </div>
       </div>
 
@@ -355,28 +371,6 @@ export default function PublicFloorViewer({
         ref={tooltipRef}
         className="absolute z-50 pointer-events-none select-none bg-stone-950/95 backdrop-blur-xl border border-amber-500/50 p-3.5 rounded-2xl shadow-2xl hidden text-left transition-opacity duration-75 min-w-[220px]"
       />
-
-      {/* Legend Footer */}
-      <div className="px-5 py-3 border-t border-stone-200 dark:border-stone-800 bg-stone-50/80 dark:bg-stone-950/60 flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-stone-600 dark:text-stone-400">
-        <div className="flex items-center gap-5">
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 bg-stone-200 dark:bg-stone-500/20 border border-stone-300 dark:border-stone-400 rounded inline-block" />
-            <span className="text-stone-900 dark:text-stone-200 font-bold">Standard</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 bg-rose-500/30 border border-rose-500 rounded inline-block" />
-            <span className="text-stone-900 dark:text-stone-200 font-bold">Sans fiche</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 bg-blue-600/80 border border-blue-500 rounded inline-block" />
-            <span className="text-stone-900 dark:text-stone-200 font-bold">Sélectionné</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 bg-blue-500/55 border border-blue-400 rounded inline-block" />
-            <span className="text-stone-900 dark:text-stone-200 font-bold">Survol (Actif)</span>
-          </div>
-        </div>
-      </div>
 
     </div>
   );

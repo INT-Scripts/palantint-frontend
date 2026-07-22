@@ -1,0 +1,205 @@
+{
+    "F0-1": {
+        "room_id": "F0-1",
+        "raw_name": "Minet (Bagagerie)",
+        "club_name": "Minet (Bagagerie)",
+        "floor": "0",
+        "building": "Foyer"
+    },
+    "F0-2": {
+        "room_id": "F0-2",
+        "raw_name": "Cave (Club Code, ModelIT, GamINT, CELL)",
+        "club_name": "Cave (Club Code, ModelIT, GamINT, CELL)",
+        "floor": "0",
+        "building": "Foyer"
+    },
+    "F0-3": {
+        "room_id": "F0-3",
+        "raw_name": "BPM (Tijet)",
+        "club_name": "BPM (Tijet)",
+        "floor": "0",
+        "building": "Foyer"
+    },
+    "F0-4": {
+        "room_id": "F0-4",
+        "raw_name": "DolphINT",
+        "club_name": "DolphINT",
+        "floor": "0",
+        "building": "Foyer"
+    },
+    "F0-5": {
+        "room_id": "F0-5",
+        "raw_name": "Univert INTervenir",
+        "club_name": "Univert INTervenir",
+        "floor": "0",
+        "building": "Foyer"
+    },
+    "F0-6": {
+        "room_id": "F0-6",
+        "raw_name": "Equality In&Act",
+        "club_name": "Equality In&Act",
+        "floor": "0",
+        "building": "Foyer"
+    },
+    "F0-7": {
+        "room_id": "F0-7",
+        "raw_name": "HackademINT",
+        "club_name": "HackademINT",
+        "floor": "0",
+        "building": "Foyer"
+    },
+    "F0-8": {
+        "room_id": "F0-8",
+        "raw_name": "PaintIT,TellTheTale,INTimes",
+        "club_name": "PaintIT,TellTheTale,INTimes",
+        "floor": "0",
+        "building": "Foyer"
+    },
+    "F0-9": {
+        "room_id": "F0-9",
+        "raw_name": "",
+        "club_name": "",
+        "floor": "0",
+        "building": "Foyer"
+    },
+    "F0-10": {
+        "room_id": "F0-10",
+        "raw_name": "Minet (Salle serveur)",
+        "club_name": "Minet (Salle serveur)",
+        "floor": "0",
+        "building": "Foyer"
+    },
+    "F0-11": {
+        "room_id": "F0-11",
+        "raw_name": "BDE (Déchetterie)",
+        "club_name": "BDE (Déchetterie)",
+        "floor": "0",
+        "building": "Foyer"
+    },
+    "F0-12": {
+        "room_id": "F0-12",
+        "raw_name": "EvryOne",
+        "club_name": "EvryOne",
+        "floor": "0",
+        "building": "Foyer"
+    },
+    "F0-13": {
+        "room_id": "F0-13",
+        "raw_name": "",
+        "club_name": "",
+        "floor": "0",
+        "building": "Foyer"
+    },
+    "F1-1": {
+        "room_id": "F1-1",
+        "raw_name": "Club Jeux",
+        "club_name": "Club Jeux",
+        "floor": "1",
+        "building": "Foyer"
+    },
+    "F1-2": {
+        "room_id": "F1-2",
+        "raw_name": "Declic",
+        "club_name": "Declic",
+        "floor": "1",
+        "building": "Foyer"
+    },
+    "F1-3": {
+        "room_id": "F1-3",
+        "raw_name": "BPM",
+        "club_name": "BPM",
+        "floor": "1",
+        "building": "Foyer"
+    },
+    "F1-4": {
+        "room_id": "F1-4",
+        "raw_name": "Absinthe",
+        "club_name": "Absinthe",
+        "floor": "1",
+        "building": "Foyer"
+    },
+    "F1-5": {
+        "room_id": "F1-5",
+        "raw_name": "Absinthe",
+        "club_name": "Absinthe",
+        "floor": "1",
+        "building": "Foyer"
+    },
+    "F1-6": {
+        "room_id": "F1-6",
+        "raw_name": "CookIT",
+        "club_name": "CookIT",
+        "floor": "1",
+        "building": "Foyer"
+    },
+    "F1-7": {
+        "room_id": "F1-7",
+        "raw_name": "Grande Salle",
+        "club_name": "Grande Salle",
+        "floor": "1",
+        "building": "Foyer"
+    },
+    "F1-8": {
+        "room_id": "F1-8",
+        "raw_name": "EmotyS",
+        "club_name": "EmotyS",
+        "floor": "1",
+        "building": "Foyer"
+    },
+    "F1-9": {
+        "room_id": "F1-9",
+        "raw_name": "Minet (local)",
+        "club_name": "Minet (local)",
+        "floor": "1",
+        "building": "Foyer"
+    },
+    "F1-10": {
+        "room_id": "F1-10",
+        "raw_name": "BDA",
+        "club_name": "BDA",
+        "floor": "1",
+        "building": "Foyer"
+    },
+    "F1-11": {
+        "room_id": "F1-11",
+        "raw_name": "BDE (local)",
+        "club_name": "BDE (local)",
+        "floor": "1",
+        "building": "Foyer"
+    },
+    "F1-12": {
+        "room_id": "F1-12",
+        "raw_name": "Welcom",
+        "club_name": "Welcom",
+        "floor": "1",
+        "building": "Foyer"
+    },
+    "F1-13": {
+        "room_id": "F1-13",
+        "raw_name": "ASINT",
+        "club_name": "ASINT",
+        "floor": "1",
+        "building": "Foyer"
+    },
+    "F1-14": {
+        "room_id": "F1-14",
+        "raw_name": "Club Zik",
+        "club_name": "Club Zik",
+        "floor": "1",
+        "building": "Foyer"
+    },
+    "F1-15": {
+        "room_id": "F1-15",
+        "raw_name": "INTV",
+        "club_name": "INTV",
+        "floor": "1",
+        "building": "Foyer"
+    },
+    "F1-16": {
+        "room_id": "F1-16",
+        "raw_name": "INTech",
+        "club_name": "INTech",
+        "floor": "1",
+        "building": "Foyer"
+    }
+}

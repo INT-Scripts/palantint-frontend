@@ -1,0 +1,80 @@
+<svg width="644" height="760" viewBox="0 0 644 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+<style id="plan-theme-styles">
+  a[data-room] { cursor: pointer; }
+  a[data-room] text, a[data-room] tspan { pointer-events: none !important; user-select: none !important; }
+  
+  /* 1. Default room fill & stroke */
+  a[data-room] .room-area, g[data-room] .room-area, polygon.room-area, path.room-area, rect.room-area {
+    fill: rgba(120, 113, 108, 0.12) !important;
+    stroke: rgba(120, 113, 108, 0.4) !important;
+    stroke-width: 1px !important;
+    pointer-events: all !important;
+    transition: fill 0.15s ease, stroke 0.15s ease;
+  }
+
+  /* 2. Passive Occupied & Filtered room glow (Orange) */
+  a[data-room][data-occupied="true"] .room-area, g[data-room][data-occupied="true"] .room-area,
+  a[data-room][data-filtered="true"] .room-area, g[data-room][data-filtered="true"] .room-area {
+    fill: rgba(249, 115, 22, 0.32) !important;
+    stroke: #f97316 !important;
+    stroke-width: 1.5px !important;
+  }
+
+  /* 3. Selected / Active room (Blue Filled) */
+  a[data-room][data-active="true"] .room-area, g[data-room][data-active="true"] .room-area,
+  a[data-room][data-selected="true"] .room-area, g[data-room][data-selected="true"] .room-area {
+    fill: rgba(37, 99, 235, 0.75) !important;
+    stroke: #2563eb !important;
+    stroke-width: 2.5px !important;
+  }
+
+  /* 4. Hover state (Blue) — TOP PRIORITY (Overrides passive orange, active, default) */
+  a[data-room]:hover .room-area, a[data-room][data-hover="true"] .room-area,
+  a[data-room][data-occupied="true"]:hover .room-area, a[data-room][data-occupied="true"][data-hover="true"] .room-area,
+  a[data-room][data-active="true"]:hover .room-area, a[data-room][data-active="true"][data-hover="true"] .room-area {
+    fill: rgba(59, 130, 246, 0.55) !important;
+    stroke: #3b82f6 !important;
+    stroke-width: 2.5px !important;
+    cursor: pointer !important;
+  }
+</style>
+<g id="U5_-0.5">
+<path id="Vector 38" d="M461.785 54.248H335.964L335.473 110.24M461.785 54.248V110.24M461.785 54.248H484.975M244.682 669.15V706.982H299.204M244.682 669.15H190.406M244.682 669.15V576.334M133.953 552.626H77.5L79.5 534.5L77.5 421.944L133.953 421.441M79.5 534.5H24V669.15H67.7926H83.3352M335.473 110.24L334.978 166.736L333.991 279.477L333.497 335.847L333.003 392.217L300.931 422.987M300.931 422.987L244.682 421.944M300.931 422.987V551.113M461.785 110.24H335.473M461.785 110.24V166.736M334.978 166.736H461.785M461.785 166.736V222.224M461.785 222.224H335.964L333.991 279.477M461.785 222.224V277.711M333.991 279.477L461.785 277.711M461.785 277.711V335.216V391.208V447.2L360 445.668M484.975 54.248V166.736V223.737M484.975 54.248H572.31H614.25V110.24V166.736V222.224M484.975 223.737L614.25 222.224M484.975 223.737V277.711V335.216V391.208M614.25 222.224V277.711V333.703V390.452M484.975 391.208V447.2H555.04H594.513M484.975 391.208L614.25 390.452M614.25 390.452V447.2H594.513M318.694 407.35L371.983 456.784V465.36L370.503 551.113H300.931M244.682 551.113V421.944M244.682 551.113H300.931M244.682 551.113H225.685H206.689H192.38M133.953 421.441L190.406 420.938L244.682 421.944M445.995 551.113V465.36H396.5V520H408.002M445.995 551.113V590M445.995 551.113H408.002M190.406 420.938L192.38 551.113M192.38 551.113L175.11 552.626H133.953M190.406 669.15H139.585H83.3352M190.406 669.15V575.662M83.3352 669.15L81.8549 574.317L244.682 576.334M399 575.93L353.727 575.525L299.204 575.93L244.682 576.334M516.554 574.317V576.334M467.215 609.5H445.995V590M467.215 609.5H485.5L485.427 590M467.215 609.5V706.982M408.002 706.982H353.727M408.002 706.982V590M408.002 706.982H467.215M353.727 575.525V706.982M353.727 706.982H299.204M299.204 575.93V706.982M133.953 421.441V552.626M399 575.93V590H445.995M399 575.93V551.113H408.002M485.191 527L485.084 498.5L484.975 469.5H594.513M594.513 469.5V447.2M594.513 469.5V498.5M485.084 498.5H594.513M594.513 498.5V527M485.191 527H594.513M485.427 590L485.314 560L485.191 527M594.513 527V551.113L594.373 560M485.314 560H594.373M594.373 560L593.898 590M485.427 590H593.898M593.898 590L592.046 706.982H516.554H467.215M408.002 520V551.113M408.002 520H444.5" stroke="white" stroke-width="2"/>
+<a data-room="5009" class="cursor-pointer group">
+<polygon class="room-area" points="337.5,56.0 337.0,108.0 459.5,108.0 459.5,56.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="5009" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="373" y="89.8636">5009</tspan></text>
+</a>
+<a data-room="5008" class="cursor-pointer group">
+<polygon class="room-area" points="337.0,112.0 336.5,164.5 459.5,164.5 459.5,112.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="5008" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="373" y="149.864">5008</tspan></text>
+</a>
+<a data-room="5007" class="cursor-pointer group">
+<polygon class="room-area" points="336.5,168.5 336.0,220.0 459.5,220.0 459.5,168.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="5007" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="373" y="201.864">5007</tspan></text>
+</a>
+<a data-room="5006" class="cursor-pointer group">
+<polygon class="room-area" points="337.5,224.0 335.5,277.0 459.5,275.5 459.5,224.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="5006" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="373" y="256.864">5006</tspan></text>
+</a>
+<a data-room="5005" class="cursor-pointer group">
+<polygon class="room-area" points="317.5,409.0 302.5,423.0 302.5,549.0 368.5,549.0 369.5,457.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="5005" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="312" y="451.864">5005</tspan></text>
+</a>
+<a data-room="5004" class="cursor-pointer group">
+<polygon class="room-area" points="246.5,423.5 246.5,549.0 298.5,549.0 298.5,424.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="5004" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="260" y="452.864">5004</tspan></text>
+</a>
+<a data-room="5003" class="cursor-pointer group">
+<polygon class="room-area" points="192.0,422.5 194.0,549.0 242.5,549.0 242.5,423.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="5003" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="203" y="452.864">5003</tspan></text>
+</a>
+<a data-room="5002" class="cursor-pointer group">
+<polygon class="room-area" points="188.0,422.5 135.5,423.0 135.5,550.5 190.0,549.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="5002" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="147" y="452.864">5002</tspan></text>
+</a>
+<a data-room="5001" class="cursor-pointer group">
+<polygon class="room-area" points="131.5,423.0 79.5,423.5 79.5,550.5 131.5,550.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="5001" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="94" y="451.864">5001</tspan></text>
+</a>
+</g>
+</svg>

@@ -1,0 +1,352 @@
+<svg width="211" height="1064" viewBox="0 0 211 1064" fill="none" xmlns="http://www.w3.org/2000/svg">
+<style id="plan-theme-styles">
+  a[data-room] { cursor: pointer; }
+  a[data-room] text, a[data-room] tspan { pointer-events: none !important; user-select: none !important; }
+  
+  /* 1. Default room fill & stroke */
+  a[data-room] .room-area, g[data-room] .room-area, polygon.room-area, path.room-area, rect.room-area {
+    fill: rgba(120, 113, 108, 0.12) !important;
+    stroke: rgba(120, 113, 108, 0.4) !important;
+    stroke-width: 1px !important;
+    pointer-events: all !important;
+    transition: fill 0.15s ease, stroke 0.15s ease;
+  }
+
+  /* 2. Passive Occupied & Filtered room glow (Orange) */
+  a[data-room][data-occupied="true"] .room-area, g[data-room][data-occupied="true"] .room-area,
+  a[data-room][data-filtered="true"] .room-area, g[data-room][data-filtered="true"] .room-area {
+    fill: rgba(249, 115, 22, 0.32) !important;
+    stroke: #f97316 !important;
+    stroke-width: 1.5px !important;
+  }
+
+  /* 3. Selected / Active room (Blue Filled) */
+  a[data-room][data-active="true"] .room-area, g[data-room][data-active="true"] .room-area,
+  a[data-room][data-selected="true"] .room-area, g[data-room][data-selected="true"] .room-area {
+    fill: rgba(37, 99, 235, 0.75) !important;
+    stroke: #2563eb !important;
+    stroke-width: 2.5px !important;
+  }
+
+  /* 4. Hover state (Blue) — TOP PRIORITY (Overrides passive orange, active, default) */
+  a[data-room]:hover .room-area, a[data-room][data-hover="true"] .room-area,
+  a[data-room][data-occupied="true"]:hover .room-area, a[data-room][data-occupied="true"][data-hover="true"] .room-area,
+  a[data-room][data-active="true"]:hover .room-area, a[data-room][data-active="true"][data-hover="true"] .room-area {
+    fill: rgba(59, 130, 246, 0.55) !important;
+    stroke: #3b82f6 !important;
+    stroke-width: 2.5px !important;
+    cursor: pointer !important;
+  }
+</style>
+<g id="U6_1">
+<path id="Vector 40" d="M161 124H181.5L181.545 147M161 124V98.5M161 124H123V147M49 71V51.5L125.5 51.1585M49 71H106.5V84.75M49 71V98.5M106.5 98.5H49M106.5 98.5H108.5V124M106.5 98.5V84.75M49 98.5V124M108.5 124H49M108.5 124V133H112.5V147M49 124V147M112.5 147H49M112.5 147V154.5H110V170.5M49 147V170.5M110 170.5H49M110 170.5V180H112.5V194M49 170.5V194.5M112.5 194L49 194.5M112.5 194V202H110V217.5M49 194.5V217.5M110 217.5H49M110 217.5V227H112.5V241.5M49 217.5V241.5M112.5 241.5H49M112.5 241.5V249H110V264.5M49 241.5V264.5M110 264.5H49M110 264.5V274H112.5V288M49 264.5V288M112.5 288H49M112.5 288V302H110V311M49 288V311M110 311H49M110 311V327.5H112.5V334.5M49 311V335M112.5 334.5L49 335M112.5 334.5V348.5H110V358.5M49 335V358.5M110 358.5H49M110 358.5V368.5H112.5V382M49 358.5V382M112.5 382H49M112.5 382V396H110V406M49 382V406M110 406H49M110 406V421.5H112.5V429.5M49 406V429.5M112.5 429.5H49M112.5 429.5V443.5H110V453.5M49 429.5V453.5M110 453.5H49M110 453.5V463H112.5V476.5M49 453.5V477M112.5 476.5L49 477M112.5 476.5V484H110V501M49 477V501M110 501H49M110 501V510.5H112.5V524H89M49 501V524M49 524H89M49 524V570M89 524V547.5H112.5V570M112.5 570H49M112.5 570V583V593M112.5 570H125M49 570V593M112.5 593H49M112.5 593V616.5H108.5M49 593V616.5M49 616.5H108.5M49 616.5V640M108.5 616.5V623H112.5V631H110.5V640M110.5 640H49M110.5 640V649H112.5V664M49 640V664M112.5 664H49M112.5 664V671.5H109.5V677H110.5V686.5M49 664V686.5M110.5 686.5H49M110.5 686.5V697H109V703H112.5V711M49 686.5V711M112.5 711H49M112.5 711V719H110V735M49 711V735.5M110 735L49 735.5M110 735V743.5H112.5V758M49 735.5V758M112.5 758H49M112.5 758V766.5H109V771H110.5V781.5M49 758V781.5M110.5 781.5H49M110.5 781.5V796.5H112.5V805M49 781.5V805M112.5 805H49M112.5 805V813.5H110V828.5M49 805V828.5M110 828.5H49M110 828.5V838.5H108.5V844H112.5V852.5M49 828.5V852.5M112.5 852.5H49M112.5 852.5V859.5H108.5V867H111V888H97.5V875H67V899M49 852.5V899M49 899H67M49 899V922.5M67 899H111H113V907H109.5V913H111V922.5M111 922.5H49M111 922.5V931H113V945M49 922.5V945M113 945H49M113 945V959.5H111V968.5M49 945V968.5M111 968.5H49M111 968.5V978H109V983H113V992M49 968.5V992M113 992H49M113 992V1000H109V1015M49 992V1015M109 1015H49M109 1015H117.5M49 1015V1038H117.5M117.5 1015V1038M117.5 1015H126.5M117.5 1038H184V1015M184 1015H126.5M184 1015V991M126.5 1015V1000H122.5V991M122.5 991H184M122.5 991V968.5M184 991V968.5M122.5 968.5H184M122.5 968.5V944.5M184 968.5V945M122.5 944.5L184 945M122.5 944.5V922M184 945V922M122.5 922H184M122.5 922V899M184 922V899M122.5 899H184M122.5 899V875.5M184 899V875.5M122.5 875.5H184M122.5 875.5V852M184 875.5V852M122.5 852H184M122.5 852V828.5M184 852V828.5M122.5 828.5H184M122.5 828.5V805M184 828.5V805M122.5 805H184M122.5 805V781M184 805V781M122.5 781H184M122.5 781V757.5M184 781V757.5M122.5 757.5H184M122.5 757.5V734M184 757.5V734M122.5 734H184M122.5 734V711M184 734V711M122.5 711H184M122.5 711V686.5M184 711V687H174.5V686.5M122.5 686.5H174.5M122.5 686.5V659.5M174.5 686.5V659.5M122.5 659.5H174.5M122.5 659.5V640H125H149.75V616.5M174.5 659.5V640H182.5L182.454 616.5M125.5 51.1585L161 51V72V98.5M125.5 51.1585V70H121.5V84.75M161 98.5H138H121.5V84.75M123 147H181.545M123 147V170.5M181.681 217.5L181.59 170.5L181.545 147M123 170.5H181.59M123 170.5V194M123 194H181.5M123 194V217.5M123 217.5H181.681M123 217.5V241.5M181.681 217.5L181.728 241.5M123 241.5H181.728M123 241.5V264.5M181.728 241.5L181.772 264.5M123 264.5H181.772M123 264.5V288M181.862 311L181.818 288L181.772 264.5M123 288H181.818M123 288V312M123 312L181.862 311M123 312V334.5M181.954 358.5L181.908 334.5L181.862 311M123 334.5H181.908M123 334.5V358.5M123 358.5H181.954M123 358.5V382M182.047 406L182 382L181.954 358.5M123 382H182M123 382V406M123 406H182.047M123 406V429.5M182.139 453.5L182.092 429.5L182.047 406M123 429.5H182.092M123 429.5V453.5M123 453.5H182.139M123 453.5V476.5M182.139 453.5L182.183 476.5M123 476.5H182.183M123 476.5V501M182.454 616.5L182.365 570.5L182.231 501L182.183 476.5M123 501H182.231M123 501V524H125M182.139 524H147H125M125 524V532.5V541V570M125 570L130 570.044L138.5 570.118L182.365 570.5M125 570V601.5V616.5H146H149.75M182.454 616.5H149.75M106.5 84.75H121.5" stroke="white"/>
+<a data-room="6121" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,53.5 51.0,69.0 106.5,69.0 108.5,82.5 119.5,82.5 123.5,53.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6121" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="77" y="65.8636">6121</tspan></text>
+</a>
+<a data-room="6122" class="cursor-pointer group">
+<polygon class="room-area" points="127.5,53.0 127.5,70.0 123.5,72.0 123.5,96.5 159.0,96.5 159.0,53.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6122" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="128" y="87.8636">6122</tspan></text>
+</a>
+<a data-room="6128" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,73.0 51.0,96.5 104.5,96.5 104.5,73.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6128" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="64" y="89.8636">6128</tspan></text>
+</a>
+<a data-room="6123" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,126.0 125.0,145.0 179.5,145.0 179.5,126.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6123" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="139" y="138.864">6123</tspan></text>
+</a>
+<a data-room="6124" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,149.0 125.0,168.5 179.5,168.5 179.5,149.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6124" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="139" y="160.864">6124</tspan></text>
+</a>
+<a data-room="6125" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,172.5 125.0,192.0 179.5,192.0 179.5,172.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6125" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="138" y="187.864">6125</tspan></text>
+</a>
+<a data-room="6126" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,196.0 125.0,215.5 179.5,215.5 179.5,196.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6126" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="138" y="210.864">6126</tspan></text>
+</a>
+<a data-room="6127" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,219.5 125.0,239.5 179.5,239.5 179.5,219.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6127" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="137" y="233.864">6127</tspan></text>
+</a>
+<a data-room="6128_2" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,243.5 125.0,262.5 179.5,262.5 179.5,243.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6128_2" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="138" y="257.864">6128</tspan></text>
+</a>
+<a data-room="6129" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,266.5 125.0,286.0 179.5,286.0 179.5,266.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6129" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="138" y="281.864">6129</tspan></text>
+</a>
+<a data-room="6130" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,290.0 125.0,310.0 179.5,309.0 179.5,290.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6130" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="137" y="304.864">6130</tspan></text>
+</a>
+<a data-room="6131" class="cursor-pointer group">
+<polygon class="room-area" points="179.5,313.0 125.0,314.0 125.0,332.5 179.5,332.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6131" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="138" y="329.864">6131</tspan></text>
+</a>
+<a data-room="6132" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,336.5 125.0,356.5 179.5,356.5 179.5,336.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6132" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="139" y="351.864">6132</tspan></text>
+</a>
+<a data-room="6133" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,360.5 125.0,380.0 180.0,380.0 179.5,360.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6133" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="138" y="373.864">6133</tspan></text>
+</a>
+<a data-room="6134" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,384.0 125.0,404.0 180.0,404.0 180.0,384.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6134" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="137" y="398.864">6134</tspan></text>
+</a>
+<a data-room="6135" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,408.0 125.0,427.5 180.0,427.5 180.0,408.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6135" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="136" y="421.864">6135</tspan></text>
+</a>
+<a data-room="6136" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,431.5 125.0,451.5 180.0,451.5 180.0,431.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6136" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="136" y="444.864">6136</tspan></text>
+</a>
+<a data-room="6137" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,455.5 125.0,474.5 180.0,474.5 180.0,455.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6137" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="137" y="469.864">6137</tspan></text>
+</a>
+<a data-room="6138" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,478.5 125.0,499.0 180.0,499.0 180.0,478.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6138" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="137" y="491.864">6138</tspan></text>
+</a>
+<a data-room="6139" class="cursor-pointer group">
+<polygon class="room-area" points="125.0,503.0 125.0,522.0 180.0,522.0 180.0,503.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6139" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="137" y="516.864">6139</tspan></text>
+</a>
+<a data-room="6140" class="cursor-pointer group">
+<polygon class="room-area" points="127.0,526.0 127.0,568.0 180.0,568.5 180.0,526.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6140" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="148" y="552.864">6140</tspan></text>
+</a>
+<a data-room="6177" class="cursor-pointer group">
+<polygon class="room-area" points="127.0,572.0 127.0,614.5 180.0,614.5 180.0,572.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6177" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="146" y="599.864">6177</tspan></text>
+</a>
+<a data-room="6176" class="cursor-pointer group">
+<polygon class="room-area" points="180.0,618.5 151.5,618.5 151.0,641.0 124.5,642.0 124.5,657.5 172.5,657.5 172.5,640.0 180.5,638.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6176" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="138" y="653.864">6176</tspan></text>
+</a>
+<a data-room="6175" class="cursor-pointer group">
+<polygon class="room-area" points="124.5,661.5 124.5,684.5 172.5,684.5 172.5,661.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6175" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="135" y="678.864">6175</tspan></text>
+</a>
+<a data-room="6174" class="cursor-pointer group">
+<polygon class="room-area" points="124.5,688.5 124.5,709.0 182.0,709.0 182.0,689.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6174" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="139" y="704.864">6174</tspan></text>
+</a>
+<a data-room="6173" class="cursor-pointer group">
+<polygon class="room-area" points="124.5,713.0 124.5,732.0 182.0,732.0 182.0,713.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6173" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="139" y="727.864">6173</tspan></text>
+</a>
+<a data-room="6172" class="cursor-pointer group">
+<polygon class="room-area" points="124.5,736.0 124.5,755.5 182.0,755.5 182.0,736.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6172" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="140" y="749.864">6172</tspan></text>
+</a>
+<a data-room="6171" class="cursor-pointer group">
+<polygon class="room-area" points="124.5,759.5 124.5,779.0 182.0,779.0 182.0,759.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6171" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="139" y="773.864">6171</tspan></text>
+</a>
+<a data-room="6170" class="cursor-pointer group">
+<polygon class="room-area" points="124.5,783.0 124.5,803.0 182.0,803.0 182.0,783.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6170" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="137" y="798.864">6170</tspan></text>
+</a>
+<a data-room="6169" class="cursor-pointer group">
+<polygon class="room-area" points="124.5,807.0 124.5,826.5 182.0,826.5 182.0,807.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6169" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="140" y="820.864">6169</tspan></text>
+</a>
+<a data-room="6168" class="cursor-pointer group">
+<polygon class="room-area" points="124.5,830.5 124.5,850.0 182.0,850.0 182.0,830.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6168" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="139" y="845.864">6168</tspan></text>
+</a>
+<a data-room="6167" class="cursor-pointer group">
+<polygon class="room-area" points="124.5,854.0 124.5,873.5 182.0,873.5 182.0,854.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6167" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="138" y="867.864">6167</tspan></text>
+</a>
+<a data-room="6166" class="cursor-pointer group">
+<polygon class="room-area" points="124.5,877.5 124.5,897.0 182.0,897.0 182.0,877.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6166" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="139" y="890.864">6166</tspan></text>
+</a>
+<a data-room="6165" class="cursor-pointer group">
+<polygon class="room-area" points="124.5,901.0 124.5,920.0 182.0,920.0 182.0,901.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6165" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="138" y="914.864">6165</tspan></text>
+</a>
+<a data-room="6164" class="cursor-pointer group">
+<polygon class="room-area" points="124.5,924.0 124.5,942.5 182.0,943.0 182.0,924.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6164" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="137" y="937.864">6164</tspan></text>
+</a>
+<a data-room="6163" class="cursor-pointer group">
+<polygon class="room-area" points="124.5,946.5 124.5,966.5 182.0,966.5 182.0,947.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6163" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="136" y="960.864">6163</tspan></text>
+</a>
+<a data-room="6162" class="cursor-pointer group">
+<polygon class="room-area" points="124.5,970.5 124.5,989.0 182.0,989.0 182.0,970.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6162" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="139" y="984.864">6162</tspan></text>
+</a>
+<a data-room="6161" class="cursor-pointer group">
+<polygon class="room-area" points="124.5,993.0 124.5,998.0 128.5,1000.0 128.5,1013.0 182.0,1013.0 182.0,993.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6161" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="138" y="1008.86">6161</tspan></text>
+</a>
+<a data-room="6160" class="cursor-pointer group">
+<polygon class="room-area" points="119.5,1017.0 119.5,1036.0 182.0,1036.0 182.0,1017.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6160" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="138" y="1029.86">6160</tspan></text>
+</a>
+<a data-room="6159" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,1017.0 51.0,1036.0 115.5,1036.0 115.5,1017.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6159" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="67" y="1030.86">6159</tspan></text>
+</a>
+<a data-room="6158" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,1013.0 107.0,1013.0 107.0,1000.0 111.0,998.0 111.0,994.0 51.0,994.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6158" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="67" y="1006.86">6158</tspan></text>
+</a>
+<a data-room="6157" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,970.5 51.0,990.0 111.0,990.0 111.0,985.0 107.0,983.0 109.0,970.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6157" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="68" y="983.864">6157</tspan></text>
+</a>
+<a data-room="6156" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,947.0 51.0,966.5 109.0,966.5 111.0,947.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6156" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="66" y="959.864">6156</tspan></text>
+</a>
+<a data-room="6155" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,924.5 51.0,943.0 111.0,943.0 109.0,924.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6155" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="65" y="937.864">6155</tspan></text>
+</a>
+<a data-room="6154" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,901.0 51.0,920.5 109.0,920.5 107.5,907.0 111.0,905.0 111.0,901.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6154" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="65" y="915.864">6154</tspan></text>
+</a>
+<a data-room="6153" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,854.5 51.0,897.0 65.0,897.0 67.0,873.0 97.5,873.0 99.5,886.0 109.0,886.0 106.5,859.5 110.5,854.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6153" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="65" y="867.864">6153</tspan></text>
+</a>
+<a data-room="6152" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,830.5 51.0,850.5 110.5,850.5 110.5,846.0 106.5,844.0 108.0,830.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6152" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="66" y="843.864">6152</tspan></text>
+</a>
+<a data-room="6151" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,807.0 51.0,826.5 108.0,826.5 108.0,813.5 110.5,811.5 110.5,807.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6151" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="64" y="820.864">6151</tspan></text>
+</a>
+<a data-room="6150" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,783.5 51.0,803.0 110.5,803.0 108.5,783.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6150" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="65" y="797.864">6150</tspan></text>
+</a>
+<a data-room="6149" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,760.0 51.0,779.5 108.5,779.5 107.0,766.5 110.5,764.5 110.5,760.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6149" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="65" y="772.864">6149</tspan></text>
+</a>
+<a data-room="6148" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,737.5 51.0,756.0 110.5,756.0 108.0,737.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6148" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="66" y="750.864">6148</tspan></text>
+</a>
+<a data-room="6147" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,713.0 51.0,733.5 108.0,733.0 108.0,719.0 110.5,713.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6147" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="66" y="725.864">6147</tspan></text>
+</a>
+<a data-room="6146" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,688.5 51.0,709.0 110.5,709.0 110.5,705.0 107.0,703.0 108.5,688.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6146" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="64" y="701.864">6146</tspan></text>
+</a>
+<a data-room="6145" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,666.0 51.0,684.5 108.5,684.5 107.5,671.5 110.5,669.5 110.5,666.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6145" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="66" y="679.864">6145</tspan></text>
+</a>
+<a data-room="6144" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,642.0 51.0,662.0 110.5,662.0 108.5,642.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6144" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="65" y="654.864">6144</tspan></text>
+</a>
+<a data-room="6143" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,618.5 51.0,638.0 108.5,638.0 110.5,625.0 107.0,624.0 106.5,618.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6143" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="66" y="632.864">6143</tspan></text>
+</a>
+<a data-room="6142" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,595.0 51.0,614.5 110.5,614.5 110.5,595.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6142" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="67" y="607.864">6142</tspan></text>
+</a>
+<a data-room="6141" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,572.0 51.0,591.0 110.5,591.0 110.5,572.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6141" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="66" y="585.864">6141</tspan></text>
+</a>
+<a data-room="6101" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,526.0 51.0,568.0 110.5,568.0 110.5,549.5 87.5,548.5 87.0,526.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6101" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="53" y="549.864">6101</tspan></text>
+</a>
+<a data-room="6102" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,503.0 51.0,522.0 110.5,522.0 108.0,503.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6102" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="63" y="516.864">6102</tspan></text>
+</a>
+<a data-room="6103" class="cursor-pointer group">
+<polygon class="room-area" points="110.5,478.5 51.0,479.0 51.0,499.0 108.0,499.0 108.0,484.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6103" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="67" y="492.864">6103</tspan></text>
+</a>
+<a data-room="6104" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,455.5 51.0,475.0 110.5,474.5 108.0,455.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6104" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="66" y="469.864">6104</tspan></text>
+</a>
+<a data-room="6105" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,431.5 51.0,451.5 108.0,451.5 110.5,431.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6105" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="67" y="445.864">6105</tspan></text>
+</a>
+<a data-room="6106" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,408.0 51.0,427.5 110.5,427.5 108.0,421.5 108.0,408.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6106" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="64" y="420.864">6106</tspan></text>
+</a>
+<a data-room="6107" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,384.0 51.0,404.0 108.0,404.0 110.5,384.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6107" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="66" y="397.864">6107</tspan></text>
+</a>
+<a data-room="6108" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,360.5 51.0,380.0 110.5,380.0 108.0,360.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6108" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="67" y="373.864">6108</tspan></text>
+</a>
+<a data-room="6109" class="cursor-pointer group">
+<polygon class="room-area" points="110.5,336.5 51.0,337.0 51.0,356.5 108.0,356.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6109" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="66" y="350.864">6109</tspan></text>
+</a>
+<a data-room="6110" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,313.0 51.0,333.0 110.5,332.5 108.0,327.5 108.0,313.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6110" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="68" y="328.864">6110</tspan></text>
+</a>
+<a data-room="6119" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,100.5 51.0,122.0 106.5,122.0 106.5,100.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6119" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="70" y="115.864">6119</tspan></text>
+</a>
+<a data-room="6118" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,126.0 51.0,145.0 110.5,145.0 110.5,135.0 106.5,133.0 106.5,126.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6118" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="70" y="140.864">6118</tspan></text>
+</a>
+<a data-room="6117" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,149.0 51.0,168.5 108.0,168.5 108.0,154.5 110.5,149.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6117" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="69" y="163.864">6117</tspan></text>
+</a>
+<a data-room="6116" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,172.5 51.0,192.5 110.5,192.0 108.0,172.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6116" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="70" y="187.864">6116</tspan></text>
+</a>
+<a data-room="6115" class="cursor-pointer group">
+<polygon class="room-area" points="110.5,196.0 51.0,196.5 51.0,215.5 108.0,215.5 108.0,202.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6115" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="69" y="208.864">6115</tspan></text>
+</a>
+<a data-room="6114" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,219.5 51.0,239.5 110.5,239.5 108.0,219.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6114" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="70" y="232.864">6114</tspan></text>
+</a>
+<a data-room="6113" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,243.5 51.0,262.5 108.0,262.5 108.0,249.0 110.5,243.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6113" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="71" y="258.864">6113</tspan></text>
+</a>
+<a data-room="6112" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,266.5 51.0,286.0 110.5,286.0 108.0,266.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6112" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="66" y="279.864">6112</tspan></text>
+</a>
+<a data-room="6111" class="cursor-pointer group">
+<polygon class="room-area" points="51.0,290.0 51.0,309.0 108.0,309.0 108.0,302.0 110.5,300.0 110.5,290.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<text class="room-label" pointer-events="none" fill="white" id="6111" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="12" letter-spacing="0em"><tspan x="69" y="305.864">6111</tspan></text>
+</a>
+</g>
+</svg>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Info, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, MousePointerClick, Info } from "lucide-react";
 
 interface PublicFloorViewerProps {
   building: string;
@@ -10,6 +10,14 @@ interface PublicFloorViewerProps {
   filteredRoomIds: Set<string>;
   onSelectRoom: (roomId: string) => void;
   apartmentsMap: Record<string, any>;
+}
+
+function parseNumeric(val: any): number {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === "number") return isNaN(val) ? 0 : val;
+  const cleaned = String(val).replace(",", ".").replace(/[^\d.-]/g, "");
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : num;
 }
 
 export default function PublicFloorViewer({
@@ -24,17 +32,16 @@ export default function PublicFloorViewer({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Hover state for room info tooltip
-  const [hoveredRoom, setHoveredRoom] = useState<{
-    id: string;
-    x: number;
-    y: number;
-    details?: any;
-  } | null>(null);
+  const svgRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const hoveredRoomRef = useRef<string | null>(null);
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const apartmentsMapRef = useRef(apartmentsMap);
+  useEffect(() => {
+    apartmentsMapRef.current = apartmentsMap;
+  }, [apartmentsMap]);
 
-  // Fetch SVG plan file
+  // Fetch SVG plan file and sanitize internal <style> tags that override CSS with !important
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
@@ -47,8 +54,9 @@ export default function PublicFloorViewer({
           throw new Error(`Floor plan unavailable for ${building} Level ${floor}`);
         }
         const text = await res.text();
+        const cleanedText = text.replace(/<style[\s\S]*?<\/style>/gi, "");
         if (isMounted) {
-          setSvgContent(text);
+          setSvgContent(cleanedText);
           setLoading(false);
         }
       } catch (e: any) {
@@ -67,203 +75,305 @@ export default function PublicFloorViewer({
     };
   }, [building, floor]);
 
-  // Bind DOM events and styles to SVG room elements
+  // Direct DOM event listeners for zero-lag hover & tooltips
   useEffect(() => {
-    if (!containerRef.current || !svgContent) return;
+    const el = svgRef.current;
+    if (!el || !svgContent) return;
 
-    const svgEl = containerRef.current.querySelector("svg");
-    if (!svgEl) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      const link = (e.target as Element).closest?.("a[data-room]");
+      if (link) {
+        const roomNum = link.getAttribute("data-room") || "";
 
-    // Ensure responsive SVG scaling within column
-    svgEl.removeAttribute("width");
-    svgEl.removeAttribute("height");
-    svgEl.style.width = "100%";
-    svgEl.style.height = "auto";
-    svgEl.style.display = "block";
+        if (tooltipRef.current) {
+          tooltipRef.current.style.display = "block";
 
-    // Query room anchor tags and room shape elements
-    const roomContainers = containerRef.current.querySelectorAll<SVGElement>(
-      "[data-room], a[id], g[id]"
-    );
+          const rect = el.getBoundingClientRect();
+          const tooltipWidth = tooltipRef.current.offsetWidth || 240;
+          const tooltipHeight = tooltipRef.current.offsetHeight || 220;
 
-    roomContainers.forEach((container) => {
-      const roomId =
-        container.getAttribute("data-room") || container.getAttribute("id");
-      if (!roomId || isNaN(Number(roomId))) return;
+          let x = e.clientX - rect.left + 16;
+          let y = e.clientY - rect.top + 16;
 
-      const isFiltered = filteredRoomIds.has(roomId);
-      const isSelected = selectedRoomId === roomId;
+          if (x + tooltipWidth > rect.width - 12) {
+            x = Math.max(12, e.clientX - rect.left - tooltipWidth - 16);
+          }
+          if (y + tooltipHeight > rect.height - 12) {
+            y = Math.max(12, e.clientY - rect.top - tooltipHeight - 16);
+          }
 
-      // Make parent clickable and cursor pointer
-      container.style.cursor = "pointer";
+          tooltipRef.current.style.left = `${x}px`;
+          tooltipRef.current.style.top = `${y}px`;
 
-      // Query shapes inside room anchor
-      const shapes = container.querySelectorAll<SVGElement>("polygon, rect, path");
-      const targetShape = shapes.length > 0 ? shapes[0] : container;
+          if (hoveredRoomRef.current !== roomNum) {
+            if (hoveredRoomRef.current) {
+              const prev = el.querySelector(`a[data-room="${hoveredRoomRef.current}"]`);
+              if (prev) prev.removeAttribute("data-hover");
+            }
+            link.setAttribute("data-hover", "true");
+            hoveredRoomRef.current = roomNum;
 
-      // Styling room polygons
-      shapes.forEach((shape) => {
-        shape.style.pointerEvents = "all"; // Fix click hitboxes on transparent fills
-        shape.style.transition = "all 0.2s ease";
+            const detail = apartmentsMapRef.current[roomNum];
+            if (detail) {
+              const baseRent = parseNumeric(detail.Tarif);
+              const allocBoursier = parseNumeric(detail["Allocation boursier"]);
+              const allocNonBoursier = parseNumeric(detail["Allocation non boursier"]);
+
+              const netBoursier = baseRent > 0 && allocBoursier > 0 ? baseRent - allocBoursier : (baseRent || 0);
+              const netNonBoursier = baseRent > 0 && allocNonBoursier > 0 ? baseRent - allocNonBoursier : (baseRent || 0);
+              const surf = parseNumeric(detail.Superficie);
+
+              tooltipRef.current.innerHTML = `
+                <div class="flex flex-col gap-2 font-mono">
+                  <div class="flex items-center justify-between gap-4 border-b border-stone-800 pb-1.5">
+                    <div class="flex items-center gap-1.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-amber-400"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                      <span class="text-xs font-black text-white tracking-wider">LOGEMENT_${roomNum}</span>
+                    </div>
+                    <span class="text-[8px] font-black px-1.5 py-0.5 bg-amber-500/20 text-amber-400 border border-amber-500/40 uppercase">
+                      ${detail.Type || "Chambre"}
+                    </span>
+                  </div>
+                  
+                  <div class="mt-1 pt-1 border-t border-stone-800/80 flex flex-col gap-1.5">
+                    <div class="grid grid-cols-2 gap-1 text-[9px]">
+                      <div class="flex flex-col p-1 bg-stone-900/80 border border-stone-800">
+                        <span class="text-[7px] text-stone-500 uppercase font-bold">Type</span>
+                        <span class="font-bold text-white uppercase truncate">${detail.Type || "-"}</span>
+                      </div>
+                      <div class="flex flex-col p-1 bg-stone-900/80 border border-stone-800">
+                        <span class="text-[7px] text-stone-500 uppercase font-bold">Superficie</span>
+                        <span class="font-bold text-white">${surf > 0 ? `${surf} m²` : (detail.Superficie || "-")}</span>
+                      </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center p-1.5 bg-amber-500/10 border border-amber-500/20 text-[10px]">
+                      <span class="text-stone-300 uppercase font-bold">Loyer Brut</span>
+                      <span class="font-black text-amber-400">${baseRent > 0 ? `${baseRent} €/m` : (detail.Tarif || "-")}</span>
+                    </div>
+                    
+                    <div class="flex flex-col gap-0.5 bg-stone-900/90 border border-stone-800 p-1.5 text-[9px]">
+                      <div class="flex justify-between items-center gap-3 text-emerald-400">
+                        <span>Boursier:</span>
+                        <span class="font-bold">${netBoursier > 0 ? `${netBoursier} €` : "-"} <span class="text-[7.5px] text-stone-500 font-normal">(-${allocBoursier}€ APL)</span></span>
+                      </div>
+                      <div class="flex justify-between items-center gap-3 text-stone-300">
+                        <span>Non-Boursier:</span>
+                        <span class="font-bold">${netNonBoursier > 0 ? `${netNonBoursier} €` : "-"} <span class="text-[7.5px] text-stone-500 font-normal">(-${allocNonBoursier}€ APL)</span></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            } else {
+              tooltipRef.current.innerHTML = `
+                <div class="flex flex-col gap-1 font-mono">
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="text-xs font-black text-white tracking-wider">LOGEMENT_${roomNum}</span>
+                    <span class="text-[8px] font-bold px-1.5 py-0.5 bg-rose-500/20 text-rose-400 border border-rose-500/40 uppercase">
+                      Sans fiche
+                    </span>
+                  </div>
+                  <span class="text-[9px] text-stone-400">Données non répertoriées</span>
+                </div>
+              `;
+            }
+          }
+        }
+      } else {
+        if (hoveredRoomRef.current !== null) {
+          const prev = el.querySelector(`a[data-room="${hoveredRoomRef.current}"]`);
+          if (prev) prev.removeAttribute("data-hover");
+          hoveredRoomRef.current = null;
+          if (tooltipRef.current) {
+            tooltipRef.current.style.display = "none";
+          }
+        }
+      }
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      const link = (e.target as Element).closest?.("a[data-room]");
+      if (link) {
+        e.preventDefault();
+        const roomNum = link.getAttribute("data-room") || "";
+        onSelectRoom(roomNum);
+      }
+    };
+
+    const handleMouseLeave = () => {
+      if (hoveredRoomRef.current) {
+        const prev = el.querySelector(`a[data-room="${hoveredRoomRef.current}"]`);
+        if (prev) prev.removeAttribute("data-hover");
+      }
+      hoveredRoomRef.current = null;
+      if (tooltipRef.current) tooltipRef.current.style.display = "none";
+    };
+
+    el.addEventListener("mousemove", handleMouseMove);
+    el.addEventListener("click", handleClick);
+    el.addEventListener("mouseleave", handleMouseLeave);
+
+    if (tooltipRef.current) tooltipRef.current.style.display = "none";
+
+    return () => {
+      el.removeEventListener("mousemove", handleMouseMove);
+      el.removeEventListener("click", handleClick);
+      el.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, [svgContent, onSelectRoom]);
+
+  // Visual selection & missing-meta state sync
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el || !svgContent) return;
+
+    const apply = () => {
+      el.querySelectorAll("a[data-room]").forEach((a) => {
+        const roomNum = a.getAttribute("data-room") || "";
+        const isSelected = selectedRoomId === roomNum;
+        const hasMeta = !!apartmentsMapRef.current[roomNum];
 
         if (isSelected) {
-          shape.setAttribute("fill", "rgba(245, 158, 11, 0.45)"); // Amber glow
-          shape.setAttribute("stroke", "#f59e0b");
-          shape.setAttribute("stroke-width", "2.5");
-        } else if (isFiltered) {
-          shape.setAttribute("fill", "rgba(217, 119, 6, 0.15)");
-          shape.setAttribute("stroke", "#d97706");
-          shape.setAttribute("stroke-width", "1.5");
+          a.setAttribute("data-selected", "true");
+          a.setAttribute("data-active", "true");
         } else {
-          shape.setAttribute("fill", "rgba(120, 113, 108, 0.04)");
-          shape.setAttribute("stroke", "rgba(120, 113, 108, 0.3)");
-          shape.setAttribute("stroke-width", "1");
+          a.removeAttribute("data-selected");
+          a.removeAttribute("data-active");
+        }
+
+        if (!hasMeta) {
+          a.setAttribute("data-no-meta", "true");
+        } else {
+          a.removeAttribute("data-no-meta");
         }
       });
+    };
 
-      // Mouse event listeners for click and hover
-      const handleMouseEnter = (e: MouseEvent) => {
-        shapes.forEach((shape) => {
-          if (!isSelected) {
-            shape.setAttribute("fill", "rgba(245, 158, 11, 0.35)");
-            shape.setAttribute("stroke", "#f59e0b");
-          }
-        });
-
-        const rect = containerRef.current?.getBoundingClientRect();
-        if (rect) {
-          setHoveredRoom({
-            id: roomId,
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top,
-            details: apartmentsMap[roomId],
-          });
-        }
-      };
-
-      const handleMouseLeave = () => {
-        setHoveredRoom(null);
-        shapes.forEach((shape) => {
-          if (isSelected) {
-            shape.setAttribute("fill", "rgba(245, 158, 11, 0.45)");
-            shape.setAttribute("stroke", "#f59e0b");
-          } else if (isFiltered) {
-            shape.setAttribute("fill", "rgba(217, 119, 6, 0.15)");
-            shape.setAttribute("stroke", "#d97706");
-          } else {
-            shape.setAttribute("fill", "rgba(120, 113, 108, 0.04)");
-            shape.setAttribute("stroke", "rgba(120, 113, 108, 0.3)");
-          }
-        });
-      };
-
-      const handleClick = (e: MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onSelectRoom(roomId);
-      };
-
-      container.addEventListener("mouseenter", handleMouseEnter as any);
-      container.addEventListener("mouseleave", handleMouseLeave as any);
-      container.addEventListener("click", handleClick as any);
-    });
-  }, [svgContent, filteredRoomIds, selectedRoomId, apartmentsMap, onSelectRoom]);
+    apply();
+    const raf = requestAnimationFrame(apply);
+    return () => cancelAnimationFrame(raf);
+  }, [svgContent, selectedRoomId, apartmentsMap]);
 
   return (
-    <div className="relative w-full bg-white/80 dark:bg-stone-900/80 border border-zinc-200/80 dark:border-stone-800/80 rounded-2xl overflow-hidden shadow-sm flex flex-col h-full">
+    <div className="relative w-full h-full flex-1 min-h-[500px] lg:min-h-[800px] bg-white dark:bg-stone-900 border-2 border-stone-200 dark:border-stone-800 rounded-3xl overflow-hidden shadow-sm flex flex-col">
       
       {/* Header Bar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200/80 dark:border-stone-800/80 bg-stone-50/80 dark:bg-stone-950/40">
-        <div className="flex items-center gap-2 text-xs font-mono">
-          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <span className="font-bold text-zinc-900 dark:text-stone-100">
-            {building} — Level {floor} Floor Plan
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-200 dark:border-stone-800 bg-stone-50/80 dark:bg-stone-950/60">
+        <div className="flex items-center gap-2.5 text-xs font-mono">
+          <ShieldCheck className="w-4 h-4 text-amber-500" />
+          <span className="font-extrabold text-stone-900 dark:text-stone-50 uppercase tracking-wider">
+            {building} — Étage {floor} Plan Architectural
           </span>
         </div>
-        <span className="text-[10px] font-mono text-zinc-400 dark:text-stone-500 uppercase tracking-wider">
-          Click any room
-        </span>
+        <div className="flex items-center gap-1.5 text-[11px] font-mono text-stone-500 dark:text-stone-400 font-bold">
+          <MousePointerClick className="w-3.5 h-3.5 text-amber-500" />
+          <span>Survoler un logement / Cliquer pour sélectionner</span>
+        </div>
       </div>
 
-      {/* SVG Canvas Container */}
+      {/* SVG Container with Light / Dark Mode Selectors */}
       <div
-        className="relative flex-1 min-h-[400px] w-full flex items-center justify-center p-4 sm:p-6 overflow-hidden"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, rgba(120, 113, 108, 0.12) 1px, transparent 1px)",
-          backgroundSize: "20px 20px",
-        }}
+        ref={svgRef}
+        className="flex-1 flex overflow-auto relative z-0 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-stone-800 h-full w-full select-none"
       >
         {loading ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-16">
-            <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-            <span className="font-mono text-xs text-zinc-400 dark:text-stone-500 uppercase tracking-widest">
-              Rendering layout map...
+          <div className="m-auto flex flex-col items-center justify-center gap-3 py-20">
+            <div className="w-9 h-9 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+            <span className="font-mono text-xs text-stone-400 dark:text-stone-500 uppercase tracking-widest">
+              Chargement du plan...
             </span>
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center text-center p-6 gap-2 py-16">
+          <div className="m-auto flex flex-col items-center justify-center text-center p-6 gap-2 py-20">
             <Info className="w-8 h-8 text-amber-500" />
-            <span className="text-sm font-bold text-zinc-800 dark:text-stone-200">
+            <span className="text-sm font-bold text-stone-800 dark:text-stone-200 font-mono">
               {error}
             </span>
-            <p className="text-xs text-zinc-400 dark:text-stone-500 max-w-xs">
-              Select a different floor level or building above.
-            </p>
           </div>
         ) : (
-          <div
-            ref={containerRef}
-            className="w-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-auto [&_svg]:max-h-[550px] [&_svg_path]:stroke-stone-700 dark:[&_svg_path]:stroke-stone-300 [&_svg_text]:fill-stone-800 dark:[&_svg_text]:fill-stone-200 [&_svg_text]:font-mono [&_svg_text]:font-bold"
-            dangerouslySetInnerHTML={{ __html: svgContent }}
-          />
-        )}
-
-        {/* Hover Tooltip */}
-        {hoveredRoom && hoveredRoom.details && (
-          <div
-            className="absolute z-30 pointer-events-none bg-white/95 dark:bg-stone-900/95 border border-amber-500/50 shadow-xl rounded-xl p-3 text-xs backdrop-blur-md transform -translate-x-1/2 -translate-y-full mb-3 animate-in fade-in zoom-in-95 duration-150"
-            style={{
-              left: `${hoveredRoom.x}px`,
-              top: `${hoveredRoom.y}px`,
-            }}
-          >
-            <div className="flex items-center justify-between gap-3 border-b border-zinc-200/80 dark:border-stone-800/80 pb-1.5 mb-1.5">
-              <span className="font-bold text-amber-600 dark:text-amber-400 font-mono">
-                Room {hoveredRoom.id}
-              </span>
-              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-stone-800 text-zinc-600 dark:text-stone-300">
-                {hoveredRoom.details.Type || "Chambre"}
-              </span>
-            </div>
-            <div className="space-y-1 font-mono text-[11px] text-zinc-600 dark:text-stone-300">
-              <div className="flex justify-between gap-4">
-                <span>Surface:</span>
-                <span className="font-bold text-zinc-900 dark:text-stone-100">
-                  {hoveredRoom.details.Superficie} m²
-                </span>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span>Base Price:</span>
-                <span className="font-bold text-zinc-900 dark:text-stone-100">
-                  {hoveredRoom.details.Tarif} €/mo
-                </span>
-              </div>
-            </div>
+          <div className="m-auto flex w-full h-full">
+            <div
+              className="m-auto flex w-full h-full
+                         [&_svg]:m-auto [&_svg]:max-w-[95%] [&_svg]:max-h-[95%] [&_svg]:w-auto [&_svg]:h-auto [&_svg]:block
+                         [&_svg_path[stroke='white']]:stroke-stone-700! dark:[&_svg_path[stroke='white']]:stroke-stone-200!
+                         [&_svg_path[stroke='#ffffff']]:stroke-stone-700! dark:[&_svg_path[stroke='#ffffff']]:stroke-stone-200!
+                         [&_a[data-room]]:cursor-pointer!
+                         [&_a[data-room]_text]:pointer-events-none!
+                         [&_a[data-room]_tspan]:pointer-events-none!
+                         [&_a[data-room]_.room-area]:pointer-events-all!
+                         [&_a[data-room]_.room-area]:transition-all!
+                         [&_a[data-room]_.room-area]:duration-150!
+                         [&_.room-area]:fill-stone-200/60! [&_.room-area]:stroke-stone-300! dark:[&_.room-area]:fill-stone-500/15! dark:[&_.room-area]:stroke-stone-400/40!
+                         [&_.room-area]:stroke-[1px]!
+                         [&_.room-label]:font-sans!
+                         [&_.room-label]:fill-stone-800! dark:[&_.room-label]:fill-stone-200!
+                         [&_a[data-room][data-no-meta='true']_.room-area]:fill-rose-500/20!
+                         [&_a[data-room][data-no-meta='true']_.room-area]:stroke-rose-500!
+                         [&_a[data-room][data-no-meta='true']_.room-area]:stroke-[1.5px]!
+                         [&_a[data-room][data-no-meta='true']_.room-label]:fill-rose-600! dark:[&_a[data-room][data-no-meta='true']_.room-label]:fill-rose-400!
+                         [&_a[data-room][data-selected='true']_.room-area]:fill-blue-600/80!
+                         [&_a[data-room][data-no-meta='true'][data-selected='true']_.room-area]:fill-blue-600/80!
+                         [&_a[data-room][data-active='true']_.room-area]:fill-blue-600/80!
+                         [&_a[data-room][data-no-meta='true'][data-active='true']_.room-area]:fill-blue-600/80!
+                         [&_a[data-room][data-selected='true']_.room-area]:stroke-blue-500!
+                         [&_a[data-room][data-no-meta='true'][data-selected='true']_.room-area]:stroke-blue-500!
+                         [&_a[data-room][data-active='true']_.room-area]:stroke-blue-500!
+                         [&_a[data-room][data-no-meta='true'][data-active='true']_.room-area]:stroke-blue-500!
+                         [&_a[data-room][data-selected='true']_.room-area]:stroke-2!
+                         [&_a[data-room][data-no-meta='true'][data-selected='true']_.room-area]:stroke-2!
+                         [&_a[data-room][data-active='true']_.room-area]:stroke-2!
+                         [&_a[data-room][data-no-meta='true'][data-active='true']_.room-area]:stroke-2!
+                         [&_a[data-room]:hover_.room-area]:fill-blue-500/55!
+                         [&_a[data-room][data-no-meta='true']:hover_.room-area]:fill-blue-500/55!
+                         [&_a[data-room][data-hover='true']_.room-area]:fill-blue-500/55!
+                         [&_a[data-room][data-no-meta='true'][data-hover='true']_.room-area]:fill-blue-500/55!
+                         [&_a[data-room]:hover_.room-area]:stroke-blue-400!
+                         [&_a[data-room][data-no-meta='true']:hover_.room-area]:stroke-blue-400!
+                         [&_a[data-room][data-hover='true']_.room-area]:stroke-blue-400!
+                         [&_a[data-room][data-no-meta='true'][data-hover='true']_.room-area]:stroke-blue-400!
+                         [&_a[data-room]:hover_.room-area]:stroke-[2.5px]!
+                         [&_a[data-room][data-no-meta='true']:hover_.room-area]:stroke-[2.5px]!
+                         [&_a[data-room][data-hover='true']_.room-area]:stroke-[2.5px]!
+                         [&_a[data-room][data-no-meta='true'][data-hover='true']_.room-area]:stroke-[2.5px]!
+                         [&_a[data-room][data-selected='true']_.room-label]:fill-white!
+                         [&_a[data-room][data-active='true']_.room-label]:fill-white!
+                         [&_a[data-room][data-selected='true']_.room-label]:font-black!
+                         [&_a[data-room][data-active='true']_.room-label]:font-black!
+                         [&_a[data-room]:hover_.room-label]:fill-white!
+                         [&_a[data-room]:hover_.room-label]:font-black!
+                         [&_a[data-room][data-hover='true']_.room-label]:fill-white!
+                         [&_a[data-room][data-hover='true']_.room-label]:font-black!"
+              dangerouslySetInnerHTML={{ __html: svgContent }}
+            />
           </div>
         )}
       </div>
 
+      {/* Container Relative Tooltip */}
+      <div
+        ref={tooltipRef}
+        className="absolute z-50 pointer-events-none select-none bg-stone-950/95 backdrop-blur-xl border border-amber-500/50 p-3.5 rounded-2xl shadow-2xl hidden text-left transition-opacity duration-75 min-w-[220px]"
+      />
+
       {/* Legend Footer */}
-      <div className="px-4 py-2.5 border-t border-zinc-200/80 dark:border-stone-800/80 bg-stone-50/60 dark:bg-stone-950/40 flex items-center justify-between text-[11px] font-mono text-zinc-500 dark:text-stone-400">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-amber-500 border border-amber-600 inline-block" />
-            <span>Selected Room</span>
+      <div className="px-5 py-3 border-t border-stone-200 dark:border-stone-800 bg-stone-50/80 dark:bg-stone-950/60 flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-stone-600 dark:text-stone-400">
+        <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 bg-stone-200 dark:bg-stone-500/20 border border-stone-300 dark:border-stone-400 rounded inline-block" />
+            <span className="text-stone-900 dark:text-stone-200 font-bold">Standard</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-amber-600/20 border border-amber-600/60 inline-block" />
-            <span>Matching Search</span>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 bg-rose-500/30 border border-rose-500 rounded inline-block" />
+            <span className="text-stone-900 dark:text-stone-200 font-bold">Sans fiche</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 bg-blue-600/80 border border-blue-500 rounded inline-block" />
+            <span className="text-stone-900 dark:text-stone-200 font-bold">Sélectionné</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 bg-blue-500/55 border border-blue-400 rounded inline-block" />
+            <span className="text-stone-900 dark:text-stone-200 font-bold">Survol (Actif)</span>
           </div>
         </div>
       </div>

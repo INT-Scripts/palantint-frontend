@@ -6,6 +6,7 @@ import {
   WashingMachine, RefreshCw, Clock, Euro, 
   CheckCircle2, AlertTriangle, Info
 } from "lucide-react";
+import PortalHeader from "@/components/PortalHeader";
 
 const BUILDINGS = ["U3", "U4", "U5", "U6", "U7"];
 
@@ -103,17 +104,13 @@ export default function PublicLaundryPage() {
       
       {/* Title Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
-            Live Telemetry Services
-          </span>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-zinc-950 dark:text-stone-50 mt-1">
-            Laundry Monitor
-          </h1>
-          <p className="text-zinc-500 dark:text-stone-400 text-sm sm:text-base mt-2 max-w-xl">
-            Real-time status of washing machines and dryers across all campus residential halls.
-          </p>
-        </div>
+        <PortalHeader
+          icon={<WashingMachine className="w-4 h-4" />}
+          badgeText="Live Telemetry Services"
+          title="Laundry Monitor"
+          subtitle="Real-time status of washing machines and dryers across all campus residential halls."
+          accentColor="blue"
+        />
         <div className="flex items-center gap-4 self-start md:self-end">
           {lastUpdated && (
             <div className="text-[10px] font-mono text-zinc-400 dark:text-stone-500 uppercase tracking-widest">

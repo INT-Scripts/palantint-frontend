@@ -5,6 +5,7 @@ import { fetchPublic } from "@/lib/api";
 import { 
   Users, Search, X, ExternalLink, ShieldAlert, Info, Globe, AlertTriangle
 } from "lucide-react";
+import PortalHeader from "@/components/PortalHeader";
 
 interface Club {
   id: string;
@@ -77,18 +78,14 @@ export default function PublicClubsPage() {
     <section className="flex-1 max-w-6xl w-full mx-auto px-4 py-12 sm:py-16 relative z-10">
       
       {/* Title Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-rose-600 dark:text-rose-400">
-            Student Life & Culture
-          </span>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-zinc-950 dark:text-stone-50 mt-1">
-            Clubs & Orgs
-          </h1>
-          <p className="text-zinc-500 dark:text-stone-400 text-sm sm:text-base mt-2 max-w-xl">
-            Explore active student associations, creative clubs, sports leagues, and governance boards operating on campus.
-          </p>
-        </div>
+      <div className="mb-10">
+        <PortalHeader
+          icon={<Users className="w-4 h-4" />}
+          badgeText="Student Life & Culture"
+          title="Clubs & Orgs"
+          subtitle="Explore active student associations, creative clubs, sports leagues, and governance boards operating on campus."
+          accentColor="rose"
+        />
       </div>
 
       {/* Search Input bar */}

@@ -51,9 +51,9 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background text-foreground p-6 sm:p-8 font-sans">
-            {/* Lean Auth Card */}
-            <div className="w-full max-w-md bg-card border border-border rounded-2xl p-8 sm:p-10 shadow-lg">
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-6 sm:p-8 font-sans">
+            {/* Flat Auth Form (No background card container or dimmed box) */}
+            <div className="w-full max-w-md">
                 
                 {/* Return Link */}
                 <button 
@@ -65,7 +65,7 @@ export default function LoginPage() {
                     <span>Return to Gateway</span>
                 </button>
 
-                {/* Title Header (Monochrome, no color on logo) */}
+                {/* Title Header */}
                 <div className="mb-8 space-y-2">
                     <h1 className="text-3xl sm:text-4xl font-black tracking-tight uppercase text-foreground">
                         INT PORTAL
@@ -95,7 +95,7 @@ export default function LoginPage() {
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 required
-                                className="w-full h-13 sm:h-14 bg-muted/40 border border-input rounded-xl pl-12 pr-4 text-base font-medium text-foreground placeholder:text-muted-foreground/60 focus:bg-background focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all"
+                                className="w-full h-13 sm:h-14 bg-transparent border border-border focus:border-foreground rounded-xl pl-12 pr-4 text-base font-medium text-foreground placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-ring outline-none transition-all"
                                 placeholder="Username"
                             />
                         </div>
@@ -112,7 +112,7 @@ export default function LoginPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="w-full h-13 sm:h-14 bg-muted/40 border border-input rounded-xl pl-12 pr-4 text-base font-medium text-foreground placeholder:text-muted-foreground/60 focus:bg-background focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all"
+                                className="w-full h-13 sm:h-14 bg-transparent border border-border focus:border-foreground rounded-xl pl-12 pr-4 text-base font-medium text-foreground placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-ring outline-none transition-all"
                                 placeholder="••••••••••••"
                             />
                         </div>
@@ -122,7 +122,7 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full h-13 sm:h-14 flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-wider text-sm sm:text-base rounded-xl shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full h-13 sm:h-14 flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-wider text-sm sm:text-base rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <span>{loading ? "Signing in..." : "Sign In"}</span>
                             <LogIn className="w-4 h-4 sm:w-5 sm:h-5" />

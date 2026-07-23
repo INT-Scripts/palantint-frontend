@@ -305,7 +305,7 @@ function FoyerContent() {
                             rightContent={
                                 <div className="hidden sm:flex items-center gap-3 text-[10px] font-mono">
                                     <div className="flex items-center gap-1.5">
-                                        <span className="w-2.5 h-2.5 bg-orange-500/32 border border-orange-500 inline-block" />
+                                        <span className="w-2.5 h-2.5 bg-rose-500/32 border border-rose-500 inline-block" />
                                         <span className="text-zinc-300">Attribué</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
@@ -336,10 +336,10 @@ function FoyerContent() {
                                                    [&_.room-area]:fill-zinc-800/20!
                                                    [&_.room-area]:stroke-zinc-700/60!
                                                    [&_.room-area]:stroke-[1px]!
-                                                   [&_a[data-room][data-occupied='true']_.room-area]:fill-orange-500/32!
-                                                   [&_a[data-room][data-occupied='true']_.room-area]:stroke-orange-500!
+                                                   [&_a[data-room][data-occupied='true']_.room-area]:fill-rose-500/32!
+                                                   [&_a[data-room][data-occupied='true']_.room-area]:stroke-rose-500!
                                                    [&_a[data-room][data-occupied='true']_.room-area]:stroke-[1.5px]!
-                                                   [&_a[data-room][data-occupied='true']_.room-label]:fill-orange-300!
+                                                   [&_a[data-room][data-occupied='true']_.room-label]:fill-rose-300!
                                                    [&_a[data-room][data-occupied='true']_.room-label]:font-bold!
                                                    [&_a[data-room][data-active='true']_.room-area]:fill-blue-600/80!
                                                    [&_a[data-room][data-occupied='true'][data-active='true']_.room-area]:fill-blue-600/80!
@@ -375,7 +375,7 @@ function FoyerContent() {
                                                    [&_a[data-room][data-hover='true']_.room-label]:fill-white!
                                                    [&_a[data-room][data-hover='true']_.room-label]:font-black!"
                                         dangerouslySetInnerHTML={{
-                                            __html: svgContent || `<div class="m-auto flex flex-col items-center justify-center text-zinc-600 gap-4 font-mono uppercase tracking-widest"><svg class="w-16 h-16 opacity-30 text-housing-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="square" stroke-linejoin="miter" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg><span class="text-xs text-housing-500/80 text-center">PLAN_NOT_FOUND</span></div>`,
+                                            __html: svgContent || `<div class="m-auto flex flex-col items-center justify-center text-zinc-600 gap-4 font-mono uppercase tracking-widest"><svg class="w-16 h-16 opacity-30 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="square" stroke-linejoin="miter" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg><span class="text-xs text-rose-500/80 text-center">PLAN_NOT_FOUND</span></div>`,
                                         }}
                                     />
                                 </div>
@@ -384,15 +384,15 @@ function FoyerContent() {
                             {/* Tooltip */}
                             <div
                                 ref={tooltipRef}
-                                className="absolute z-50 pointer-events-none select-none bg-zinc-950/95 backdrop-blur-xl border border-housing-500/40 p-3.5 rounded-none shadow-2xl hidden text-left transition-opacity duration-75 min-w-[220px]"
+                                className="absolute z-50 pointer-events-none select-none bg-zinc-950/95 backdrop-blur-xl border border-rose-500/40 p-3.5 rounded-none shadow-2xl hidden text-left transition-opacity duration-75 min-w-[220px]"
                             />
 
                             {/* Legend Footer */}
                             <div className="px-5 py-3 border-t border-zinc-800 bg-zinc-900/50 flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-zinc-400">
                                 <div className="flex items-center gap-5">
                                     <div className="flex items-center gap-2">
-                                        <span className="w-3 h-3 bg-orange-500/32 border border-orange-500 inline-block" />
-                                        <span className="text-zinc-200 font-bold">Attribué (Orange)</span>
+                                        <span className="w-3 h-3 bg-rose-500/32 border border-rose-500 inline-block" />
+                                        <span className="text-zinc-200 font-bold">Attribué (Rose)</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="w-3 h-3 bg-zinc-800/40 border border-zinc-700 inline-block" />
@@ -414,7 +414,7 @@ function FoyerContent() {
                         <div className="xl:w-[420px] shrink-0 bg-zinc-900/40 backdrop-blur-3xl border border-zinc-800 flex flex-col shadow-2xl relative rounded-none h-[500px] lg:h-[800px]">
                             <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-zinc-800 bg-black/20 shrink-0">
                                 <h3 className="text-[10px] font-black font-mono text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                                    <Users className="w-4 h-4 text-housing-500" />
+                                    <Users className="w-4 h-4 text-rose-500" />
                                     Locaux — {BUILDINGS.Foyer.find((f) => f.value === floor)?.label || `F${floor}`}
                                 </h3>
                                 <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest font-bold">
@@ -429,7 +429,7 @@ function FoyerContent() {
                                     <div className="p-4 border-b border-zinc-800 bg-zinc-950/70 space-y-3 shrink-0">
                                         <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
                                             <div className="flex items-center gap-2 font-mono">
-                                                <div className="w-2 h-2 rounded-full bg-housing-500 animate-pulse" />
+                                                <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
                                                 <span className="text-sm font-black text-white uppercase">{detail.club_name}</span>
                                             </div>
                                             <button
@@ -481,7 +481,7 @@ function FoyerContent() {
                                                 key={room.room_id}
                                                 className={`border-b border-zinc-800/30 p-4 transition-all cursor-pointer ${
                                                     selectedRoom === room.room_id
-                                                        ? "bg-housing-500/5 border-l-2 border-housing-500"
+                                                        ? "bg-rose-500/5 border-l-2 border-rose-500"
                                                         : "hover:bg-zinc-900/40 border-l-2 border-transparent"
                                                 }`}
                                                 onClick={() =>
@@ -522,7 +522,7 @@ function FoyerContent() {
                         <Box
                             className="h-[600px] p-1"
                             contentClassName="bg-zinc-950/20"
-                            icon={<Layers className="w-4 h-4 text-housing-500" />}
+                            icon={<Layers className="w-4 h-4 text-rose-500" />}
                             title="Building Wireframe"
                         >
                             <BuildingModel
@@ -538,7 +538,7 @@ function FoyerContent() {
                         <Box
                             className="h-[600px] p-1"
                             contentClassName="flex items-center justify-center bg-zinc-950/20 p-8"
-                            icon={<FileText className="w-4 h-4 text-housing-500" />}
+                            icon={<FileText className="w-4 h-4 text-rose-500" />}
                             title="Floor Map Reference"
                         >
                             <a

@@ -46,6 +46,15 @@ export default function ClubsPage() {
         return a.localeCompare(b);
     });
 
+    const getOriginBadgeStyle = (origin?: string) => {
+        if (!origin) return "bg-zinc-900 text-zinc-400 border-zinc-800";
+        const u = origin.toUpperCase();
+        if (u.includes("BDE")) return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+        if (u.includes("BDA")) return "bg-purple-500/10 text-purple-400 border-purple-500/30";
+        if (u.includes("ASINT") || u.includes("BDS")) return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+        return "bg-amber-500/10 text-amber-400 border-amber-500/30";
+    };
+
     const [hoveredId, setHoveredId] = useState<string | null>(null);
 
     return (
@@ -120,13 +129,24 @@ export default function ClubsPage() {
                                                             )}
                                                         </div>
                                                         <div className="z-10 flex-1 min-w-0">
-                                                            <h3 className="text-xl font-bold text-white leading-tight uppercase tracking-wider transition-colors truncate"
-                                                            >
+                                                            <h3 className="text-xl font-bold text-white leading-tight uppercase tracking-wider transition-colors truncate">
                                                                 {club.name}
                                                             </h3>
-                                                            <p className="text-[10px] text-zinc-500 font-mono mt-1 tracking-widest uppercase">
-                                                                REF: {club.id.substring(0, 8)}
-                                                            </p>
+                                                            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                                                                <span className={`text-[9px] font-mono font-bold px-2 py-0.5 border uppercase tracking-widest rounded-none ${getOriginBadgeStyle(club.association_of_origin)}`}>
+                                                                    {club.association_of_origin || "INDEPENDENT"}
+                                                                </span>
+                                                                {club.type && (
+                                                                    <span className="text-[9px] font-mono font-semibold px-2 py-0.5 bg-zinc-900 border border-zinc-700 text-zinc-300 uppercase tracking-widest rounded-none">
+                                                                        {club.type}
+                                                                    </span>
+                                                                )}
+                                                                {club.foyer_room && (
+                                                                    <span className="text-[9px] font-mono font-bold px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 uppercase tracking-widest rounded-none">
+                                                                        LOCAL {club.foyer_room}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div className="p-6 flex-1 bg-zinc-950/20">

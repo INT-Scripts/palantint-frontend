@@ -214,10 +214,15 @@ export default function PublicClubsPage() {
                             )}
                             <div className="min-w-0 flex-1">
                               <h3 className="text-base font-extrabold text-zinc-950 dark:text-stone-50 leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1">{club.name}</h3>
-                              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                                 <span className={`px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider rounded border ${getOriginBadgeStyle(club.association_of_origin)}`}>
                                   {club.association_of_origin || "Independent"}
                                 </span>
+                                {club.type && (
+                                  <span className="px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider rounded bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border border-stone-200/80 dark:border-stone-700/80">
+                                    {club.type}
+                                  </span>
+                                )}
                                 {club.foyer_room && (
                                   <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                     Local {club.foyer_room}

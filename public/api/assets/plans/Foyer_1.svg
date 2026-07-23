@@ -39,7 +39,7 @@
   }
 </style>
 <g id="Foyer_1">
-<path id="Vector 44" d="M150.5 448H111V322.5M150.5 448V510M150.5 448H332.5V332.5M150.5 510H48.5V803H229.5M150.5 510H229.5M479.5 803V891.5L599 908.701M479.5 803H229.5M479.5 803V721.5M1007.5 967.5V1040.5M599 908.701L752 930.723L1007.5 967.5M1007.5 967.5H1046.5M1216 967.5V743M1216 967.5V1040.5H1007.5M1216 967.5H1046.5M580.5 838H729.5L764.5 782.702L1123.5 215.5L1432 399.5L1216 743M1216 743H1028V789.5M764.5 782.702H544.5V721.5M764.5 782.702V587.5M680 390H764.5V510M680 390V315M680 390H544.5V467.5M680 315H725.5V98H565M680 315H563M404.5 176V98H565M404.5 176H332.5M404.5 176V245.5M332.5 176V126.5H111V218.5M332.5 176V238H302.5V263.25M599 908.701V1040.5H752M1007.5 1040.5H752M752 930.723V1040.5M1028 789.5L900.5 858.5L890 877L900.5 891.5L967 930.723M1028 789.5V803H1046.5V967.5M229.5 510V656.5M229.5 510H369.5M229.5 803V656.5M229.5 656.5H369.5M479.5 656.5V510H369.5M479.5 656.5H369.5M479.5 656.5V721.5M369.5 656.5V510M111 322.5L332.5 332.5M111 322.5V218.5M332.5 332.5V288.5H302.5V263.25M302.5 263.25L229.5 255.5L215 218.5H111M563 315H404.5V245.5M565 98L563.641 245.5L563 315M404.5 245.5H563.641M544.5 467.5H641V510H764.5M544.5 467.5V587.5M764.5 510V587.5M764.5 587.5H544.5M544.5 587.5V721.5M479.5 721.5H544.5" stroke="white" stroke-width="2"/>
+<path id="Vector 44" d="M150.5 448H111V332.5M150.5 448V510M150.5 448H332.5V332.5M150.5 510H48.5V803H229.5M150.5 510H229.5M479.5 803V891.5L599 908.701M479.5 803H229.5M479.5 803V721.5M1007.5 967.5V1040.5M599 908.701L752 930.723L1007.5 967.5M1007.5 967.5H1046.5M1216 967.5V743M1216 967.5V1040.5H1007.5M1216 967.5H1046.5M580.5 782.702V838H729.5L764.5 782.702L1123.5 215.5L1432 399.5L1216 743M1216 743H1028V785.5M764.5 782.702V587.5M764.5 782.702H580.5M680 390H764.5V510M680 390V315M680 390H544.5V467.5M680 315H725.5V98H565M680 315H563M404.5 176V98H565M404.5 176H332.5M404.5 176V245.5M332.5 176V126.5H111V218.5M332.5 176V238H302.5V263.25M599 908.701V1040.5H752M1007.5 1040.5H752M752 930.723V1040.5M1028 803H1046.5V967.5M1028 803L906 870.5V881L969 918.5L960.5 931L894.5 890L889.5 876L894.5 861.5L1028 785.5M1028 803V785.5M229.5 510V656.5M229.5 510H369.5M229.5 803V656.5M229.5 656.5H369.5M479.5 656.5V510H369.5M479.5 656.5H369.5M479.5 656.5V721.5M369.5 656.5V510M111 332.5H332.5M111 332.5V218.5M332.5 332.5V288.5H302.5V263.25M302.5 263.25L229.5 255.5L215 218.5H111M563 315H404.5V245.5M565 98L563.641 245.5L563 315M404.5 245.5H563.641M544.5 467.5H641V510H764.5M544.5 467.5V587.5M764.5 510V587.5M764.5 587.5H544.5M544.5 587.5V721.5M479.5 721.5H544.5M544.5 721.5V782.702H580.5" stroke="white" stroke-width="2"/>
 <a data-room="F1-1" class="cursor-pointer group">
 <polygon class="room-area" points="50.5,512.0 50.5,801.0 227.5,801.0 227.5,512.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
 <text class="room-label" pointer-events="none" fill="white" id="F1-1" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="32" letter-spacing="0em"><tspan x="96" y="657.136">F1-1</tspan></text>
@@ -61,7 +61,7 @@
 <text class="room-label" pointer-events="none" fill="white" id="F1-6" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="32" letter-spacing="0em"><tspan x="1096" y="863.136">F1-6</tspan></text>
 </a>
 <a data-room="F1-7" class="cursor-pointer group">
-<polygon class="room-area" points="1429.0,400.0 1124.0,218.5 731.5,839.0 580.5,840.0 761.0,784.5 544.5,784.5 542.5,723.5 481.5,723.5 481.5,890.0 1044.5,965.5 1044.5,805.0 901.5,860.0 967.0,932.5 898.5,858.0 1028.0,741.0 1215.0,741.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<polygon class="room-area" points="1429.0,400.0 1124.0,218.5 731.5,839.0 580.5,840.0 542.5,723.5 481.5,723.5 481.5,890.0 1044.5,965.5 1044.5,805.0 908.0,871.5 960.5,933.0 892.5,861.0 1028.0,741.0 1215.0,741.0" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
 <text class="room-label" pointer-events="none" fill="white" id="F1-7" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="32" letter-spacing="0em"><tspan x="1080" y="568.136">F1-7</tspan></text>
 </a>
 <a data-room="F1-2" class="cursor-pointer group">
@@ -97,11 +97,11 @@
 <text class="room-label" pointer-events="none" fill="white" id="F1-14" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="32" letter-spacing="0em"><tspan x="174" y="182.136">F1-14</tspan></text>
 </a>
 <a data-room="F1-15" class="cursor-pointer group">
-<polygon class="room-area" points="113.0,220.5 113.0,320.5 330.5,330.5 330.5,290.5 301.5,290.0 300.0,264.5 228.5,257.0 213.5,220.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<polygon class="room-area" points="113.0,220.5 113.0,330.5 330.5,330.5 330.5,290.5 301.5,290.0 300.0,264.5 228.5,257.0 213.5,220.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
 <text class="room-label" pointer-events="none" fill="white" id="F1-15" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="32" letter-spacing="0em"><tspan x="164" y="299.136">F1-15</tspan></text>
 </a>
 <a data-room="F1-16" class="cursor-pointer group">
-<polygon class="room-area" points="113.0,324.5 113.0,446.0 330.5,446.0 330.5,334.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
+<polygon class="room-area" points="113.0,334.5 113.0,446.0 330.5,446.0 330.5,334.5" fill="rgba(120, 113, 108, 0.12)" stroke="white" stroke-width="2" pointer-events="all" />
 <text class="room-label" pointer-events="none" fill="white" id="F1-16" style="white-space: pre" xml:space="preserve" font-family="Inter" font-size="32" letter-spacing="0em"><tspan x="164" y="396.136">F1-16</tspan></text>
 </a>
 </g>

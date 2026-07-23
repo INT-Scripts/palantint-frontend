@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Box } from "@/components/ui/box";
 import BuildingModel from "../apartments/components/BuildingModel";
+import PageHeader from "@/components/PageHeader";
 
 const BUILDINGS: Record<string, { label: string; value: string }[]> = {
     Foyer: [
@@ -260,7 +261,7 @@ function FoyerContent() {
                             }}
                             className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold font-mono border transition-all cursor-pointer ${
                                 floor === f.value
-                                    ? "bg-housing-500/20 text-white border-housing-500 shadow-sm shadow-housing-500/20"
+                                    ? "bg-rose-500/20 text-white border-rose-500 shadow-sm shadow-rose-500/20"
                                     : "bg-zinc-950/60 border-zinc-800/80 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 hover:border-zinc-700"
                             }`}
                         >
@@ -273,33 +274,24 @@ function FoyerContent() {
     };
 
     return (
-        <div className="min-h-screen bg-zinc-950 selection:bg-housing-500/30 font-sans">
+        <div className="min-h-screen bg-zinc-950 selection:bg-rose-500/30 font-sans">
             {/* Ambient Background */}
             <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-[20%] left-[-10%] w-[30%] h-[50%] bg-housing-600/10 blur-[150px] mix-blend-screen" />
-                <div className="absolute bottom-[10%] right-[-10%] w-[30%] h-[40%] bg-orga-600/10 blur-[150px] mix-blend-screen" />
+                <div className="absolute top-[20%] left-[-10%] w-[30%] h-[50%] bg-rose-600/10 blur-[150px] mix-blend-screen" />
+                <div className="absolute bottom-[10%] right-[-10%] w-[30%] h-[40%] bg-rose-600/10 blur-[150px] mix-blend-screen" />
             </div>
 
             <main className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 mt-4 sm:mt-8 pb-32">
                 <div className="space-y-12">
 
-                    {/* Page Header */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-mono font-black uppercase tracking-[0.25em] text-housing-500 border border-housing-500/30 bg-housing-500/10 px-2.5 py-1">
-                                Foyer Map // Active
-                            </span>
-                        </div>
-                        <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white leading-none">
-                            Carte Interactive du{" "}
-                            <span className="bg-gradient-to-r from-housing-400 to-housing-600 bg-clip-text text-transparent">
-                                Foyer Associatif
-                            </span>
-                        </h1>
-                        <p className="text-zinc-400 text-sm font-mono uppercase tracking-widest">
-                            Cartographie des locaux associatifs — navigation interactive par étage.
-                        </p>
-                    </div>
+                    <PageHeader
+                        badgeText="Foyer Map // Active"
+                        title1="Foyer"
+                        title2="Associatif"
+                        titleGradient="from-rose-400 to-rose-600"
+                        subtitle="Cartographie des locaux associatifs — navigation interactive par étage."
+                        colorName="rose"
+                    />
 
                     {renderSelectors()}
 
@@ -308,7 +300,7 @@ function FoyerContent() {
                         {/* SVG Map Box */}
                         <Box
                             className="flex-1 min-h-[500px] lg:min-h-[800px]"
-                            icon={<MapPin className="w-4 h-4 text-housing-500" />}
+                            icon={<MapPin className="w-4 h-4 text-rose-500" />}
                             title="Interactive Floor Map"
                             rightContent={
                                 <div className="hidden sm:flex items-center gap-3 text-[10px] font-mono">
@@ -458,19 +450,19 @@ function FoyerContent() {
                                                 <span className="font-bold text-white uppercase">{detail.type || "—"}</span>
                                             </div>
                                             {detail.association_of_origin && (
-                                                <div className="p-2 bg-housing-500/10 border border-housing-500/20 col-span-2">
+                                                <div className="p-2 bg-rose-500/10 border border-rose-500/20 col-span-2">
                                                     <span className="text-[8px] font-mono text-zinc-300 uppercase block font-bold">Association d'origine</span>
-                                                    <span className="font-bold text-housing-400 text-xs">{detail.association_of_origin}</span>
+                                                    <span className="font-bold text-rose-400 text-xs">{detail.association_of_origin}</span>
                                                 </div>
                                             )}
                                             {detail.club_id && (
                                                 <div className="col-span-2">
                                                     <button
                                                         onClick={() => router.push(`/palantint/clubs/${detail.club_id}`)}
-                                                        className="w-full text-left text-[10px] font-mono text-zinc-400 hover:text-housing-400 uppercase border border-zinc-800 p-1.5 bg-black/40 hover:bg-zinc-900 transition-colors flex items-center justify-between"
+                                                        className="w-full text-left text-[10px] font-mono text-zinc-400 hover:text-rose-400 uppercase border border-zinc-800 p-1.5 bg-black/40 hover:bg-zinc-900 transition-colors flex items-center justify-between"
                                                     >
                                                         <span>Voir la fiche du club</span>
-                                                        <span className="text-housing-500 font-bold">→</span>
+                                                        <span className="text-rose-500 font-bold">→</span>
                                                     </button>
                                                 </div>
                                             )}

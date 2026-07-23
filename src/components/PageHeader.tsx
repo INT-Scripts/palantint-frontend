@@ -7,7 +7,7 @@ interface PageHeaderProps {
   title2: string;
   titleGradient: string;
   subtitle: string;
-  colorName: "student" | "orga" | "housing" | "zinc" | "campus" | "network" | "timetable" | "media" | "comms";
+  colorName: "student" | "orga" | "housing" | "zinc" | "campus" | "network" | "timetable" | "media" | "comms" | "rose";
   bottomContent?: ReactNode;
   rightContent?: ReactNode;
   searchPlaceholder?: string;
@@ -52,6 +52,10 @@ const colorMap = {
   comms: {
     border: "border-comms-500",
     bg: "bg-comms-500",
+  },
+  rose: {
+    border: "border-rose-500",
+    bg: "bg-rose-500",
   }
 };
 

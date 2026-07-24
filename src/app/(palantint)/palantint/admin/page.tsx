@@ -6,7 +6,7 @@ import { fetchPrivate } from "@/lib/api";
 import { 
     Users, Database, Calendar, Shield, Activity, 
     Search, Fingerprint, ShieldAlert, X, Key,
-    Tags, Plus, Pencil, Trash2, Check, Map, Compass
+    Tags, Plus, Pencil, Trash2, Check, Map, Compass, MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SearchBar from "@/components/ui/SearchBar";
@@ -143,9 +143,14 @@ export default function AdminDashboardPage() {
                     </h1>
                 </div>
                 <div className="hidden md:flex items-center gap-4">
+                    <Link href="/palantint/admin/campus">
+                        <Button variant="outline" className="bg-amber-500/5 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500 hover:text-amber-300 font-mono text-[10px] uppercase tracking-widest h-10 px-6 group rounded-none">
+                            <MapPin className="w-3.5 h-3.5 mr-2" /> 3D Campus Calibration
+                        </Button>
+                    </Link>
                     <Link href="/palantint/admin/maps">
                         <Button variant="outline" className="bg-housing-500/5 border-housing-500/30 text-housing-400 hover:bg-housing-500/10 hover:border-housing-500 hover:text-housing-300 font-mono text-[10px] uppercase tracking-widest h-10 px-6 group rounded-none">
-                            <Compass className="w-3.5 h-3.5 mr-2 group-hover:rotate-90 transition-transform duration-500" /> Map Alignment Tool
+                            <Compass className="w-3.5 h-3.5 mr-2 group-hover:rotate-90 transition-transform duration-500" /> 2D Skeleton Alignment
                         </Button>
                     </Link>
                 </div>

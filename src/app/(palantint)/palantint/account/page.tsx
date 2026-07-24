@@ -52,7 +52,9 @@ export default function AccountPage() {
                 const userData = await fetchPrivate("/users/me");
                 setUser(userData);
 
-                fetchPrivate("/users/me/cas-credentials").then(setCasStatus);
+                fetchPrivate("/users/me/cas-credentials")
+                    .then(setCasStatus)
+                    .catch(() => setCasStatus({ has_credentials: false, cas_username: null }));
 
                 if (userData.is_admin) {
                     fetchPrivate("/admin/telemetry").then(setTelemetry);

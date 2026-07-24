@@ -25,7 +25,7 @@ export function Box({ icon, title, rightContent, children, className = "", conte
                     )}
                 </div>
             )}
-            <div className={`flex-1 relative overflow-hidden ${contentClassName}`}>
+            <div className={`flex-1 flex flex-col relative overflow-hidden min-h-0 ${contentClassName}`}>
                 {children}
             </div>
         </div>

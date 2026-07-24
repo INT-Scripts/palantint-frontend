@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchPrivate } from "@/lib/api";
-import { Menu, User, LogIn, Compass, Home as HomeIcon, LogOut, Search, MapPin, Share2, CalendarDays, Flame, WashingMachine, ChevronDown, Users } from "lucide-react";
+import { Menu, User, LogIn, Compass, Home as HomeIcon, LogOut, Search, MapPin, Share2, CalendarDays, Flame, WashingMachine, ChevronDown, Users, Layers } from "lucide-react";
 import GlobalSearch from "./GlobalSearch";
 import { Button } from "@/components/ui/button";
 
@@ -95,7 +95,7 @@ export default function Navbar() {
                                     className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
                                     onClick={() => router.push(user ? "/palantint/foyer" : "/foyer")}
                                 >
-                                    <MapPin className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
+                                    <Layers className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
                                     <div>
                                         <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">Foyer Map</p>
                                         <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-normal">Locaux associatifs interactifs</p>
@@ -260,7 +260,7 @@ export default function Navbar() {
                         onClick={() => { setMobileMenuOpen(false); router.push(user ? "/palantint/foyer" : "/foyer"); }}
                     >
                         <span>Foyer Map</span>
-                        <MapPin className="w-5 h-5 text-zinc-600 group-hover:text-white" />
+                        <Layers className="w-5 h-5 text-zinc-600 group-hover:text-white" />
                     </button>
                     <button 
                         className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"

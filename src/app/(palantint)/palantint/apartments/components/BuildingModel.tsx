@@ -44,6 +44,22 @@ function getInterestingPoints(points: THREE.Vector2[]) {
     return result;
 }
 
+function parseDimensions(svgContent: string) {
+    let vw = 1000, vh = 1000;
+    if (!svgContent) return { vw, vh };
+    const vbMatch = svgContent.match(/viewBox=["']([-\d.]+)\s+([-\d.]+)\s+([\d.]+)\s+([\d.]+)["']/);
+    if (vbMatch) {
+        vw = parseFloat(vbMatch[3]) || 1000;
+        vh = parseFloat(vbMatch[4]) || 1000;
+    } else {
+        const wMatch = svgContent.match(/width=["']([\d.]+)["']/);
+        const hMatch = svgContent.match(/height=["']([\d.]+)["']/);
+        if (wMatch) vw = parseFloat(wMatch[1]) || 1000;
+        if (hMatch) vh = parseFloat(hMatch[1]) || 1000;
+    }
+    return { vw, vh };
+}
+
 function FloorPlate({ 
     svgContent, 
     yOffset, 
@@ -59,10 +75,9 @@ function FloorPlate({
     tx: number,
     ty: number
 }) {
-    const { lines, vw, vh } = useMemo(() => {
+    const { lines } = useMemo(() => {
         if (!svgContent) return { lines: [], vw: 1000, vh: 1000 };
         
-        // Aggressive sanitization to prevent "Unknown color transparent" errors
         const sanitizedSvg = svgContent
             .replace(/fill="transparent"/g, 'fill="none"')
             .replace(/stroke="transparent"/g, 'stroke="none"')
@@ -70,9 +85,7 @@ function FloorPlate({
         
         const loader = new SVGLoader();
         const svgData = loader.parse(sanitizedSvg);
-        const viewBoxMatch = sanitizedSvg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
-        const vw = viewBoxMatch ? parseFloat(viewBoxMatch[1]) : 1000;
-        const vh = viewBoxMatch ? parseFloat(viewBoxMatch[2]) : 1000;
+        const { vw, vh } = parseDimensions(sanitizedSvg);
         
         const floorLines: any[] = [];
         svgData.paths.forEach((path) => {
@@ -123,9 +136,7 @@ function SceneContent({ floors, activeFloor, buildingSvgs, buildingMetadata }: a
             const meta = buildingMetadata[f.value];
             const svg = buildingSvgs[f.value];
             if (meta?.pillars?.length >= 2 && svg) {
-                const viewBoxMatch = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
-                const vw = viewBoxMatch ? parseFloat(viewBoxMatch[1]) : 1000;
-                const vh = viewBoxMatch ? parseFloat(viewBoxMatch[2]) : 1000;
+                const { vw, vh } = parseDimensions(svg);
                 const p = meta.pillars;
                 const x0 = (p[0].x / 100) * vw;
                 const y0 = (p[0].y / 100) * vh;
@@ -147,9 +158,7 @@ function SceneContent({ floors, activeFloor, buildingSvgs, buildingMetadata }: a
             const svg = buildingSvgs[f.value];
             if (!svg) return;
 
-            const viewBoxMatch = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
-            const vw = viewBoxMatch ? parseFloat(viewBoxMatch[1]) : 1000;
-            const vh = viewBoxMatch ? parseFloat(viewBoxMatch[2]) : 1000;
+            const { vw, vh } = parseDimensions(svg);
 
             let finalScale = BASE_WORLD_SCALE;
             let tx = -0.5 * vw, ty = -0.5 * vh;
@@ -216,7 +225,7 @@ function SceneContent({ floors, activeFloor, buildingSvgs, buildingMetadata }: a
                         closest = v2;
                     }
                 });
-                if (closest && minDist < 0.05) { 
+                if (closest && minDist < 0.15) { 
                     positions.push(v1.x, i * FLOOR_SPACING, v1.z);
                     positions.push(closest.x, (i + 1) * FLOOR_SPACING, closest.z);
                 }

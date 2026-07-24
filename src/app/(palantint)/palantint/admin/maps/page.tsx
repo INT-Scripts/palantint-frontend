@@ -80,13 +80,23 @@ export default function MapCalibrationPage() {
     const svgVertices = useMemo(() => {
         if (!svgContent) return [];
         try {
-            const loader = new SVGLoader();
-            const svgData = loader.parse(svgContent);
-            const viewBoxMatch = svgContent.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
-            const vw = viewBoxMatch ? parseFloat(viewBoxMatch[1]) : 1000;
-            const vh = viewBoxMatch ? parseFloat(viewBoxMatch[2]) : 1000;
+            let vw = 1000, vh = 1000;
+            const vbMatch = svgContent.match(/viewBox=["']([-\d.]+)\s+([-\d.]+)\s+([\d.]+)\s+([\d.]+)["']/);
+            if (vbMatch) {
+                vw = parseFloat(vbMatch[3]) || 1000;
+                vh = parseFloat(vbMatch[4]) || 1000;
+            } else {
+                const wMatch = svgContent.match(/width=["']([\d.]+)["']/);
+                const hMatch = svgContent.match(/height=["']([\d.]+)["']/);
+                if (wMatch) vw = parseFloat(wMatch[1]) || 1000;
+                if (hMatch) vh = parseFloat(hMatch[1]) || 1000;
+            }
 
             const vertices: {x: number, y: number}[] = [];
+
+            // 1. Paths via SVGLoader
+            const loader = new SVGLoader();
+            const svgData = loader.parse(svgContent);
             svgData.paths.forEach((path) => {
                 path.subPaths.forEach((subPath) => {
                     const points = subPath.getPoints();
@@ -98,6 +108,26 @@ export default function MapCalibrationPage() {
                     });
                 });
             });
+
+            // 2. Extract polygon points (room areas)
+            const polyMatches = svgContent.matchAll(/points=["']([^"']+)["']/g);
+            for (const match of polyMatches) {
+                const pairs = match[1].trim().split(/\s+/);
+                pairs.forEach(pair => {
+                    const parts = pair.split(',');
+                    if (parts.length === 2) {
+                        const px = parseFloat(parts[0]);
+                        const py = parseFloat(parts[1]);
+                        if (!isNaN(px) && !isNaN(py)) {
+                            vertices.push({
+                                x: (px / vw) * 100,
+                                y: (py / vh) * 100
+                            });
+                        }
+                    }
+                });
+            }
+
             return vertices;
         } catch (e) {
             console.error("Vertex extraction failed", e);
@@ -117,7 +147,7 @@ export default function MapCalibrationPage() {
         let x = ((e.clientX - rect.left) / rect.width) * 100;
         let y = ((e.clientY - rect.top) / rect.height) * 100;
         
-        // APPLY SNAPPING (Always find closest if enabled)
+        // APPLY SNAPPING (Snap if within reasonable proximity threshold)
         if (snapMode && svgVertices.length > 0) {
             let closest = svgVertices[0];
             let minDist = Math.pow(x - closest.x, 2) + Math.pow(y - closest.y, 2);
@@ -130,9 +160,12 @@ export default function MapCalibrationPage() {
                 }
             }
             
-            x = closest.x;
-            y = closest.y;
-            toast.success("Locked to geometric vertex.");
+            // Snap if within ~5% distance threshold (25 in squared space)
+            if (minDist <= 25) {
+                x = closest.x;
+                y = closest.y;
+                toast.success("Locked to geometric vertex.");
+            }
         }
 
         setMetadata({ ...metadata, pillars: [...metadata.pillars, { x, y }] });
@@ -394,7 +427,7 @@ export default function MapCalibrationPage() {
                             )}
 
                             <div 
-                                className="relative flex items-center justify-center pointer-events-none [&_svg]:block [&_svg]:w-auto [&_svg]:h-auto [&_svg]:max-w-[80vw] [&_svg]:max-h-[70vh] [&_svg_path]:stroke-zinc-100 [&_svg_path]:stroke-[1.5px] [&_svg_path]:fill-none [&_svg_rect]:stroke-zinc-100 [&_svg_text]:fill-zinc-400"
+                                className="relative flex items-center justify-center pointer-events-none [&_*]:pointer-events-none! [&_svg]:block [&_svg]:w-auto [&_svg]:h-auto [&_svg]:max-w-[80vw] [&_svg]:max-h-[70vh] [&_svg_path]:stroke-zinc-100 [&_svg_path]:stroke-[1.5px] [&_svg_path]:fill-none [&_svg_rect]:stroke-zinc-100 [&_svg_text]:fill-zinc-400 [&_.room-area]:fill-none! [&_.room-area]:stroke-none!"
                                 dangerouslySetInnerHTML={{ __html: svgContent }}
                             />
 

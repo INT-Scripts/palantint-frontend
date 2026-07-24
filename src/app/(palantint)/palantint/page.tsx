@@ -145,9 +145,9 @@ export default function Homepage() {
         {/* HERO SECTION */}
         <section className="flex flex-col items-center text-center space-y-8 max-w-4xl mx-auto mb-20">
           <img 
-            src="/palantint.svg" 
+            src="/palantint-long.svg" 
             alt="PalantINT Logo" 
-            className="w-48 h-48 sm:w-56 sm:h-56 opacity-95 filter drop-shadow-[0_0_30px_rgba(224,147,20,0.2)] select-none pointer-events-none" 
+            className="w-full max-w-lg sm:max-w-xl h-auto opacity-95 filter drop-shadow-[0_0_30px_rgba(161,161,170,0.25)] select-none pointer-events-none" 
           />
 
           <div className="space-y-6">
@@ -157,27 +157,6 @@ export default function Homepage() {
             <p className="text-sm sm:text-base text-zinc-400 font-mono max-w-2xl mx-auto uppercase tracking-wide leading-relaxed">
               The high-fidelity campus intelligence and spatial data visualisation platform. central directory, interactive wireframes, and unified timetable records.
             </p>
-            {user && (
-              <div className="text-xs font-mono text-emerald-400 uppercase tracking-widest mt-2 animate-pulse">
-                Welcome back, operator // {user.username}
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <Button
-              onClick={() => router.push("/palantint/students")}
-              className="bg-zinc-100 hover:bg-white text-zinc-950 font-mono font-bold uppercase tracking-widest h-12 px-8 rounded-none transition-all shadow-[0_0_30px_rgba(255,255,255,0.05)] border-none"
-            >
-              Access Directory <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => router.push("/palantint/clubs")}
-              className="border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-900 font-mono uppercase tracking-widest h-12 px-8 rounded-none transition-all"
-            >
-              Explore Public Directories
-            </Button>
           </div>
         </section>
 

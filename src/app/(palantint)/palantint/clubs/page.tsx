@@ -7,13 +7,7 @@ import PageHeader from "@/components/PageHeader";
 import PalantintClubCard, { PalantintClub } from "../components/PalantintClubCard";
 import PalantintFloorSelector from "../components/PalantintFloorSelector";
 import { PALETTE } from "@/lib/colors";
-
-const BUILDINGS = {
-  Foyer: [
-    { label: "Rez-de-chaussée (F0)", value: "0" },
-    { label: "1er Étage (F1)", value: "1" },
-  ],
-};
+import { FOYER_BUILDINGS as BUILDINGS } from "@/lib/buildings";
 
 export default function ClubsPage() {
   const [clubs, setClubs] = useState<PalantintClub[]>([]);

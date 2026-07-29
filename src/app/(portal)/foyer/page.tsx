@@ -1,18 +1,19 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { fetchPublic } from "@/lib/api";
-import { Layers, FileText } from "lucide-react";
+import { Layers, FileText, Users } from "lucide-react";
 import PortalHeader from "@/components/PortalHeader";
 import PublicFloorViewer from "../apartments/components/PublicFloorViewer";
-import BuildingModel from "@/app/(palantint)/palantint/apartments/components/BuildingModel";
 import PortalFloorSelector from "../components/PortalFloorSelector";
-import PortalRoomDirectory from "../components/PortalRoomDirectory";
-import { FoyerRoomDetail } from "../components/PortalRoomDetailCard";
 
-const BUILDINGS: Record<string, { label: string; value: string }[]> = {
-  Foyer: [{ label: "Rez-de-chaussée (F0)", value: "0" }, { label: "1er Étage (F1)", value: "1" }],
-};
+// Canvas/WebGL sizing breaks under SSR hydration — must be client-only.
+const BuildingModel = dynamic(() => import("@/app/(palantint)/palantint/apartments/components/BuildingModel"), { ssr: false });
+import PortalDirectoryPanel from "../components/PortalDirectoryPanel";
+import FoyerRoomList from "../components/FoyerRoomList";
+import FoyerRoomDetailCard, { FoyerRoomDetail } from "../components/FoyerRoomDetailCard";
+import { FOYER_BUILDINGS as BUILDINGS } from "@/lib/buildings";
 
 export default function PublicFoyerPage() {
   const [foyerMap, setFoyerMap] = useState<Record<string, FoyerRoomDetail>>({});
@@ -22,6 +23,7 @@ export default function PublicFoyerPage() {
   const [activeFloor, setActiveFloor] = useState<string>("0");
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [buildingSvgs, setBuildingSvgs] = useState<Record<string, string>>({});
+  const [buildingMetadata, setBuildingMetadata] = useState<Record<string, any>>({});
 
   useEffect(() => {
     let isMounted = true;
@@ -53,6 +55,19 @@ export default function PublicFoyerPage() {
       setBuildingSvgs(svgs);
     };
     loadSvgs();
+  }, [activeBuilding]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadMetadata = async () => {
+      let meta: any = {};
+      try {
+        meta = await fetchPublic(`/maps/${activeBuilding}/metadata`);
+      } catch { /* skip */ }
+      if (isMounted) setBuildingMetadata(meta || {});
+    };
+    loadMetadata();
+    return () => { isMounted = false; };
   }, [activeBuilding]);
 
   const foyerRoomsList = useMemo(() => Object.values(foyerMap), [foyerMap]);
@@ -112,13 +127,21 @@ export default function PublicFoyerPage() {
         </div>
 
         <div className="lg:col-span-5 w-full relative min-h-[450px] lg:min-h-0">
-          <PortalRoomDirectory
-            rooms={currentFloorRooms}
-            activeFloor={activeFloor}
-            selectedRoomId={selectedRoomId}
-            roomMap={foyerMap}
-            onSelectRoom={setSelectedRoomId}
+          <PortalDirectoryPanel
+            items={currentFloorRooms}
+            getId={(room) => room.room_id}
+            selectedId={selectedRoomId}
+            onSelect={setSelectedRoomId}
             loading={loading}
+            accentColor="rose"
+            icon={Users}
+            title={`Répertoire Locaux — Étage ${activeFloor}`}
+            countLabel="Locaux"
+            emptyLabel="Aucun local pour cet étage."
+            renderDetail={(room, onClose) => <FoyerRoomDetailCard room={room} onClose={onClose} />}
+            renderList={(rooms) => (
+              <FoyerRoomList rooms={rooms} selectedRoomId={selectedRoomId} onSelectRoom={setSelectedRoomId} />
+            )}
           />
         </div>
       </div>
@@ -141,7 +164,7 @@ export default function PublicFoyerPage() {
             Bâtiment Foyer Wireframe 3D
           </h3>
           <div className="flex-1 rounded-2xl overflow-hidden bg-stone-50 dark:bg-stone-950/50">
-            <BuildingModel bldg={activeBuilding} floors={BUILDINGS[activeBuilding] || []} activeFloor={activeFloor} buildingSvgs={buildingSvgs} buildingMetadata={{}} />
+            <BuildingModel bldg={activeBuilding} floors={BUILDINGS[activeBuilding] || []} activeFloor={activeFloor} buildingSvgs={buildingSvgs} buildingMetadata={buildingMetadata} />
           </div>
         </div>
 

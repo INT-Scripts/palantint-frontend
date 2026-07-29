@@ -7,10 +7,7 @@ import PortalHeader from "@/components/PortalHeader";
 import PortalFloorSelector from "../components/PortalFloorSelector";
 import PortalClubCard, { Club } from "../components/PortalClubCard";
 import PortalClubModal from "../components/PortalClubModal";
-
-const BUILDINGS = {
-  Foyer: [{ label: "Rez-de-chaussée (F0)", value: "0" }, { label: "1er Étage (F1)", value: "1" }],
-};
+import { FOYER_BUILDINGS as BUILDINGS } from "@/lib/buildings";
 
 export default function PublicClubsPage() {
   const [clubs, setClubs] = useState<Club[]>([]);

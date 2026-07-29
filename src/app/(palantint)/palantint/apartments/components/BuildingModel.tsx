@@ -6,6 +6,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Line } from "@react-three/drei";
 import * as THREE from "three";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
+import { stripStyle } from "@/lib/svgPlan";
 
 interface FloorData {
     value: string;
@@ -20,7 +21,21 @@ interface BuildingModelProps {
     buildingMetadata: Record<string, any>;
 }
 
-const FLOOR_SPACING = 0.5; 
+export interface BuildingWireframeProps {
+    floors: FloorData[];
+    activeFloor: string;
+    buildingSvgs: Record<string, string>;
+    buildingMetadata: Record<string, any>;
+    /** Continuously spin the model (used for the standalone floor-plan preview). Disable for a fixed, admin-placed orientation. */
+    autoRotate?: boolean;
+    position?: [number, number, number];
+    rotation?: [number, number, number];
+    scale?: number;
+    /** Vertical distance between floors, in the same world units as `scale`. Uniform across the whole building. */
+    floorHeight?: number;
+}
+
+const DEFAULT_floorHeight = 0.5;
 const BASE_WORLD_SCALE = 0.006; // Slightly reduced to fit better
 
 /**
@@ -75,57 +90,72 @@ function FloorPlate({
     tx: number,
     ty: number
 }) {
-    const { lines } = useMemo(() => {
-        if (!svgContent) return { lines: [], vw: 1000, vh: 1000 };
-        
-        const sanitizedSvg = svgContent
+    // Merged into a single BufferGeometry (instead of one THREE.Line + one
+    // THREE.LineBasicMaterial per wall segment) so a floor's walls are one
+    // GPU object to create/dispose rather than dozens — mounting/unmounting
+    // the focused building's wireframe was creating/tearing down hundreds of
+    // Three.js objects and causing a big main-thread freeze.
+    const geometry = useMemo(() => {
+        if (!svgContent) return null;
+
+        const sanitizedSvg = stripStyle(svgContent)
             .replace(/fill="transparent"/g, 'fill="none"')
             .replace(/stroke="transparent"/g, 'stroke="none"')
             .replace(/color="transparent"/g, 'color="none"');
-        
+
         const loader = new SVGLoader();
         const svgData = loader.parse(sanitizedSvg);
-        const { vw, vh } = parseDimensions(sanitizedSvg);
-        
-        const floorLines: any[] = [];
+
+        const positions: number[] = [];
         svgData.paths.forEach((path) => {
             path.subPaths.forEach((subPath) => {
                 const points = subPath.getPoints();
-                const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                floorLines.push(geometry);
+                for (let i = 0; i < points.length - 1; i++) {
+                    positions.push(points[i].x, points[i].y, 0);
+                    positions.push(points[i + 1].x, points[i + 1].y, 0);
+                }
             });
         });
-        return { lines: floorLines, vw, vh };
+        if (positions.length === 0) return null;
+
+        const geom = new THREE.BufferGeometry();
+        geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        return geom;
     }, [svgContent]);
 
-    if (lines.length === 0) return null;
+    if (!geometry) return null;
 
     return (
-        <group position={[0, yOffset, 0]} scale={[scale, -scale, scale]} rotation={[Math.PI / 2, 0, 0]}>
-            {lines.map((geometry, i) => (
-                <primitive 
-                    key={i} 
-                    object={new THREE.Line(
-                        geometry, 
-                        new THREE.LineBasicMaterial({
-                            color: isActive ? PALETTE.housing[500] : PALETTE.white,
-                            transparent: true,
-                            opacity: 0.9,
-                            linewidth: 1
-                        })
-                    )} 
-                    position={[tx, ty, 0]} 
+        <group position={[0, yOffset, 0]} scale={[scale, scale, scale]} rotation={[Math.PI / 2, 0, 0]}>
+            <lineSegments geometry={geometry} renderOrder={999} position={[tx, ty, 0]}>
+                <lineBasicMaterial
+                    color={isActive ? PALETTE.housing[500] : PALETTE.white}
+                    transparent
+                    opacity={0.9}
+                    linewidth={1}
+                    depthTest={false}
+                    depthWrite={false}
                 />
-            ))}
+            </lineSegments>
         </group>
     );
 }
 
-function SceneContent({ floors, activeFloor, buildingSvgs, buildingMetadata }: any) {
+export function BuildingWireframe({
+    floors,
+    activeFloor,
+    buildingSvgs,
+    buildingMetadata,
+    autoRotate = false,
+    position = [0, 0, 0],
+    rotation = [0, 0, 0],
+    scale = 1,
+    floorHeight = DEFAULT_floorHeight,
+}: BuildingWireframeProps) {
     const groupRef = useRef<THREE.Group>(null);
 
     useFrame((state, delta) => {
-        if (groupRef.current) {
+        if (autoRotate && groupRef.current) {
             groupRef.current.rotation.y += delta * 0.15;
         }
     });
@@ -177,12 +207,12 @@ function SceneContent({ floors, activeFloor, buildingSvgs, buildingMetadata }: a
             }
 
             sumX += (0.5 * vw + tx) * finalScale;
-            sumZ += -(0.5 * vh + ty) * finalScale;
+            sumZ += (0.5 * vh + ty) * finalScale;
             count++;
 
             const worldPoints: {x: number, z: number}[] = [];
             const loader = new SVGLoader();
-            const svgData = loader.parse(svg);
+            const svgData = loader.parse(stripStyle(svg));
             svgData.paths.forEach((path) => {
                 path.subPaths.forEach((subPath) => {
                     const rawPoints = subPath.getPoints();
@@ -190,7 +220,7 @@ function SceneContent({ floors, activeFloor, buildingSvgs, buildingMetadata }: a
                     interestingPoints.forEach((p) => {
                         worldPoints.push({
                             x: (p.x + tx) * finalScale,
-                            z: -(p.y + ty) * finalScale
+                            z: (p.y + ty) * finalScale
                         });
                     });
                 });
@@ -205,12 +235,20 @@ function SceneContent({ floors, activeFloor, buildingSvgs, buildingMetadata }: a
         };
     }, [buildingMetadata, buildingSvgs, floors, masterPillarDistPx]);
 
+    // 2b. A flat roof plate has no volume of its own — duplicate the top
+    // floor one story above itself so the building's last level reads as a
+    // real story (with skeleton walls) instead of ending in a bare plane.
+    const displayFloors = useMemo(() => {
+        if (floors.length === 0) return floors;
+        return [...floors, floors[floors.length - 1]];
+    }, [floors]);
+
     // 3. Skeleton Geometry
     const skeletonGeometry = useMemo(() => {
         const positions: number[] = [];
-        for (let i = 0; i < floors.length - 1; i++) {
-            const f1 = floors[i].value;
-            const f2 = floors[i+1].value;
+        for (let i = 0; i < displayFloors.length - 1; i++) {
+            const f1 = displayFloors[i].value;
+            const f2 = displayFloors[i+1].value;
             const d1 = processedFloors[f1];
             const d2 = processedFloors[f2];
             if (!d1 || !d2) continue;
@@ -225,41 +263,43 @@ function SceneContent({ floors, activeFloor, buildingSvgs, buildingMetadata }: a
                         closest = v2;
                     }
                 });
-                if (closest && minDist < 0.15) { 
-                    positions.push(v1.x, i * FLOOR_SPACING, v1.z);
-                    positions.push(closest.x, (i + 1) * FLOOR_SPACING, closest.z);
+                if (closest && minDist < 0.15) {
+                    positions.push(v1.x, i * floorHeight, v1.z);
+                    positions.push(closest.x, (i + 1) * floorHeight, closest.z);
                 }
             });
         }
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
         return geometry;
-    }, [processedFloors, floors]);
+    }, [processedFloors, displayFloors, floorHeight]);
 
-    const totalHeightFinal = (floors.length - 1) * FLOOR_SPACING;
+    const totalHeightFinal = (displayFloors.length - 1) * floorHeight;
 
     return (
-        <group ref={groupRef}>
-            <group position={[-buildingCenter.x, -totalHeightFinal / 2, -buildingCenter.z]}>
-                {floors.map((f: any, i: number) => {
-                    const data = processedFloors[f.value];
-                    if (!data) return null;
-                    return (
-                        <FloorPlate 
-                            key={f.value}
-                            svgContent={buildingSvgs[f.value]}
-                            yOffset={i * FLOOR_SPACING}
-                            isActive={f.value === activeFloor}
-                            scale={data.scale}
-                            tx={data.tx}
-                            ty={data.ty}
-                        />
-                    )
-                })}
+        <group position={position} rotation={rotation} scale={scale}>
+            <group ref={groupRef}>
+                <group position={[-buildingCenter.x, -totalHeightFinal / 2, -buildingCenter.z]}>
+                    {displayFloors.map((f: any, i: number) => {
+                        const data = processedFloors[f.value];
+                        if (!data) return null;
+                        return (
+                            <FloorPlate
+                                key={`${f.value}-${i}`}
+                                svgContent={buildingSvgs[f.value]}
+                                yOffset={i * floorHeight}
+                                isActive={f.value === activeFloor}
+                                scale={data.scale}
+                                tx={data.tx}
+                                ty={data.ty}
+                            />
+                        )
+                    })}
 
-                <lineSegments geometry={skeletonGeometry}>
-                    <lineBasicMaterial color={PALETTE.white} transparent opacity={0.9} linewidth={1} />
-                </lineSegments>
+                    <lineSegments geometry={skeletonGeometry} renderOrder={999}>
+                        <lineBasicMaterial color={PALETTE.white} transparent opacity={0.9} linewidth={1} depthTest={false} depthWrite={false} />
+                    </lineSegments>
+                </group>
             </group>
         </group>
     );
@@ -270,17 +310,18 @@ export default function BuildingModel({ bldg, floors, activeFloor, buildingSvgs,
         <div className="w-full h-full relative bg-zinc-950/10 rounded-none overflow-hidden">
             <Canvas camera={{ position: [8, 6, 8], fov: 35 }} dpr={[1, 2]}>
                 <ambientLight intensity={3} />
-                <SceneContent 
-                    floors={floors} 
-                    activeFloor={activeFloor} 
-                    buildingSvgs={buildingSvgs} 
-                    buildingMetadata={buildingMetadata} 
+                <BuildingWireframe
+                    floors={floors}
+                    activeFloor={activeFloor}
+                    buildingSvgs={buildingSvgs}
+                    buildingMetadata={buildingMetadata}
+                    autoRotate
                 />
-                <OrbitControls 
-                    enablePan={false} 
-                    enableZoom={false} 
-                    minPolarAngle={Math.PI / 4} 
-                    maxPolarAngle={Math.PI / 2.2} 
+                <OrbitControls
+                    enablePan={false}
+                    enableZoom={false}
+                    minPolarAngle={Math.PI / 4}
+                    maxPolarAngle={Math.PI / 2.2}
                 />
             </Canvas>
         </div>

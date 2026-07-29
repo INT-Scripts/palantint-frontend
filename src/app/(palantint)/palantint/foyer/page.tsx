@@ -1,22 +1,19 @@
 "use client";
 
 import { useEffect, useState, useRef, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { fetchPublic } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { MapPin, Layers, FileText } from "lucide-react";
 import { Box } from "@/components/ui/box";
-import BuildingModel from "../apartments/components/BuildingModel";
 import PageHeader from "@/components/PageHeader";
+
+// Canvas/WebGL sizing breaks under SSR hydration — must be client-only.
+const BuildingModel = dynamic(() => import("../apartments/components/BuildingModel"), { ssr: false });
 import PalantintFloorSelector from "../components/PalantintFloorSelector";
 import PalantintRoomDirectory from "../components/PalantintRoomDirectory";
 import { PalantintFoyerRoomDetail } from "../components/PalantintRoomDetailCard";
-
-const BUILDINGS: Record<string, { label: string; value: string }[]> = {
-    Foyer: [
-        { label: "Rez-de-chaussée (F0)", value: "0" },
-        { label: "1er Étage (F1)", value: "1" },
-    ],
-};
+import { FOYER_BUILDINGS as BUILDINGS } from "@/lib/buildings";
 
 function FoyerContent() {
     const router = useRouter();
@@ -27,6 +24,7 @@ function FoyerContent() {
     const [floor, setFloor] = useState("0");
     const [svgContent, setSvgContent] = useState<string>("");
     const [buildingSvgs, setBuildingSvgs] = useState<Record<string, string>>({});
+    const [buildingMetadata, setBuildingMetadata] = useState<Record<string, any>>({});
     const [roomMap, setRoomMap] = useState<Record<string, PalantintFoyerRoomDetail>>({});
     const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -35,12 +33,8 @@ function FoyerContent() {
         document.title = "Foyer Associatif — PalantINT";
 
         fetchPublic("/foyer/map")
-            .then((data: PalantintFoyerRoomDetail[]) => {
-                const map: Record<string, PalantintFoyerRoomDetail> = {};
-                (data || []).forEach((r) => {
-                    map[r.room_id] = r;
-                });
-                setRoomMap(map);
+            .then((data: Record<string, PalantintFoyerRoomDetail>) => {
+                setRoomMap(data || {});
             })
             .catch(() => {
                 fetch("/api/assets/clubs/foyer_map.json")
@@ -92,6 +86,19 @@ function FoyerContent() {
         return () => {
             isMounted = false;
         };
+    }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+        const loadMetadata = async () => {
+            let meta: any = {};
+            try {
+                meta = await fetchPublic("/maps/Foyer/metadata");
+            } catch { /* skip */ }
+            if (isMounted) setBuildingMetadata(meta || {});
+        };
+        loadMetadata();
+        return () => { isMounted = false; };
     }, []);
 
     const roomMapRef = useRef(roomMap);
@@ -379,7 +386,7 @@ function FoyerContent() {
                                 floors={BUILDINGS.Foyer}
                                 activeFloor={floor}
                                 buildingSvgs={buildingSvgs}
-                                buildingMetadata={{}}
+                                buildingMetadata={buildingMetadata}
                             />
                         </Box>
 

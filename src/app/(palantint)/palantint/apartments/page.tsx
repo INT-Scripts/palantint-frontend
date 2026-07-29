@@ -1,24 +1,18 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { fetchPrivate, fetchPublic } from "@/lib/api";
-import { 
+import {
     Eye, MapPin
 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Box } from "@/components/ui/box";
-import BuildingModel from "./components/BuildingModel";
 
-const BUILDINGS: Record<string, { label: string; value: string }[]> = {
-    U1: [{ label: "RDC", value: "0" }, { label: "1er", value: "1" }, { label: "2e", value: "2" }, { label: "3e", value: "3" }, { label: "4e", value: "4" }, { label: "5e", value: "5" }],
-    U2: [{ label: "1er", value: "1" }, { label: "2e", value: "2" }, { label: "3e", value: "3" }, { label: "4e", value: "4" }, { label: "5e", value: "5" }],
-    U3: [{ label: "RDC", value: "0" }, { label: "1er", value: "1" }, { label: "2e", value: "2" }],
-    U4: [{ label: "1er", value: "1" }, { label: "2e", value: "2" }, { label: "3e", value: "3" }, { label: "4e", value: "4" }, { label: "5e", value: "5" }, { label: "6e", value: "6" }],
-    U5: [{ label: "RDC -", value: "-0.5" }, { label: "RDC +", value: "0.5" }, { label: "1er", value: "1" }, { label: "2e", value: "2" }, { label: "3e", value: "3" }, { label: "4e", value: "4" }],
-    U6: [{ label: "1er", value: "1" }, { label: "2e", value: "2" }, { label: "3e", value: "3" }],
-    U7: [{ label: "1er", value: "1" }, { label: "2e", value: "2" }, { label: "3e", value: "3" }, { label: "4e", value: "4" }, { label: "5e", value: "5" }, { label: "6e", value: "6" }],
-};
+// Canvas/WebGL sizing breaks under SSR hydration — must be client-only.
+const BuildingModel = dynamic(() => import("./components/BuildingModel"), { ssr: false });
+import { APARTMENT_BUILDINGS as BUILDINGS } from "@/lib/buildings";
 
 function parseNumeric(val: any): number {
     if (val === null || val === undefined) return 0;

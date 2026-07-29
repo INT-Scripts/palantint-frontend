@@ -1,11 +1,7 @@
 "use client";
 
 import { Layers } from "lucide-react";
-
-interface FloorOption {
-  label: string;
-  value: string;
-}
+import { FOYER_BUILDINGS, FloorDef as FloorOption } from "@/lib/buildings";
 
 interface PortalFloorSelectorProps {
   buildings?: Record<string, FloorOption[]>;
@@ -18,12 +14,8 @@ interface PortalFloorSelectorProps {
   showAllFloorsOption?: boolean;
 }
 
-const DEFAULT_BUILDINGS: Record<string, FloorOption[]> = {
-  Foyer: [{ label: "Rez-de-chaussée (F0)", value: "0" }, { label: "1er Étage (F1)", value: "1" }],
-};
-
 export default function PortalFloorSelector({
-  buildings = DEFAULT_BUILDINGS,
+  buildings = FOYER_BUILDINGS,
   activeBuilding,
   activeFloor,
   onSelectBuilding,

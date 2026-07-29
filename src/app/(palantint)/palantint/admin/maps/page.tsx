@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Link from "next/link";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
+import { stripStyle } from "@/lib/svgPlan";
 
 const BUILDINGS = {
     U1: ["0", "1", "2", "3", "4", "5"],
@@ -23,6 +24,7 @@ const BUILDINGS = {
     U5: ["-0.5", "0.5", "1", "2", "3", "4"],
     U6: ["1", "2", "3"],
     U7: ["1", "2", "3", "4", "5", "6"],
+    Foyer: ["0", "1"],
 };
 
 export default function MapCalibrationPage() {
@@ -96,7 +98,7 @@ export default function MapCalibrationPage() {
 
             // 1. Paths via SVGLoader
             const loader = new SVGLoader();
-            const svgData = loader.parse(svgContent);
+            const svgData = loader.parse(stripStyle(svgContent));
             svgData.paths.forEach((path) => {
                 path.subPaths.forEach((subPath) => {
                     const points = subPath.getPoints();

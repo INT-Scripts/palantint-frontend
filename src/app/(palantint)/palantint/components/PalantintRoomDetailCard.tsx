@@ -2,6 +2,15 @@
 
 import { X } from "lucide-react";
 
+export interface PalantintFoyerClubSummary {
+  club_id: string;
+  club_name: string;
+  logo_url?: string | null;
+  description?: string | null;
+  type?: string | null;
+  association_of_origin?: string | null;
+}
+
 export interface PalantintFoyerRoomDetail {
   room_id: string;
   raw_name: string;
@@ -11,6 +20,7 @@ export interface PalantintFoyerRoomDetail {
   association_of_origin?: string | null;
   floor: string;
   building: string;
+  clubs?: PalantintFoyerClubSummary[];
 }
 
 interface PalantintRoomDetailCardProps {
@@ -29,7 +39,9 @@ export default function PalantintRoomDetailCard({
       <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
         <div className="flex items-center gap-2 font-mono">
           <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-          <span className="text-sm font-black text-white uppercase">{room.club_name}</span>
+          <span className="text-sm font-black text-white uppercase">
+            {room.clubs && room.clubs.length > 1 ? room.clubs.map((c) => c.club_name).join(" / ") : room.club_name}
+          </span>
         </div>
         <button
           onClick={onClose}

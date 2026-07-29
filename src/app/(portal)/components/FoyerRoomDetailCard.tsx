@@ -2,6 +2,15 @@
 
 import { X } from "lucide-react";
 
+export interface FoyerClubSummary {
+  club_id: string;
+  club_name: string;
+  logo_url?: string | null;
+  description?: string | null;
+  type?: string | null;
+  association_of_origin?: string | null;
+}
+
 export interface FoyerRoomDetail {
   room_id: string;
   raw_name: string;
@@ -11,14 +20,15 @@ export interface FoyerRoomDetail {
   association_of_origin?: string | null;
   floor: string;
   building: string;
+  clubs?: FoyerClubSummary[];
 }
 
-interface PortalRoomDetailCardProps {
+interface FoyerRoomDetailCardProps {
   room: FoyerRoomDetail;
   onClose: () => void;
 }
 
-export default function PortalRoomDetailCard({ room, onClose }: PortalRoomDetailCardProps) {
+export default function FoyerRoomDetailCard({ room, onClose }: FoyerRoomDetailCardProps) {
   return (
     <div className="bg-white dark:bg-stone-900 border-2 border-rose-500/80 rounded-3xl p-5 shadow-xs space-y-4 shrink-0">
       <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-stone-800 pb-3">
@@ -38,8 +48,21 @@ export default function PortalRoomDetailCard({ room, onClose }: PortalRoomDetail
       </div>
       <div className="bg-stone-50 dark:bg-stone-950 p-3.5 rounded-2xl border border-zinc-200/80 dark:border-stone-800 font-mono">
         <span className="text-[10px] text-zinc-400 dark:text-stone-500 uppercase block mb-1 font-bold">Club / Entité occupante</span>
-        <span className="font-extrabold text-rose-600 dark:text-rose-400 text-base block">{room.club_name || room.raw_name || "Non attribué"}</span>
-        {room.association_of_origin && <span className="text-xs text-zinc-500 dark:text-stone-400 mt-1 block">Tutelle: {room.association_of_origin}</span>}
+        {room.clubs && room.clubs.length > 1 ? (
+          <div className="flex flex-col gap-2">
+            {room.clubs.map((c) => (
+              <div key={c.club_id}>
+                <span className="font-extrabold text-rose-600 dark:text-rose-400 text-base block">{c.club_name}</span>
+                {c.association_of_origin && <span className="text-xs text-zinc-500 dark:text-stone-400 block">Tutelle: {c.association_of_origin}</span>}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            <span className="font-extrabold text-rose-600 dark:text-rose-400 text-base block">{room.club_name || room.raw_name || "Non attribué"}</span>
+            {room.association_of_origin && <span className="text-xs text-zinc-500 dark:text-stone-400 mt-1 block">Tutelle: {room.association_of_origin}</span>}
+          </>
+        )}
       </div>
     </div>
   );

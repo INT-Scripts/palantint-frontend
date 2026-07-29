@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "INT Portal",
   description: "Advanced Student Directory and Network Tracker",
   icons: {
-    icon: "/palantint.svg",
+    icon: "/intportal.svg",
   },
 };
 

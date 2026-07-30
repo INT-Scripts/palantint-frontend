@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { fetchPrivate, fetchPublic } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { Link2, Github, Instagram, Linkedin, Twitter, Users, Briefcase, Plus, Trash2, X, Check, GraduationCap } from "lucide-react";
+import PalantintClubModal from "../../../components/PalantintClubModal";
 
 interface SidebarProps {
     student: any;
@@ -27,6 +28,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
     const [allClubs, setAllClubs] = useState<any[]>([]);
     const [clubForm, setClubForm] = useState({ club_id: "", role: "Member", is_mandat: false });
     const [clubLoading, setClubLoading] = useState(false);
+    const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
 
     const PLATFORMS = ["Instagram", "LinkedIn", "GitHub", "Twitter/X", "Website", "Other"];
 
@@ -344,7 +346,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                                     
                                     <div className="flex items-center justify-between p-3 pl-4">
                                         <div
-                                            onClick={() => router.push(`/palantint/clubs/${clubId}`)}
+                                            onClick={() => setSelectedClubId(clubId)}
                                             className="cursor-pointer flex-1 min-w-0"
                                         >
                                             <div className="flex items-center gap-2 mb-1">
@@ -412,6 +414,7 @@ export default function SocialsClubsSidebar({ student, onUpdate }: SidebarProps)
                 </div>
             )}
 
+            <PalantintClubModal clubId={selectedClubId} onClose={() => setSelectedClubId(null)} />
         </div>
     );
 }

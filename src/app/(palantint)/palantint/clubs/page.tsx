@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { fetchPublic } from "@/lib/api";
-import { useRouter } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
 import PalantintClubCard, { PalantintClub } from "../components/PalantintClubCard";
+import PalantintClubModal from "../components/PalantintClubModal";
 import PalantintFloorSelector from "../components/PalantintFloorSelector";
 import { PALETTE } from "@/lib/colors";
 import { FOYER_BUILDINGS as BUILDINGS } from "@/lib/buildings";
@@ -15,7 +15,7 @@ export default function ClubsPage() {
   const [loading, setLoading] = useState(true);
   const [activeFloor, setActiveFloor] = useState("ALL");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const router = useRouter();
+  const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = "Associations — PalantINT";
@@ -132,7 +132,7 @@ export default function ClubsPage() {
                       isHovered={hoveredId === club.id}
                       onMouseEnter={() => setHoveredId(club.id)}
                       onMouseLeave={() => setHoveredId(null)}
-                      onClick={() => router.push(`/palantint/clubs/${club.id}`)}
+                      onClick={() => setSelectedClubId(club.id)}
                       getOriginBadgeStyle={getOriginBadgeStyle}
                     />
                   ))}
@@ -142,6 +142,8 @@ export default function ClubsPage() {
           })}
         </div>
       </main>
+
+      <PalantintClubModal clubId={selectedClubId} onClose={() => setSelectedClubId(null)} />
     </div>
   );
 }

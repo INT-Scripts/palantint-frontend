@@ -13,6 +13,11 @@ export default function FoyerRoomList({ rooms, selectedRoomId, onSelectRoom }: F
     <div className="p-5 space-y-2.5">
       {rooms.map((room) => {
         const isSelected = selectedRoomId === room.room_id;
+        const clubNames = room.clubs && room.clubs.length > 0
+          ? room.clubs.map((c) => c.club_name).join(", ")
+          : room.club_name || room.raw_name || "Non attribué";
+        const badge = room.clubs && room.clubs.length > 1 ? `${room.clubs.length} clubs` : room.type || "Club";
+
         return (
           <div
             key={room.room_id}
@@ -27,11 +32,11 @@ export default function FoyerRoomList({ rooms, selectedRoomId, onSelectRoom }: F
               <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
               <div className="truncate">
                 <span className="font-extrabold text-sm block tracking-wider">{room.room_id}</span>
-                <span className="text-xs text-zinc-500 dark:text-stone-400 truncate block">{room.club_name || room.raw_name || "Non attribué"}</span>
+                <span className="text-xs text-zinc-500 dark:text-stone-400 truncate block">{clubNames}</span>
               </div>
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-stone-200/70 dark:bg-stone-800 text-zinc-600 dark:text-stone-300 uppercase shrink-0">
-              {room.type || "Club"}
+              {badge}
             </span>
           </div>
         );

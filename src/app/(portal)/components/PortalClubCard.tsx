@@ -1,5 +1,6 @@
 "use client";
 
+import { Eye } from "lucide-react";
 import { ClubLink } from "./PortalClubModal";
 
 export interface Club {
@@ -66,7 +67,9 @@ export default function PortalClubCard({ club, onSelectClub, getOriginBadgeStyle
 
       <div className="border-t border-zinc-100 dark:border-stone-800/80 pt-3 mt-4 flex justify-between items-center text-[11px] font-mono text-zinc-400 dark:text-stone-500">
         <span className="lowercase truncate max-w-[120px]">@{club.slug || "general"}</span>
-        <span className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform">Details →</span>
+        <span className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform">
+          Details <Eye className="w-3.5 h-3.5" />
+        </span>
       </div>
     </div>
   );

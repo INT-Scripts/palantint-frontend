@@ -8,6 +8,7 @@ import PageHeader from "@/components/PageHeader";
 import { Share2, ZoomIn, Filter, Maximize } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Box } from "@/components/ui/box";
+import PalantintClubModal from "../components/PalantintClubModal";
 
 // Dynamically import the graph to avoid SSR issues with Canvas/window
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
@@ -25,6 +26,7 @@ export default function NetworkPage() {
     const [rawGraphData, setRawGraphData] = useState<{nodes: any[], links: any[]}>({ nodes: [], links: [] });
     const [loading, setLoading] = useState(true);
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+    const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const fgRef = useRef<any>(null);
     const hasInitiallyFit = useRef(false);
@@ -107,7 +109,7 @@ export default function NetworkPage() {
         if (node.group === "student") {
             router.push(`/palantint/students/${node.id}`);
         } else if (node.group === "club") {
-            router.push(`/palantint/clubs/${node.id}`);
+            setSelectedClubId(node.id);
         }
     };
 
@@ -221,6 +223,8 @@ export default function NetworkPage() {
                     </Box>
                 </div>
             </main>
+
+            <PalantintClubModal clubId={selectedClubId} onClose={() => setSelectedClubId(null)} />
         </div>
     );
 }

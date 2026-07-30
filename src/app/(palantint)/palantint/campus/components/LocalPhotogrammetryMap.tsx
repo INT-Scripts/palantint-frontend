@@ -233,10 +233,9 @@ function ScannedModel({ url, dimmed, onSettled }: {
     return <primitive object={scene} />;
 }
 
-function BuildingFootprintMesh({ marker, onSelect, onBrowse, tilesReady, visible }: {
+function BuildingFootprintMesh({ marker, onSelect, tilesReady, visible }: {
     marker: BuildingMarker,
     onSelect: (markerId: string) => void,
-    onBrowse: (bldgId: string) => void,
     tilesReady: boolean,
     visible: boolean
 }) {
@@ -286,13 +285,7 @@ function BuildingFootprintMesh({ marker, onSelect, onBrowse, tilesReady, visible
                             hovered ? 'bg-campus-500/20 border-campus-500 text-campus-400' : 'bg-zinc-950/80 border-campus-500/50 text-white'
                         }`}>
                             <Building2 className={`w-4 h-4 ${hovered ? 'text-campus-400' : 'text-campus-600'}`} />
-                            <span
-                                onClick={(e) => { e.stopPropagation(); onBrowse(marker.bldg_id); }}
-                                title="Parcourir ce bâtiment"
-                                className="hover:text-campus-400 hover:underline"
-                            >
-                                {marker.label || marker.bldg_id}
-                            </span>
+                            <span>{marker.label || marker.bldg_id}</span>
                         </div>
                     </div>
                 </Html>
@@ -563,7 +556,6 @@ export default function LocalPhotogrammetryMap() {
                         key={m.id}
                         marker={m}
                         onSelect={handleSelectBuilding}
-                        onBrowse={navigateToBuilding}
                         tilesReady={tilesReady}
                         visible={!focusedMarker}
                     />

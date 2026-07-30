@@ -5,13 +5,16 @@ import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { fetchPrivate, fetchPublic } from "@/lib/api";
 import {
-    Eye, MapPin
+    MapPin, Users
 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Box } from "@/components/ui/box";
 
 // Canvas/WebGL sizing breaks under SSR hydration — must be client-only.
 const BuildingModel = dynamic(() => import("./components/BuildingModel"), { ssr: false });
+import PalantintDirectoryPanel from "../components/PalantintDirectoryPanel";
+import PalantintApartmentDetailCard from "./components/PalantintApartmentDetailCard";
+import PalantintApartmentList from "./components/PalantintApartmentList";
 import { APARTMENT_BUILDINGS as BUILDINGS } from "@/lib/buildings";
 
 function parseNumeric(val: any): number {
@@ -329,7 +332,10 @@ function ApartmentsContent() {
         return aptNum[0] === b && aptNum[1] === f;
     };
 
-    const currentViewApts = Object.keys(occupied)
+    // All rooms for this building/floor, occupied or not — vacancy is shown
+    // via the SVG map coloring and the empty "Occupants" section in the
+    // detail popup, not by hiding the room from the list.
+    const currentViewApts = Object.keys(apartmentsDetails)
         .filter(belongsToCurrentView)
         .sort((a, b) => Number(a) - Number(b));
 
@@ -564,99 +570,36 @@ function ApartmentsContent() {
 
                         {/* Right Directory Panel Wrapper (Pinned strictly to Left Box height) */}
                         <div className="w-full lg:w-[420px] shrink-0 relative min-h-[450px] lg:min-h-0">
-                            <div className="w-full h-full lg:absolute lg:inset-0 bg-zinc-900/40 backdrop-blur-3xl border border-zinc-800 flex flex-col shadow-2xl relative rounded-none overflow-hidden min-w-0">
-                                <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-zinc-800 bg-black/20 shrink-0">
-                                    <h3 className="text-[10px] font-black font-mono text-zinc-400 uppercase tracking-[0.2em]">
-                                        Assets — {bldg} Étage {BUILDINGS[bldg].find(f => f.value === floor)?.label || floor}
-                                    </h3>
-                                    <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest font-bold">
-                                        {currentViewApts.length} unités
-                                    </div>
-                                </div>
-
-                                {/* Selected Apartment Specs Card */}
-                                {selectedRoom && apartmentsDetails[selectedRoom] && (() => {
-                                    const detail = apartmentsDetails[selectedRoom];
-                                    const baseRent = parseNumeric(detail.Tarif);
-                                    const allocBoursier = parseNumeric(detail['Allocation boursier']);
-                                    const allocNonBoursier = parseNumeric(detail['Allocation non boursier']);
-                                    const netBoursier = baseRent > 0 && allocBoursier > 0 ? baseRent - allocBoursier : (baseRent || 0);
-                                    const netNonBoursier = baseRent > 0 && allocNonBoursier > 0 ? baseRent - allocNonBoursier : (baseRent || 0);
-                                    const surf = parseNumeric(detail.Superficie);
-
-                                    return (
-                                        <div className="p-4 border-b border-zinc-800 bg-zinc-950/70 space-y-3 shrink-0">
-                                            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
-                                                <div className="flex items-center gap-2 font-mono">
-                                                    <div className="w-2 h-2 rounded-full bg-housing-500 animate-pulse" />
-                                                    <span className="text-sm font-black text-white uppercase">Logement {selectedRoom}</span>
-                                                </div>
-                                                <button onClick={() => setSelectedRoom(null)} title="Désélectionner" className="text-zinc-500 hover:text-white p-1 cursor-pointer">
-                                                    ✕
-                                                </button>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-2 font-mono text-[11px]">
-                                                <div className="p-2 bg-zinc-900/80 border border-zinc-800">
-                                                    <span className="text-[8px] font-mono text-zinc-500 uppercase block">Type</span>
-                                                    <span className="font-bold text-white uppercase">{detail.Type || "—"}</span>
-                                                </div>
-                                                <div className="p-2 bg-zinc-900/80 border border-zinc-800">
-                                                    <span className="text-[8px] font-mono text-zinc-500 uppercase block">Superficie</span>
-                                                    <span className="font-bold text-white">{surf > 0 ? `${surf} m²` : (detail.Superficie || '-')}</span>
-                                                </div>
-                                                <div className="p-2 bg-housing-500/10 border border-housing-500/20 col-span-2 flex justify-between items-center">
-                                                    <span className="text-[8px] font-mono text-zinc-300 uppercase font-bold">Loyer Brut</span>
-                                                    <span className="font-black text-housing-400">{baseRent > 0 ? `${baseRent} €/mois` : (detail.Tarif || '-')}</span>
-                                                </div>
-                                                <div className="p-2 bg-zinc-900/80 border border-zinc-800 flex flex-col gap-0.5">
-                                                    <span className="text-[8px] font-mono text-zinc-500 uppercase">Boursier (-{allocBoursier}€ APL/ALS)</span>
-                                                    <span className="font-bold text-emerald-400 text-xs">{netBoursier > 0 ? `${netBoursier} €/m` : '-'}</span>
-                                                </div>
-                                                <div className="p-2 bg-zinc-900/80 border border-zinc-800 flex flex-col gap-0.5">
-                                                    <span className="text-[8px] font-mono text-zinc-500 uppercase">Non-Boursier (-{allocNonBoursier}€ APL/ALS)</span>
-                                                    <span className="font-bold text-zinc-200 text-xs">{netNonBoursier > 0 ? `${netNonBoursier} €/m` : '-'}</span>
-                                                </div>
-                                            </div>
-
-                                            {occupied[selectedRoom]?.length > 0 && (
-                                                <div className="pt-2 border-t border-zinc-800/60 space-y-1 font-mono">
-                                                    <span className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest font-black block mb-1">Occupants enregistrés</span>
-                                                    {occupied[selectedRoom].map((o: any) => (
-                                                        <button key={o.id} onClick={() => router.push(`/palantint/students/${o.id}`)} className="w-full text-left text-[11px] font-mono text-zinc-300 hover:text-housing-400 truncate uppercase border border-zinc-800 p-1.5 bg-black/40 hover:bg-zinc-900 transition-colors flex items-center justify-between cursor-pointer">
-                                                            <span>{o.first_name} {o.last_name}</span>
-                                                            <Eye className="w-3 h-3 text-zinc-500" />
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })()}
-
-                                <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
-                                    {currentViewApts.length > 0 ? currentViewApts.map((apt) => (
-                                        <div key={apt} className={`border-b border-zinc-800/30 p-4 transition-all cursor-pointer ${selectedRoom === apt ? "bg-housing-500/5 border-l-2 border-housing-500" : "hover:bg-zinc-900/40 border-l-2 border-transparent"}`} onClick={() => { setSelectedRoom(apt); setSearch(apt); }}>
-                                            <div className="flex items-center justify-between font-mono">
-                                                <span className="text-sm font-bold text-white">{apt}</span>
-                                                <span className="text-[10px] text-zinc-500">{occupied[apt]?.length || 0} residents</span>
-                                            </div>
-                                            {occupied[apt]?.length > 0 && (
-                                                <div className="mt-3 space-y-1">
-                                                    {occupied[apt].map((o: any) => (
-                                                        <button key={o.id} onClick={(e) => { e.stopPropagation(); router.push(`/palantint/students/${o.id}`); }} className="w-full text-left text-[11px] font-mono text-zinc-400 hover:text-housing-400 truncate uppercase border border-zinc-800/50 p-1 bg-black/20 hover:bg-black/40 transition-colors cursor-pointer">
-                                                            {o.first_name} {o.last_name}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )) : (
-                                        <div className="p-10 text-center text-zinc-600 font-mono text-xs uppercase tracking-widest">
-                                            {loading ? "Loading assets..." : "No assets detected"}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                            <PalantintDirectoryPanel
+                                items={currentViewApts}
+                                getId={(apt) => apt}
+                                selectedId={selectedRoom}
+                                onSelect={(id) => { setSelectedRoom(id); setSearch(id || ""); }}
+                                accentColor="housing"
+                                resolveDetailItem={(id) => (apartmentsDetails[id] ? id : null)}
+                                loading={loading}
+                                icon={Users}
+                                title={`Assets — ${bldg} Étage ${BUILDINGS[bldg].find(f => f.value === floor)?.label || floor}`}
+                                countLabel="unités"
+                                emptyLabel="Aucun logement détecté pour cet étage."
+                                renderDetail={(apt, onClose) => (
+                                    <PalantintApartmentDetailCard
+                                        roomId={apt}
+                                        detail={apartmentsDetails[apt]}
+                                        occupants={occupied[apt] || []}
+                                        onClose={onClose}
+                                        onNavigateToStudent={(studentId) => router.push(`/palantint/students/${studentId}`)}
+                                    />
+                                )}
+                                renderList={(apts) => (
+                                    <PalantintApartmentList
+                                        apartments={apts}
+                                        occupied={occupied}
+                                        selectedRoomId={selectedRoom}
+                                        onSelectRoom={(id) => { setSelectedRoom(id); setSearch(id); }}
+                                    />
+                                )}
+                            />
                         </div>
                     </div>
 

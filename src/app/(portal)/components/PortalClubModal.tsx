@@ -1,6 +1,7 @@
 "use client";
 
-import { ExternalLink, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ExternalLink, MapPin, X } from "lucide-react";
 
 export interface ClubLink {
   name: string;
@@ -27,7 +28,14 @@ interface PortalClubModalProps {
 }
 
 export default function PortalClubModal({ club, onClose, getOriginBadgeStyle }: PortalClubModalProps) {
+  const router = useRouter();
   if (!club) return null;
+
+  const handleJumpToFoyer = () => {
+    const roomId = club.foyer_room;
+    onClose();
+    router.push(`/foyer?room=${encodeURIComponent(roomId!)}`);
+  };
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
@@ -59,7 +67,13 @@ export default function PortalClubModal({ club, onClose, getOriginBadgeStyle }: 
                   <span className="px-2.5 py-1 text-xs font-mono font-semibold uppercase tracking-wider rounded-md bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200/80 dark:border-stone-700/80">{club.type}</span>
                 )}
                 {club.foyer_room && (
-                  <span className="px-2.5 py-1 text-xs font-mono font-bold uppercase tracking-wider rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Foyer Local: {club.foyer_room}</span>
+                  <button
+                    onClick={handleJumpToFoyer}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-bold uppercase tracking-wider rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors cursor-pointer"
+                  >
+                    <MapPin className="w-3 h-3" />
+                    Foyer Local: {club.foyer_room}
+                  </button>
                 )}
               </div>
             </div>

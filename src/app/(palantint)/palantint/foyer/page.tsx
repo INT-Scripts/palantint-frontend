@@ -2,21 +2,23 @@
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { fetchPublic } from "@/lib/api";
-import { useRouter } from "next/navigation";
-import { MapPin, Layers, FileText } from "lucide-react";
+import { MapPin, Layers, FileText, Users } from "lucide-react";
 import { Box } from "@/components/ui/box";
 import PageHeader from "@/components/PageHeader";
 
 // Canvas/WebGL sizing breaks under SSR hydration — must be client-only.
 const BuildingModel = dynamic(() => import("../apartments/components/BuildingModel"), { ssr: false });
 import PalantintFloorSelector from "../components/PalantintFloorSelector";
-import PalantintRoomDirectory from "../components/PalantintRoomDirectory";
-import { PalantintFoyerRoomDetail } from "../components/PalantintRoomDetailCard";
+import PalantintDirectoryPanel from "../components/PalantintDirectoryPanel";
+import PalantintRoomList from "../components/PalantintRoomList";
+import PalantintRoomDetailCard, { PalantintFoyerRoomDetail } from "../components/PalantintRoomDetailCard";
+import PalantintClubModal from "../components/PalantintClubModal";
 import { FOYER_BUILDINGS as BUILDINGS } from "@/lib/buildings";
 
 function FoyerContent() {
-    const router = useRouter();
+    const searchParams = useSearchParams();
     const svgRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const hoveredRoomRef = useRef<string | null>(null);
@@ -27,6 +29,7 @@ function FoyerContent() {
     const [buildingMetadata, setBuildingMetadata] = useState<Record<string, any>>({});
     const [roomMap, setRoomMap] = useState<Record<string, PalantintFoyerRoomDetail>>({});
     const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
+    const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -50,6 +53,14 @@ function FoyerContent() {
             })
             .finally(() => setLoading(false));
     }, []);
+
+    // Deep-link support: /palantint/foyer?room=F0-5 (used by "Jump to location" from a club).
+    useEffect(() => {
+        const roomId = searchParams.get("room");
+        if (!roomId || !roomMap[roomId]) return;
+        setSelectedRoom(roomId);
+        setFloor(roomMap[roomId].floor);
+    }, [searchParams, roomMap]);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -351,14 +362,27 @@ function FoyerContent() {
 
                         {/* Right Directory Panel Wrapper (Pinned strictly to Left Box height) */}
                         <div className="w-full lg:w-[420px] shrink-0 relative min-h-[450px] lg:min-h-0">
-                            <PalantintRoomDirectory
-                                rooms={currentFloorRooms}
-                                floorLabel={BUILDINGS.Foyer.find((f) => f.value === floor)?.label || `F${floor}`}
-                                selectedRoom={selectedRoom}
-                                roomMap={roomMap}
-                                onSelectRoom={setSelectedRoom}
-                                onNavigateToClub={(clubId) => router.push(`/palantint/clubs/${clubId}`)}
+                            <PalantintDirectoryPanel
+                                items={currentFloorRooms}
+                                getId={(room) => room.room_id}
+                                selectedId={selectedRoom}
+                                onSelect={setSelectedRoom}
+                                accentColor="rose"
                                 loading={loading}
+                                icon={Users}
+                                title={`Locaux — ${BUILDINGS.Foyer.find((f) => f.value === floor)?.label || `F${floor}`}`}
+                                countLabel="locaux"
+                                emptyLabel="Aucun local pour cet étage."
+                                renderDetail={(room, onClose) => (
+                                    <PalantintRoomDetailCard
+                                        room={room}
+                                        onClose={onClose}
+                                        onNavigateToClub={(clubId) => setSelectedClubId(clubId)}
+                                    />
+                                )}
+                                renderList={(rooms) => (
+                                    <PalantintRoomList rooms={rooms} selectedRoomId={selectedRoom} onSelectRoom={setSelectedRoom} />
+                                )}
                             />
                         </div>
                     </div>
@@ -415,6 +439,8 @@ function FoyerContent() {
                     </div>
                 </div>
             </main>
+
+            <PalantintClubModal clubId={selectedClubId} onClose={() => setSelectedClubId(null)} />
         </div>
     );
 }

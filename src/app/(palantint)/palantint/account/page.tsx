@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
+import PalantintClubModal from "../components/PalantintClubModal";
 
 export default function AccountPage() {
     const router = useRouter();
@@ -33,6 +34,7 @@ export default function AccountPage() {
     const [casUser, setCasUser] = useState("");
     const [casPass, setCasPass] = useState("");
     const [casSaving, setCasSaving] = useState(false);
+    const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
 
     useEffect(() => {
         if (selectedEventId) {
@@ -365,7 +367,7 @@ export default function AccountPage() {
                             <div className="space-y-3">
                                 {student?.clubs?.length > 0 ? (
                                     student.clubs.map((club: any) => (
-                                        <Link key={club.id} href={`/palantint/clubs/${club.id}`} className="block border border-zinc-800 bg-black/20 hover:border-orga-500/40 hover:bg-orga-500/[0.03] group/club p-4 rounded-none">
+                                        <button key={club.id} onClick={() => setSelectedClubId(club.id)} className="w-full block border border-zinc-800 bg-black/20 hover:border-orga-500/40 hover:bg-orga-500/[0.03] group/club p-4 rounded-none text-left cursor-pointer">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 border border-zinc-800 bg-zinc-950 flex items-center justify-center shrink-0 rounded-none">
                                                     {club.logo_url ? <img src={club.logo_url} alt="" className="w-full h-full object-cover" /> : <Users className="w-4 h-4 text-zinc-800" />}
@@ -375,7 +377,7 @@ export default function AccountPage() {
                                                     <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">{club.role || "MEMBER"}</p>
                                                 </div>
                                             </div>
-                                        </Link>
+                                        </button>
                                     ))
                                 ) : (
                                     <div className="p-8 border border-zinc-900 bg-black/10 text-center">
@@ -541,6 +543,8 @@ export default function AccountPage() {
                     </div>
                 </div>
             )}
+
+            <PalantintClubModal clubId={selectedClubId} onClose={() => setSelectedClubId(null)} />
         </div>
     );
 }

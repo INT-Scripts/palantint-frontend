@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { fetchPublic } from "@/lib/api";
 import { Layers, FileText, Users } from "lucide-react";
 import PortalHeader from "@/components/PortalHeader";
@@ -13,17 +14,36 @@ const BuildingModel = dynamic(() => import("@/app/(palantint)/palantint/apartmen
 import PortalDirectoryPanel from "../components/PortalDirectoryPanel";
 import FoyerRoomList from "../components/FoyerRoomList";
 import FoyerRoomDetailCard, { FoyerRoomDetail } from "../components/FoyerRoomDetailCard";
+import PortalClubModal, { ClubDetail } from "../components/PortalClubModal";
 import { FOYER_BUILDINGS as BUILDINGS } from "@/lib/buildings";
 
-export default function PublicFoyerPage() {
+function FoyerContent() {
+  const searchParams = useSearchParams();
   const [foyerMap, setFoyerMap] = useState<Record<string, FoyerRoomDetail>>({});
   const [loading, setLoading] = useState<boolean>(true);
 
   const [activeBuilding, setActiveBuilding] = useState<string>("Foyer");
   const [activeFloor, setActiveFloor] = useState<string>("0");
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [selectedClub, setSelectedClub] = useState<ClubDetail | null>(null);
   const [buildingSvgs, setBuildingSvgs] = useState<Record<string, string>>({});
   const [buildingMetadata, setBuildingMetadata] = useState<Record<string, any>>({});
+
+  const handleOpenClub = async (clubId: string) => {
+    try {
+      const fullDetails = await fetchPublic(`/clubs/${clubId}`);
+      if (fullDetails) setSelectedClub(fullDetails);
+    } catch { /* ignore, keep panel state */ }
+  };
+
+  const getOriginBadgeStyle = (origin?: string) => {
+    if (!origin) return "bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300 border-stone-200 dark:border-stone-700";
+    const u = origin.toUpperCase();
+    if (u.includes("BDE")) return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+    if (u.includes("BDA")) return "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20";
+    if (u.includes("ASINT") || u.includes("BDS")) return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+    return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -42,6 +62,14 @@ export default function PublicFoyerPage() {
     load();
     return () => { isMounted = false; };
   }, []);
+
+  // Deep-link support: /foyer?room=F0-5 (used by "Jump to location" from a club).
+  useEffect(() => {
+    const roomId = searchParams.get("room");
+    if (!roomId || !foyerMap[roomId]) return;
+    setSelectedRoomId(roomId);
+    setActiveFloor(foyerMap[roomId].floor);
+  }, [searchParams, foyerMap]);
 
   useEffect(() => {
     const loadSvgs = async () => {
@@ -138,7 +166,7 @@ export default function PublicFoyerPage() {
             title={`Répertoire Locaux — Étage ${activeFloor}`}
             countLabel="Locaux"
             emptyLabel="Aucun local pour cet étage."
-            renderDetail={(room, onClose) => <FoyerRoomDetailCard room={room} onClose={onClose} />}
+            renderDetail={(room, onClose) => <FoyerRoomDetailCard room={room} onClose={onClose} onOpenClub={handleOpenClub} />}
             renderList={(rooms) => (
               <FoyerRoomList rooms={rooms} selectedRoomId={selectedRoomId} onSelectRoom={setSelectedRoomId} />
             )}
@@ -180,6 +208,20 @@ export default function PublicFoyerPage() {
           </div>
         </div>
       </div>
+
+      <PortalClubModal
+        club={selectedClub}
+        onClose={() => setSelectedClub(null)}
+        getOriginBadgeStyle={getOriginBadgeStyle}
+      />
     </section>
+  );
+}
+
+export default function PublicFoyerPage() {
+  return (
+    <Suspense fallback={null}>
+      <FoyerContent />
+    </Suspense>
   );
 }

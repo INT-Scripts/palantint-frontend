@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, Users, WashingMachine, MapPin } from "lucide-react";
+import { Building2, Users, WashingMachine, MapPin, BookOpen } from "lucide-react";
 
 export default function PortalHomePage() {
   return (
@@ -9,12 +9,12 @@ export default function PortalHomePage() {
           All your campus services <br className="hidden sm:inline" /> in one unified place.
         </h1>
         <p className="text-lg sm:text-xl text-zinc-600 dark:text-stone-400 leading-relaxed max-w-2xl">
-          Check live laundry room occupancy, explore campus housing, browse accredited student clubs, and view interactive foyer floor plans.
+          Search the full course catalog, check live laundry room occupancy, explore campus housing, browse accredited student clubs, and view interactive foyer floor plans.
         </p>
       </div>
 
       {/* Feature Grid - Minimal Editorial Columns */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 border border-zinc-200/80 dark:border-stone-800/50 bg-stone-50/90 dark:bg-stone-900/90 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-sm relative z-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 border border-zinc-200/80 dark:border-stone-800/50 bg-stone-50/90 dark:bg-stone-900/90 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-sm relative z-10">
         
         {/* Clubs Column (Green) */}
         <Link href="/clubs" className="group flex flex-col justify-between h-full p-4 rounded-xl hover:bg-stone-100/60 dark:hover:bg-stone-800/40 transition-colors">
@@ -76,6 +76,27 @@ export default function PortalHomePage() {
           </div>
           <div className="flex items-center gap-1.5 text-zinc-400 dark:text-stone-500 text-xs font-semibold uppercase tracking-wider mt-8 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-all group-hover:translate-x-1 duration-300">
             Housing info →
+          </div>
+        </Link>
+
+        {/* Course Catalog Column (Indigo) */}
+        <Link href="/courses" className="group flex flex-col justify-between h-full p-4 rounded-xl hover:bg-stone-100/60 dark:hover:bg-stone-800/40 transition-colors">
+          <div>
+            <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-300 shadow-sm border border-indigo-100/50 dark:border-indigo-900/10">
+              <BookOpen className="w-6 h-6" />
+            </div>
+            <h3 className="font-semibold text-lg text-zinc-900 dark:text-stone-100 transition-colors inline-block">
+              <span className="relative pb-1">
+                Course Catalog
+                <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-gradient-to-r from-indigo-500 to-violet-500 group-hover:w-full transition-all duration-300" />
+              </span>
+            </h3>
+            <p className="text-zinc-500 dark:text-stone-400 text-sm mt-3 leading-relaxed">
+              Search every course sheet from both schools: credits, level, language, and syllabus.
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 text-zinc-400 dark:text-stone-500 text-xs font-semibold uppercase tracking-wider mt-8 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-all group-hover:translate-x-1 duration-300">
+            Browse courses →
           </div>
         </Link>
 

@@ -9,12 +9,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link2, Users, Image as ImageIcon, CalendarDays, Edit, MapPin, Briefcase, GraduationCap, Mail, X, Check, StickyNote, Home, Network, Lock, MessageSquare } from "lucide-react";
+import { Link2, Users, Image as ImageIcon, CalendarDays, Edit, MapPin, Briefcase, GraduationCap, Mail, X, Check, StickyNote, Home, Network, Lock, MessageSquare, BookOpen } from "lucide-react";
 import AgendaCalendar from "./components/AgendaCalendar";
 import MediaGallery from "./components/MediaGallery";
 import RelationshipsList from "./components/RelationshipsList";
 import SocialsClubsSidebar from "./components/SocialsClubsSidebar";
 import NotesList from "./components/NotesList";
+
+// Courses whose official sheet names this person, matched by name at read time.
+interface TaughtCourse {
+    id: string;
+    code: string | null;
+    title: string;
+    role: string;
+    credits_ects: number | null;
+}
 
 export default function StudentProfilePage() {
     const { id } = useParams();
@@ -263,12 +272,21 @@ export default function StudentProfilePage() {
                                         >
                                             <Network className="w-3.5 h-3.5 mr-2" /> Connections
                                         </TabsTrigger>
-                                        <TabsTrigger 
-                                            value="notes" 
+                                        <TabsTrigger
+                                            value="notes"
                                             className="whitespace-nowrap data-[state=active]:bg-comms-600/20 data-[state=active]:text-comms-400 py-3 sm:py-0 sm:h-full px-4 sm:px-6 font-mono uppercase tracking-widest text-[10px] font-black transition-all relative flex items-center gap-2 rounded-none border-b-2 border-transparent data-[state=active]:border-comms-600"
                                         >
                                             <MessageSquare className="w-3.5 h-3.5 mr-2" /> Comms Log
                                         </TabsTrigger>
+                                        {/* Only for people the course catalog names as teaching staff. */}
+                                        {student.taught_courses?.length > 0 && (
+                                            <TabsTrigger
+                                                value="courses"
+                                                className="whitespace-nowrap data-[state=active]:bg-course-600/20 data-[state=active]:text-course-400 py-3 sm:py-0 sm:h-full px-4 sm:px-6 font-mono uppercase tracking-widest text-[10px] font-black transition-all rounded-none border-b-2 border-transparent data-[state=active]:border-course-600"
+                                            >
+                                                <BookOpen className="w-3.5 h-3.5 mr-2" /> Courses ({student.taught_courses.length})
+                                            </TabsTrigger>
+                                        )}
                                     </TabsList>
                                     
                                     <div className="flex-1 p-6 relative">
@@ -287,6 +305,36 @@ export default function StudentProfilePage() {
                                         <TabsContent value="notes" className="m-0 h-full">
                                             <NotesList studentId={student.id} themeColor={PALETTE.comms[500]} />
                                         </TabsContent>
+
+                                        {student.taught_courses?.length > 0 && (
+                                            <TabsContent value="courses" className="m-0 h-full">
+                                                <div className="space-y-3">
+                                                    <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest mb-4">
+                                                        Courses whose official sheet names this person
+                                                    </p>
+                                                    {student.taught_courses.map((course: TaughtCourse) => (
+                                                        <div
+                                                            key={course.id}
+                                                            onClick={() => router.push(`/palantint/courses/${course.id}`)}
+                                                            className="flex items-center justify-between gap-4 border border-zinc-800 bg-zinc-950/40 hover:bg-course-500/5 hover:border-course-500/50 px-4 py-3 cursor-pointer transition-all group"
+                                                        >
+                                                            <div className="min-w-0">
+                                                                <p className="text-[10px] font-mono text-course-500 uppercase tracking-widest">
+                                                                    {course.code || "—"}
+                                                                </p>
+                                                                <p className="text-sm font-bold text-white uppercase tracking-wide truncate group-hover:text-course-400 transition-colors">
+                                                                    {course.title}
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex items-center gap-4 shrink-0 font-mono text-[10px] uppercase tracking-widest text-zinc-500">
+                                                                <span>{course.role === "RESPONSABLE" ? "Leader" : "Teaching team"}</span>
+                                                                <span className="text-course-400">{course.credits_ects ?? "—"} ECTS</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </TabsContent>
+                                        )}
                                     </div>
                                 </Tabs>
                             </div>

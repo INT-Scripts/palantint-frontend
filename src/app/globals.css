@@ -47,6 +47,11 @@
   --color-media-500: var(--color-fuchsia-500);
   --color-media-600: var(--color-fuchsia-600);
 
+  --color-course-300: var(--color-indigo-300);
+  --color-course-400: var(--color-indigo-400);
+  --color-course-500: var(--color-indigo-500);
+  --color-course-600: var(--color-indigo-600);
+
   --color-comms-300: var(--color-red-300);
   --color-comms-400: var(--color-red-400);
   --color-comms-500: var(--color-red-500);

@@ -22,13 +22,18 @@ export default function PortalLayout({
               </div>
               <span className="font-semibold text-lg tracking-tight text-zinc-900 dark:text-stone-50">INT Portal</span>
             </Link>
-            <nav className="flex items-center gap-6 text-sm font-medium text-zinc-600 dark:text-stone-400">
-              <Link href="/clubs" className="hover:text-zinc-950 dark:hover:text-white transition-colors">Clubs</Link>
-              <Link href="/foyer" className="hover:text-zinc-950 dark:hover:text-white transition-colors">Foyer</Link>
-              <Link href="/apartments" className="hover:text-zinc-950 dark:hover:text-white transition-colors">Apartments</Link>
-              <Link href="/laundry" className="hover:text-zinc-950 dark:hover:text-white transition-colors">Laundry</Link>
-              <div className="border-l border-zinc-200 dark:border-stone-800/80 h-4" />
-              <ThemeToggle />
+            {/* Scrolls instead of wrapping: five destinations no longer fit on
+                a narrow phone, and this header has no burger menu. */}
+            <nav className="flex items-center gap-4 sm:gap-6 text-sm font-medium text-zinc-600 dark:text-stone-400 overflow-x-auto min-w-0">
+              <Link href="/courses" className="shrink-0 hover:text-zinc-950 dark:hover:text-white transition-colors">Courses</Link>
+              <Link href="/clubs" className="shrink-0 hover:text-zinc-950 dark:hover:text-white transition-colors">Clubs</Link>
+              <Link href="/foyer" className="shrink-0 hover:text-zinc-950 dark:hover:text-white transition-colors">Foyer</Link>
+              <Link href="/apartments" className="shrink-0 hover:text-zinc-950 dark:hover:text-white transition-colors">Apartments</Link>
+              <Link href="/laundry" className="shrink-0 hover:text-zinc-950 dark:hover:text-white transition-colors">Laundry</Link>
+              <div className="shrink-0 border-l border-zinc-200 dark:border-stone-800/80 h-4" />
+              <div className="shrink-0">
+                <ThemeToggle />
+              </div>
             </nav>
           </div>
         </header>

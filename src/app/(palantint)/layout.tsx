@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import AppWrapper from "@/components/AppWrapper";
 import { Toaster } from "@/components/ui/sonner";
+
+export const metadata: Metadata = {
+  icons: {
+    icon: "/palantint.svg",
+  },
+};
 
 export default function PalantintLayout({
   children,

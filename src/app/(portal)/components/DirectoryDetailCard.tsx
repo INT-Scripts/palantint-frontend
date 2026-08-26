@@ -12,7 +12,7 @@ export interface PortalStatItem {
 }
 
 interface DirectoryDetailCardProps {
-  accentColor: "amber" | "rose";
+  accentColor: "amber" | "rose" | "blue";
   title: ReactNode;
   badge?: string;
   onClose: () => void;
@@ -23,6 +23,7 @@ interface DirectoryDetailCardProps {
 const ACCENT = {
   amber: { border: "border-amber-500/80", dot: "bg-amber-500", badge: "bg-amber-600", accentBox: "bg-amber-500/10 border-amber-500/20", accentText: "text-amber-600 dark:text-amber-400" },
   rose: { border: "border-rose-500/80", dot: "bg-rose-500", badge: "bg-rose-600", accentBox: "bg-rose-500/10 border-rose-500/20", accentText: "text-rose-600 dark:text-rose-400" },
+  blue: { border: "border-blue-500/80", dot: "bg-blue-500", badge: "bg-blue-600", accentBox: "bg-blue-500/10 border-blue-500/20", accentText: "text-blue-600 dark:text-blue-400" },
 } as const;
 
 // Shared "popup" detail card used by both the apartments and foyer directory

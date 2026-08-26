@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { fetchPublic } from "@/lib/api";
 import { Building2, Info, Users } from "lucide-react";
 import PortalHeader from "@/components/PortalHeader";
@@ -25,11 +26,16 @@ function getPngPath(bldg: string, floor: string) {
 }
 
 export default function PublicApartmentsPage() {
+  const searchParams = useSearchParams();
+
   const [apartments, setApartments] = useState<Record<string, Apartment>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeBuilding, setActiveBuilding] = useState<string>("U7");
+  const initialBuilding = searchParams.get("bldg")?.toUpperCase();
+  const [activeBuilding, setActiveBuilding] = useState<string>(
+    initialBuilding && BUILDINGS[initialBuilding] ? initialBuilding : "U7"
+  );
   const [activeFloor, setActiveFloor] = useState<string>("1");
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 

@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Layers } from "lucide-react";
-import ThemeToggle from "@/components/ThemeToggle";
+import PortalNav from "./components/PortalNav";
+
+export const metadata: Metadata = {
+  icons: {
+    icon: "/intportal.svg",
+  },
+};
 
 export default function PortalLayout({
   children,
@@ -22,14 +29,7 @@ export default function PortalLayout({
               </div>
               <span className="font-semibold text-lg tracking-tight text-zinc-900 dark:text-stone-50">INT Portal</span>
             </Link>
-            <nav className="flex items-center gap-6 text-sm font-medium text-zinc-600 dark:text-stone-400">
-              <Link href="/clubs" className="hover:text-zinc-950 dark:hover:text-white transition-colors">Clubs</Link>
-              <Link href="/foyer" className="hover:text-zinc-950 dark:hover:text-white transition-colors">Foyer</Link>
-              <Link href="/apartments" className="hover:text-zinc-950 dark:hover:text-white transition-colors">Apartments</Link>
-              <Link href="/laundry" className="hover:text-zinc-950 dark:hover:text-white transition-colors">Laundry</Link>
-              <div className="border-l border-zinc-200 dark:border-stone-800/80 h-4" />
-              <ThemeToggle />
-            </nav>
+            <PortalNav />
           </div>
         </header>
 

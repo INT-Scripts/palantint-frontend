@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { fetchPublic } from "@/lib/api";
@@ -25,7 +25,7 @@ function getPngPath(bldg: string, floor: string) {
   return `/api/assets/plans/${bldg}-${f}.png`;
 }
 
-export default function PublicApartmentsPage() {
+function ApartmentsContent() {
   const searchParams = useSearchParams();
 
   const [apartments, setApartments] = useState<Record<string, Apartment>>({});
@@ -247,3 +247,12 @@ export default function PublicApartmentsPage() {
     </section>
   );
 }
+
+export default function PublicApartmentsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ApartmentsContent />
+    </Suspense>
+  );
+}
+

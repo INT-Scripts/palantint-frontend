@@ -50,32 +50,58 @@ export default function MapCalibrationPage() {
     const startMousePos = useRef({ x: 0, y: 0 });
 
     useEffect(() => {
+        let isCurrent = true;
         setLoading(true);
         const load = async () => {
             try {
                 const res = await fetch(`/api/assets/plans/${bldg}_${floor}.svg`);
-                if (res.ok) setSvgContent(await res.text());
-                const meta = await fetchPrivate(`/maps/${bldg}/${floor}/metadata`);
-                setMetadata(meta || { pillars: [] });
+                if (isCurrent) {
+                    if (res.ok) setSvgContent(await res.text());
+                    else setSvgContent("");
+                }
             } catch (e) {
-                setSvgContent("");
+                if (isCurrent) setSvgContent("");
             }
 
-            const floors = (BUILDINGS as any)[bldg];
+            try {
+                const meta = await fetchPrivate(`/maps/${bldg}/${floor}/metadata`);
+                if (isCurrent) setMetadata(meta || { pillars: [] });
+            } catch (e) {
+                if (isCurrent) setMetadata({ pillars: [] });
+            }
+
+            const floors = (BUILDINGS as any)[bldg] || [];
             const idx = floors.indexOf(floor);
             if (idx > 0) {
                 const prevF = floors[idx - 1];
-                const pRes = await fetch(`/api/assets/plans/${bldg}_${prevF}.svg`);
-                if (pRes.ok) setPrevSvgContent(await pRes.text());
-                const pMeta = await fetchPrivate(`/maps/${bldg}/${prevF}/metadata`);
-                setPrevMetadata(pMeta);
+                try {
+                    const pRes = await fetch(`/api/assets/plans/${bldg}_${prevF}.svg`);
+                    if (isCurrent) {
+                        if (pRes.ok) setPrevSvgContent(await pRes.text());
+                        else setPrevSvgContent("");
+                    }
+                } catch (e) {
+                    if (isCurrent) setPrevSvgContent("");
+                }
+
+                try {
+                    const pMeta = await fetchPrivate(`/maps/${bldg}/${prevF}/metadata`);
+                    if (isCurrent) setPrevMetadata(pMeta);
+                } catch (e) {
+                    if (isCurrent) setPrevMetadata(null);
+                }
             } else {
-                setPrevSvgContent("");
-                setPrevMetadata(null);
+                if (isCurrent) {
+                    setPrevSvgContent("");
+                    setPrevMetadata(null);
+                }
             }
-            setLoading(false);
+            if (isCurrent) setLoading(false);
         };
         load();
+        return () => {
+            isCurrent = false;
+        };
     }, [bldg, floor]);
 
     // Extract all geometric vertices for snapping
@@ -140,7 +166,8 @@ export default function MapCalibrationPage() {
     const handleMapClick = (e: React.MouseEvent) => {
         if (didDrag || !containerRef.current) return;
         
-        if (metadata.pillars.length >= 2) {
+        const currentPillars = metadata?.pillars || [];
+        if (currentPillars.length >= 2) {
             toast.error("Calibration requires exactly two reference pillars.");
             return;
         }
@@ -170,7 +197,7 @@ export default function MapCalibrationPage() {
             }
         }
 
-        setMetadata({ ...metadata, pillars: [...metadata.pillars, { x, y }] });
+        setMetadata({ ...metadata, pillars: [...currentPillars, { x, y }] });
     };
 
     const onMouseDown = (e: React.MouseEvent) => {
@@ -213,21 +240,22 @@ export default function MapCalibrationPage() {
                 method: "POST",
                 body: JSON.stringify(metadata)
             });
-            toast.success("Structural skeleton updated for level " + floor);
-        } catch (e) {
-            toast.error("Data synchronization failed");
+            toast.success(`Structural skeleton updated for ${bldg} level ${floor}`);
+        } catch (e: any) {
+            toast.error(e?.message || "Data synchronization failed");
         }
     };
 
     const removePillar = (idx: number) => {
-        const p = [...metadata.pillars];
+        const p = [...(metadata?.pillars || [])];
         p.splice(idx, 1);
         setMetadata({ ...metadata, pillars: p });
     };
 
     const swapPillars = () => {
-        if (metadata.pillars.length !== 2) return;
-        const p = [metadata.pillars[1], metadata.pillars[0]];
+        const currentPillars = metadata?.pillars || [];
+        if (currentPillars.length !== 2) return;
+        const p = [currentPillars[1], currentPillars[0]];
         setMetadata({ ...metadata, pillars: p });
         toast.info("Pillar IDs interchanged.");
     };
@@ -294,7 +322,13 @@ export default function MapCalibrationPage() {
                                 {Object.keys(BUILDINGS).map(b => (
                                     <button 
                                         key={b} 
-                                        onClick={() => setBldg(b)}
+                                        onClick={() => {
+                                            setBldg(b);
+                                            const availableFloors = (BUILDINGS as any)[b] || [];
+                                            if (!availableFloors.includes(floor)) {
+                                                setFloor(availableFloors[0] || "0");
+                                            }
+                                        }}
                                         className={`h-10 text-[11px] font-black font-mono border transition-all rounded-none ${bldg === b ? 'bg-housing-600/20 border-comms-500 text-white shadow-none' : 'bg-black/40 border-zinc-800 text-zinc-600 hover:border-zinc-600'}`}
                                     >
                                         {b}

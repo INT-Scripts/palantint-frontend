@@ -98,6 +98,21 @@ export default function AgendaCalendar({ studentId, themeColor }: AgendaCalendar
                 </div>
             ) : (
                 <div className="flex-1 overflow-auto custom-scrollbar flex bg-zinc-950/80 border border-zinc-800 relative group shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
+                    {events.length === 0 && (
+                        <div className="absolute inset-x-0 top-24 z-30 flex justify-center px-4 pointer-events-none">
+                            <div className="pointer-events-auto max-w-sm border border-zinc-700 bg-zinc-900/95 p-5 text-center shadow-xl">
+                                <p className="text-sm font-semibold text-white">No classes found for this week</p>
+                                <p className="mt-2 text-xs text-zinc-400">The timetable may have entries in another week.</p>
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentDate(addDays(currentDate, 7))}
+                                    className="mt-4 inline-flex items-center gap-2 border border-zinc-600 px-3 py-2 text-xs font-semibold text-zinc-100 hover:bg-zinc-800"
+                                >
+                                    Next week <ChevronRight className="h-3 w-3" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     {/* Time Gutter */}
                     <div className="w-16 flex-shrink-0 border-r border-zinc-800 bg-zinc-950 pt-[60px] relative z-10">
                         {Array.from({ length: 13 }).map((_, i) => (

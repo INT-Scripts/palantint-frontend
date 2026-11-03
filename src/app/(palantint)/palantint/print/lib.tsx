@@ -118,5 +118,11 @@ export const dangerButton = "rounded-none border border-comms-500/40 bg-comms-50
 /** Keeps the server's message (plain French) from a fetchPrivate error. */
 export function errorMessage(err: unknown): string {
     const message = err instanceof Error ? err.message : String(err);
-    return message.replace(/^fetchPrivate ".*?" failed with status \d+: /, "") || "Une erreur est survenue.";
+    const status = Number(message.match(/failed with status (\d+)/)?.[1]);
+    const detail = message.replace(/^fetchPrivate ".*?" failed with status \d+: /, "");
+    // Proxy errors (502/503/504) come back as nginx HTML pages, not as API messages.
+    if (/<html|<!doctype/i.test(detail) || [502, 503, 504].includes(status)) {
+        return "Le serveur PalantINT ne répond pas. Réessayez dans quelques instants.";
+    }
+    return detail || "Une erreur est survenue.";
 }

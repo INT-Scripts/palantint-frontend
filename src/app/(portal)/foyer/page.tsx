@@ -1,4 +1,5 @@
 "use client";
+import {readFloorPlan,type FloorPlan} from "@/lib/planGeometry";
 
 import { useEffect, useState, useMemo, Suspense } from "react";
 import dynamic from "next/dynamic";
@@ -15,9 +16,10 @@ import PortalDirectoryPanel from "../components/PortalDirectoryPanel";
 import FoyerRoomList from "../components/FoyerRoomList";
 import FoyerRoomDetailCard, { FoyerRoomDetail } from "../components/FoyerRoomDetailCard";
 import PortalClubModal, { ClubDetail } from "../components/PortalClubModal";
-import { FOYER_BUILDINGS as BUILDINGS } from "@/lib/buildings";
+import {BuildingCatalogBoundary, useBuildingCatalog} from "@/components/BuildingCatalog";
 
 function FoyerContent() {
+    const {foyer: BUILDINGS} = useBuildingCatalog();
   const searchParams = useSearchParams();
   const [foyerMap, setFoyerMap] = useState<Record<string, FoyerRoomDetail>>({});
   const [loading, setLoading] = useState<boolean>(true);
@@ -26,7 +28,7 @@ function FoyerContent() {
   const [activeFloor, setActiveFloor] = useState<string>("0");
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedClub, setSelectedClub] = useState<ClubDetail | null>(null);
-  const [buildingSvgs, setBuildingSvgs] = useState<Record<string, string>>({});
+  const [buildingPlans, setBuildingPlans] = useState<Record<string, FloorPlan>>({});
   const [buildingMetadata, setBuildingMetadata] = useState<Record<string, any>>({});
 
   const handleOpenClub = async (clubId: string) => {
@@ -73,14 +75,14 @@ function FoyerContent() {
 
   useEffect(() => {
     const loadSvgs = async () => {
-      const svgs: Record<string, string> = {};
+      const plans: Record<string, FloorPlan> = {};
       for (const f of BUILDINGS[activeBuilding] || []) {
         try {
-          const res = await fetch(`/api/assets/plans/${activeBuilding}_${f.value}.svg`);
-          if (res.ok) svgs[f.value] = await res.text();
+          const res = await fetch(f.assets.geojson);
+          if (res.ok) plans[f.value] = await readFloorPlan(res);
         } catch { /* skip */ }
       }
-      setBuildingSvgs(svgs);
+      setBuildingPlans(plans);
     };
     loadSvgs();
   }, [activeBuilding]);
@@ -141,7 +143,7 @@ function FoyerContent() {
         accentColor="rose"
       />
 
-      {/* Two-column: SVG Map (Left) + Room Directory (Right, exact matching height) */}
+      {/* Two-column: GeoJSON Map (Left) + Room Directory (Right, exact matching height) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
         <div className="lg:col-span-7 w-full flex flex-col">
           <PublicFloorViewer
@@ -192,21 +194,11 @@ function FoyerContent() {
             Bâtiment Foyer Wireframe 3D
           </h3>
           <div className="flex-1 rounded-2xl overflow-hidden bg-stone-50 dark:bg-stone-950/50">
-            <BuildingModel bldg={activeBuilding} floors={BUILDINGS[activeBuilding] || []} activeFloor={activeFloor} buildingSvgs={buildingSvgs} buildingMetadata={buildingMetadata} />
+            <BuildingModel bldg={activeBuilding} floors={BUILDINGS[activeBuilding] || []} activeFloor={activeFloor} buildingPlans={buildingPlans} buildingMetadata={buildingMetadata} />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-stone-900 border-2 border-zinc-200/90 dark:border-stone-800 rounded-3xl p-5 shadow-xs h-[500px] flex flex-col relative">
-          <h3 className="text-xs font-bold font-mono text-zinc-500 dark:text-stone-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-rose-500" />
-            Plan Vectoriel de Référence
-          </h3>
-          <div className="flex-1 rounded-2xl overflow-hidden bg-stone-50 dark:bg-stone-950/50 relative p-6">
-            <a href={`/api/assets/plans/Foyer_${activeFloor}.png`} target="_blank" rel="noopener noreferrer" className="absolute inset-0 p-4">
-              <img src={`/api/assets/plans/Foyer_${activeFloor}.png`} alt="Foyer Plan" className="w-full h-full object-contain brightness-90 saturate-[0.8] contrast-125 hover:brightness-110 transition-all" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            </a>
-          </div>
-        </div>
+
       </div>
 
       <PortalClubModal
@@ -221,7 +213,7 @@ function FoyerContent() {
 export default function PublicFoyerPage() {
   return (
     <Suspense fallback={null}>
-      <FoyerContent />
+      <BuildingCatalogBoundary><FoyerContent /></BuildingCatalogBoundary>
     </Suspense>
   );
 }

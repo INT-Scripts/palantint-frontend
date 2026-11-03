@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { fetchPrivate, getStudentImageUrl } from "@/lib/api";
 import PageHeader from "@/components/PageHeader";
 import { PALETTE } from "@/lib/colors";
@@ -13,11 +13,20 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Box } from "@/components/ui/box";
+import IndoorRoomLink from "@/components/IndoorRoomLink";
+import { isUuid, parseLocalDate, startOfWeek, timetableHref } from "@/lib/timetableContext";
+import { dayIntervals, type TimetableEvent } from "@/lib/timetable";
+import { useRouter } from "next/navigation";
 
-const HOURS = Array.from({ length: 14 }, (_, i) => i + 8); // 8:00 to 21:00
+const HOURS = Array.from({ length: 13 }, (_, i) => i + 8); // 8:00 to 21:00
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const formatDate = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+const formatTime = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+const timeToMinutes = (value: string) => { const [hour, minute] = value.split(':').map(Number); return hour * 60 + minute; };
+const validTime = (value: string | null) => !!value && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
 
 export default function TimetableComparePage() {
+    const router = useRouter();
     const [selectedStudents, setSelectedStudents] = useState<any[]>([]);
     const [searchQuery, setSearch] = useState("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -32,32 +41,37 @@ export default function TimetableComparePage() {
 
     // Slot Analysis
     const [selectedSlot, setSelectedSlot] = useState<{start: Date, end: Date} | null>(null);
+    const [slotBounds, setSlotBounds] = useState<{start: number, end: number} | null>(null);
+    const dragAnchor = useRef<number | null>(null);
+    const hasDragged = useRef(false);
     const [customStart, setCustomStart] = useState("08:00");
     const [customEnd, setCustomEnd] = useState("09:00");
     const [availableRooms, setAvailableRooms] = useState<string[]>([]);
     const [loadingAvailable, setLoadingAvailable] = useState(false);
 
-    // Update selected slot when custom times change
+    // Keep manual edits inside the clicked free window and at least 15 minutes long.
     const handleTimeChange = (type: 'start' | 'end', value: string) => {
-        if (type === 'start') setCustomStart(value);
-        else setCustomEnd(value);
-
-        if (selectedSlot) {
-            const [h, m] = value.split(':').map(Number);
-            const start = new Date(selectedSlot.start);
-            const end = new Date(selectedSlot.end);
-
-            if (type === 'start') {
-                start.setHours(h, m, 0, 0);
-            } else {
-                end.setHours(h, m, 0, 0);
-            }
-            
-            setSelectedSlot({ start, end });
-        }
+        if (!selectedSlot || !slotBounds || !validTime(value)) return;
+        const minutes = timeToMinutes(value);
+        if (type === 'start' && (minutes < slotBounds.start || minutes > timeToMinutes(customEnd) - 15)) return;
+        if (type === 'end' && (minutes > slotBounds.end || minutes < timeToMinutes(customStart) + 15)) return;
+        const start = new Date(selectedSlot.start);
+        const end = new Date(selectedSlot.end);
+        if (type === 'start') { start.setHours(Math.floor(minutes / 60), minutes % 60); setCustomStart(value); }
+        else { end.setHours(Math.floor(minutes / 60), minutes % 60); setCustomEnd(value); }
+        setSelectedSlot({ start, end });
     };
 
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [dataError, setDataError] = useState("");
+    const [roomError, setRoomError] = useState("");
+    const [agendaError, setAgendaError] = useState("");
+    const [availableError, setAvailableError] = useState("");
+    const [searchError, setSearchError] = useState("");
+    const [reload, setReload] = useState(0);
+    const [agendaLoadedKey, setAgendaLoadedKey] = useState("");
+    const [roomLoadedKey, setRoomLoadedKey] = useState("");
+    const [urlReady, setUrlReady] = useState(false);
     const [agendas, setAgendas] = useState<Record<string, any[]>>({});
     const [loadingAgendas, setLoadingAgendas] = useState(false);
 
@@ -76,162 +90,173 @@ export default function TimetableComparePage() {
         return { start, end };
     }, [currentDate]);
 
-    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+    useEffect(() => {
+        let generation = 0;
+        const restore = async () => {
+            const ownGeneration = ++generation;
+            setUrlReady(false);
+            const params = new URLSearchParams(window.location.search);
+            const rawWeek = parseLocalDate(params.get("week"));
+            const week = rawWeek ? startOfWeek(rawWeek) : null;
+            const day = parseLocalDate(params.get("day"));
+            const start = params.get("start");
+            const end = params.get("end");
+            const ids = [...new Set((params.get("students") || "").split(",").filter(isUuid))].slice(0, 20);
+
+            setCurrentDate(week || new Date());
+            setSelectedRoom(null);
+            if (day && week && validTime(start) && validTime(end)) {
+                const startMin = timeToMinutes(start!);
+                const endMin = timeToMinutes(end!);
+                const weekEnd = new Date(week);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                if (day >= week && day <= weekEnd && startMin >= 480 && endMin <= 1260 && startMin < endMin) {
+                    const selectedStart = new Date(day);
+                    selectedStart.setHours(Math.floor(startMin / 60), startMin % 60);
+                    const selectedEnd = new Date(day);
+                    selectedEnd.setHours(Math.floor(endMin / 60), endMin % 60);
+                    setSelectedSlot({ start: selectedStart, end: selectedEnd });
+                    setSlotBounds({ start: 480, end: 1260 });
+                    setCustomStart(start!);
+                    setCustomEnd(end!);
+                } else setSelectedSlot(null);
+            } else setSelectedSlot(null);
+
+            let people, rooms;
+            try {
+                [people, rooms] = await Promise.all([
+                    Promise.all(ids.map(id => fetchPrivate(`/students/${id}`))),
+                    fetchPrivate("/agenda/rooms/list"),
+                ]);
+            } catch {
+                if (ownGeneration === generation) setDataError("Impossible de charger les personnes ou les salles. Réessayez.");
+                return;
+            }
+            setDataError("");
+            if (ownGeneration !== generation) return;
+            setSelectedStudents(people.filter(Boolean));
+            setAllRooms(rooms);
+            const requestedRoom = params.get("room");
+            let restoredRoom: string | null = null;
+            if (requestedRoom) {
+                try {
+                    const resolved = await fetchPrivate(`/agenda/rooms/resolve?q=${encodeURIComponent(requestedRoom)}`);
+                    if (ownGeneration !== generation) return;
+                    restoredRoom = resolved.room;
+                } catch { if(ownGeneration === generation)setDataError("Impossible de résoudre la salle. Réessayez."); return; }
+            }
+            if(requestedRoom && !restoredRoom){setDataError("La salle du lien est introuvable ou ambiguë. Retirez le paramètre de salle ou choisissez une autre salle.");return;}
+            setSelectedRoom(restoredRoom);
+            setUrlReady(true);
+        };
+        void restore();
+        window.addEventListener("popstate", restore);
+        return () => { generation++; window.removeEventListener("popstate", restore); };
+    }, [reload]);
 
     useEffect(() => {
-        document.title = "Timetable Compare";
-        // Fetch all rooms for selector
-        fetchPrivate("/agenda/rooms/list").then(setAllRooms).catch(console.error);
-    }, []);
+        if (!urlReady) return;
+        const timer = setTimeout(() => {
+            const href = timetableHref({
+                students: selectedStudents.map(student => student.id),
+                room: selectedRoom,
+                week: weekRange.start,
+                day: selectedSlot?.start,
+                start: selectedSlot?.start,
+                end: selectedSlot?.end,
+            });
+            if (`${window.location.pathname}${window.location.search}` !== href) window.history.replaceState(null, "", href);
+        }, 250);
+        return () => clearTimeout(timer);
+    }, [urlReady, selectedStudents, selectedRoom, weekRange, selectedSlot]);
 
-    // Load agendas
+    const agendaKey = `${selectedStudents.map(student => student.id).sort().join(",")}:${formatDate(weekRange.start)}`;
+    const roomKey = `${selectedRoom}:${formatDate(weekRange.start)}`;
+    const dataPending = !urlReady || (!!selectedStudents.length && agendaLoadedKey !== agendaKey) || (!!selectedRoom && roomLoadedKey !== roomKey);
+
     useEffect(() => {
-        if (selectedStudents.length === 0) {
-            setAgendas({});
-            return;
-        }
-        setLoadingAgendas(true);
+        const controller = new AbortController();
+        if (!selectedStudents.length) { setAgendas({}); setLoadingAgendas(false); setAgendaError(""); return; }
+        setLoadingAgendas(true); setAgendaError("");
         fetchPrivate("/agenda/compare", {
-            method: "POST",
-            body: JSON.stringify({
-                student_ids: selectedStudents.map(s => s.id),
-                start_date: formatDate(weekRange.start),
-                end_date: formatDate(weekRange.end)
-            })
-        })
-        .then(setAgendas)
-        .catch(console.error)
-        .finally(() => setLoadingAgendas(false));
-    }, [selectedStudents, weekRange]);
+            method: "POST", signal: controller.signal,
+            body: JSON.stringify({student_ids:selectedStudents.map(student=>student.id),start_date:formatDate(weekRange.start),end_date:formatDate(weekRange.end)}),
+        }).then(data => {if(!controller.signal.aborted){setAgendas(data);setAgendaLoadedKey(agendaKey);}})
+        .catch(() => {if(!controller.signal.aborted){setAgendas({});setAgendaError("Impossible de charger les agendas sélectionnés.");}})
+        .finally(() => {if(!controller.signal.aborted)setLoadingAgendas(false);});
+        return () => controller.abort();
+    }, [selectedStudents, weekRange, agendaKey]);
 
-    // Load room occupancy
     useEffect(() => {
-        if (!selectedRoom) {
-            setRoomEvents([]);
-            return;
-        }
-        setLoadingRoom(true);
-        const params = new URLSearchParams({
-            room_query: selectedRoom,
-            start_date: formatDate(weekRange.start),
-            end_date: formatDate(weekRange.end)
-        });
-        fetchPrivate(`/agenda/rooms/occupancy?${params.toString()}`)
-            .then(setRoomEvents)
-            .finally(() => setLoadingRoom(false));
-    }, [selectedRoom, weekRange]);
+        const controller = new AbortController();
+        if (!selectedRoom) {setRoomEvents([]);setLoadingRoom(false);setRoomError("");return;}
+        setLoadingRoom(true);setRoomError("");
+        const params=new URLSearchParams({room_query:selectedRoom,exact:"true",start_date:formatDate(weekRange.start),end_date:formatDate(weekRange.end)});
+        fetchPrivate(`/agenda/rooms/occupancy?${params}`,{signal:controller.signal})
+        .then(data=>{if(!controller.signal.aborted){setRoomEvents(data);setRoomLoadedKey(roomKey);}})
+        .catch(()=>{if(!controller.signal.aborted){setRoomEvents([]);setRoomError("Impossible de charger l’occupation de cette salle.");}})
+        .finally(()=>{if(!controller.signal.aborted)setLoadingRoom(false);});
+        return ()=>controller.abort();
+    }, [selectedRoom,weekRange,roomKey]);
+
+    const events = useMemo(() => [...Object.values(agendas).flat(), ...(selectedRoom ? roomEvents : [])] as TimetableEvent[], [agendas, roomEvents, selectedRoom]);
+    const slotIsFree = !selectedSlot || dayIntervals(selectedSlot.start,events).some(interval => interval.type === "free" && interval.start <= selectedSlot.start.getHours()*60+selectedSlot.start.getMinutes() && interval.end >= selectedSlot.end.getHours()*60+selectedSlot.end.getMinutes());
 
     // Check available rooms for selected slot
     useEffect(() => {
-        if (!selectedSlot) return;
+        if (!selectedSlot || !slotIsFree || dataPending || agendaError || roomError) {setAvailableRooms([]);setLoadingAvailable(false);return;}
+        setAvailableError("");
         setLoadingAvailable(true);
+        setAvailableRooms([]);
         const params = new URLSearchParams({
-            start_time: selectedSlot.start.toISOString(),
-            end_time: selectedSlot.end.toISOString()
+            start_time: `${formatDate(selectedSlot.start)}T${formatTime(selectedSlot.start.getHours() * 60 + selectedSlot.start.getMinutes())}:00`,
+            end_time: `${formatDate(selectedSlot.end)}T${formatTime(selectedSlot.end.getHours() * 60 + selectedSlot.end.getMinutes())}:00`
         });
-        fetchPrivate(`/agenda/rooms/available?${params.toString()}`)
-            .then(setAvailableRooms)
-            .finally(() => setLoadingAvailable(false));
-    }, [selectedSlot]);
+        let cancelled = false;
+        const timer = setTimeout(() => {
+            fetchPrivate(`/agenda/rooms/available?${params.toString()}`)
+                .then((rooms: string[]) => { if (!cancelled) setAvailableRooms(rooms); })
+                .catch(() => {if(!cancelled)setAvailableError("Impossible de vérifier les salles libres.");})
+                .finally(() => { if (!cancelled) setLoadingAvailable(false); });
+        }, 200);
+        return () => { cancelled = true; clearTimeout(timer); };
+    }, [selectedSlot,slotIsFree,dataPending,agendaError,roomError]);
 
     // Student search logic
     useEffect(() => {
         if (searchQuery.length < 2) {
-            setSearchResults([]);
+            setSearchResults([]);setIsSearching(false);
             return;
         }
-        setIsSearching(true);
+        setIsSearching(true);setSearchError("");
+        const controller = new AbortController();
         const timer = setTimeout(() => {
-            fetchPrivate(`/students?q=${searchQuery}&limit=5`)
-                .then(res => setSearchResults(res.filter((s: any) => !selectedStudents.find(ss => ss.id === s.id))))
-                .finally(() => setIsSearching(false));
+            fetchPrivate(`/students?q=${encodeURIComponent(searchQuery)}&limit=8`,{signal:controller.signal})
+                .then(res => {if(!controller.signal.aborted)setSearchResults(res.filter((s: any) => !selectedStudents.find(ss => ss.id === s.id)));})
+                .catch(()=>{if(!controller.signal.aborted){setSearchResults([]);setSearchError("Recherche indisponible.");}})
+                .finally(() => {if(!controller.signal.aborted)setIsSearching(false);});
         }, 300);
-        return () => clearTimeout(timer);
+        return () => {clearTimeout(timer);controller.abort();};
     }, [searchQuery, selectedStudents]);
 
-    const addStudent = (student: any) => { setSelectedStudents(prev => [...prev, student]); setSearch(""); setSearchResults([]); };
-    const removeStudent = (id: string) => setSelectedStudents(prev => prev.filter(s => s.id !== id));
-    const nextWeek = () => { const n = new Date(currentDate); n.setDate(currentDate.getDate() + 7); setCurrentDate(n); };
-    const prevWeek = () => { const p = new Date(currentDate); p.setDate(currentDate.getDate() - 7); setCurrentDate(p); };
+    const addStudent = (student: any) => { setSelectedStudents(prev => prev.some(person=>person.id===student.id)?prev:[...prev, student]); setSelectedSlot(null); setSearch(""); setSearchResults([]); };
+    const removeStudent = (id: string) => { setSelectedStudents(prev => prev.filter(s => s.id !== id)); setSelectedSlot(null); };
+    const nextWeek = () => { const n = new Date(currentDate); n.setDate(currentDate.getDate() + 7); setSelectedSlot(null); setCurrentDate(n); };
+    const prevWeek = () => { const p = new Date(currentDate); p.setDate(currentDate.getDate() - 7); setSelectedSlot(null); setCurrentDate(p); };
 
     // Filtered rooms for selector
     const filteredRooms = useMemo(() => {
-        if (!roomSearch) return allRooms.slice(0, 10);
-        return allRooms.filter(r => r.toLowerCase().includes(roomSearch.toLowerCase())).slice(0, 10);
+        if (!roomSearch) return allRooms;
+        return allRooms.filter(r => r.toLowerCase().includes(roomSearch.toLowerCase()));
     }, [allRooms, roomSearch]);
 
-    // Unified Logic to find Free Time Windows
-    const getProcessedDayData = (dayIndex: number) => {
-        const dayDate = new Date(weekRange.start);
-        dayDate.setDate(dayDate.getDate() + dayIndex);
-        const dateStr = formatDate(dayDate);
+    const processedDays = useMemo(() => DAYS.map((_, index) => {
+        const day = new Date(weekRange.start);day.setDate(day.getDate()+index);
+        return dayIntervals(day,events);
+    }),[weekRange,events]);
+    const getProcessedDayData = (dayIndex: number) => processedDays[dayIndex];
 
-        // 1. Collect all busy slots
-        let busyIntervals: {start: number, end: number}[] = [];
-        
-        Object.values(agendas).forEach((events: any[]) => {
-            events.forEach(evt => {
-                if (evt.start_time.startsWith(dateStr)) {
-                    const s = new Date(evt.start_time);
-                    const e = new Date(evt.end_time);
-                    busyIntervals.push({ 
-                        start: s.getHours() * 60 + s.getMinutes(), 
-                        end: e.getHours() * 60 + e.getMinutes() 
-                    });
-                }
-            });
-        });
-
-        if (selectedRoom) {
-            roomEvents.forEach(evt => {
-                if (evt.start_time.startsWith(dateStr)) {
-                    const s = new Date(evt.start_time);
-                    const e = new Date(evt.end_time);
-                    busyIntervals.push({ 
-                        start: s.getHours() * 60 + s.getMinutes(), 
-                        end: e.getHours() * 60 + e.getMinutes() 
-                    });
-                }
-            });
-        }
-
-        // 2. Merge overlapping busy intervals
-        if (busyIntervals.length === 0) {
-            return [{ type: 'free', start: 480, end: 1260 }]; // Whole day free (8am-9pm)
-        }
-
-        busyIntervals.sort((a, b) => a.start - b.start);
-        const merged: {start: number, end: number}[] = [busyIntervals[0]];
-        for (let i = 1; i < busyIntervals.length; i++) {
-            const last = merged[merged.length - 1];
-            if (busyIntervals[i].start < last.end) {
-                last.end = Math.max(last.end, busyIntervals[i].end);
-            } else {
-                merged.push(busyIntervals[i]);
-            }
-        }
-
-        // 3. Find gaps (Free Windows) between 8:00 (480) and 21:00 (1260)
-        const result: {type: 'free' | 'busy', start: number, end: number}[] = [];
-        let current = 480;
-
-        merged.forEach(interval => {
-            if (interval.start > current) {
-                result.push({ type: 'free', start: current, end: interval.start });
-            }
-            // Add the busy block as well for the grid layout
-            result.push({ type: 'busy', start: interval.start, end: interval.end });
-            current = Math.max(current, interval.end);
-        });
-
-        if (current < 1260) {
-            result.push({ type: 'free', start: current, end: 1260 });
-        }
-
-        return result;
-    };
-
-    const handleFreeSlotClick = (dayIndex: number, startMin: number, endMin: number) => {
+    const selectFreeSlot = (dayIndex: number, boundsStart: number, boundsEnd: number, startMin: number, endMin: number) => {
         const date = new Date(weekRange.start);
         date.setDate(date.getDate() + dayIndex);
         
@@ -241,10 +266,16 @@ export default function TimetableComparePage() {
         const end = new Date(date);
         end.setHours(Math.floor(endMin / 60), endMin % 60, 0, 0);
 
-        setCustomStart(`${Math.floor(startMin / 60).toString().padStart(2, '0')}:${(startMin % 60).toString().padStart(2, '0')}`);
-        setCustomEnd(`${Math.floor(endMin / 60).toString().padStart(2, '0')}:${(endMin % 60).toString().padStart(2, '0')}`);
-        
+        setCustomStart(formatTime(startMin));
+        setCustomEnd(formatTime(endMin));
+        setSlotBounds({ start: boundsStart, end: boundsEnd });
         setSelectedSlot({ start, end });
+    };
+
+    const pointerMinute = (event: React.PointerEvent<HTMLDivElement>, start: number, end: number) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const offset = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+        return Math.min(end - 15, start + Math.floor((offset * (end - start)) / 15) * 15);
     };
 
     return (
@@ -265,6 +296,7 @@ export default function TimetableComparePage() {
                         colorName="timetable"
                     />
 
+                    {(dataError || roomError || agendaError) && <div role="alert" className="flex items-center justify-between border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-300"><span>{dataError || roomError || agendaError}</span><button onClick={()=>{setSelectedSlot(null);setReload(value=>value+1);}} className="border border-red-500/30 px-3 py-2">Réessayer</button></div>}
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                         <div className="lg:col-span-1 space-y-6">
                             {/* Student Selector */}
@@ -280,6 +312,8 @@ export default function TimetableComparePage() {
                                         />
                                     </div>
 
+                                    {isSearching && <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />}
+                                    {searchError && <p role="status" className="text-xs text-red-400">{searchError}</p>}
                                     {searchResults.length > 0 && (
                                         <div className="bg-zinc-900 border border-zinc-800 divide-y divide-zinc-800 shadow-2xl">
                                             {searchResults.map(s => (
@@ -296,7 +330,7 @@ export default function TimetableComparePage() {
                                         {selectedStudents.map(s => (
                                             <div key={s.id} className="flex items-center gap-3 bg-zinc-950 border border-zinc-800 p-2 group transition-all hover:border-zinc-600">
                                                 <Avatar className="h-6 w-6 rounded-none"><AvatarImage src={getStudentImageUrl(s.id)} className="grayscale" /><AvatarFallback>{s.first_name[0]}</AvatarFallback></Avatar>
-                                                <span className="flex-1 text-[10px] font-bold text-zinc-300 uppercase truncate">{s.first_name} {s.last_name}</span>
+                                                <button type="button" onClick={() => router.push(`/palantint/students/${s.id}`)} className="flex-1 text-left text-[10px] font-bold text-zinc-300 hover:text-timetable-400 uppercase truncate">{s.first_name} {s.last_name}</button>
                                                 <button onClick={() => removeStudent(s.id)} className="text-zinc-700 hover:text-red-500"><X className="w-3 h-3" /></button>
                                             </div>
                                         ))}
@@ -317,24 +351,24 @@ export default function TimetableComparePage() {
                                         />
                                     </div>
 
-                                    {roomSearch && !selectedRoom && (
-                                        <div className="bg-zinc-900 border border-zinc-800 divide-y divide-zinc-800 max-h-48 overflow-y-auto custom-scrollbar shadow-2xl">
+                                    <div className="bg-zinc-900 border border-zinc-800 divide-y divide-zinc-800 max-h-48 overflow-y-auto custom-scrollbar shadow-2xl" aria-label="Classroom list">
                                             {filteredRooms.map(room => (
-                                                <div key={room} className="p-3 flex items-center justify-between hover:bg-timetable-500/10 cursor-pointer group transition-all" onClick={() => { setSelectedRoom(room); setRoomSearch(room); }}>
+                                                <button type="button" key={room} className={`w-full p-3 flex items-center justify-between text-left hover:bg-timetable-500/10 cursor-pointer group transition-all ${selectedRoom === room ? 'bg-timetable-500/10' : ''}`} onClick={() => { setSelectedRoom(room); setSelectedSlot(null); setRoomSearch(''); }}>
                                                     <span className="text-[10px] font-mono text-zinc-400 group-hover:text-white uppercase">{room}</span>
                                                     <Zap className="w-3 h-3 text-zinc-800 group-hover:text-timetable-500" />
-                                                </div>
+                                                </button>
                                             ))}
-                                        </div>
-                                    )}
+                                            {filteredRooms.length === 0 && <p className="p-3 text-[10px] font-mono text-zinc-500">No classrooms found.</p>}
+                                    </div>
 
+                                    {selectedRoom && <IndoorRoomLink room={selectedRoom} />}
                                     {selectedRoom && (
                                         <div className="p-3 bg-timetable-500/10 border border-timetable-500/30 flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-2 h-2 bg-timetable-500 animate-pulse" />
                                                 <span className="text-[10px] font-black text-white uppercase font-mono tracking-widest">{selectedRoom}</span>
                                             </div>
-                                            <button onClick={() => { setSelectedRoom(null); setRoomSearch(""); }} className="text-zinc-500 hover:text-white"><X className="w-3 h-3" /></button>
+                                            <button onClick={() => { setSelectedRoom(null); setSelectedSlot(null); setRoomSearch(""); }} className="text-zinc-500 hover:text-white"><X className="w-3 h-3" /></button>
                                         </div>
                                     )}
                                 </div>
@@ -350,24 +384,34 @@ export default function TimetableComparePage() {
                                                 <span className="text-[10px] font-black text-white font-mono uppercase text-center border-b border-zinc-800 pb-2">
                                                     {selectedSlot.start.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}
                                                 </span>
+                                                <span className="text-[10px] text-zinc-400 font-mono text-center">
+                                                    {selectedStudents.length} personne(s) · {selectedRoom || 'Toute salle'} · {customStart}–{customEnd}
+                                                </span>
+                                                <button type="button" onClick={() => navigator.clipboard.writeText(`${window.location.origin}${timetableHref({ students: selectedStudents.map(student => student.id), room: selectedRoom, week: weekRange.start, day: selectedSlot.start, start: selectedSlot.start, end: selectedSlot.end })}`)} className="text-[9px] text-timetable-400 hover:text-white font-mono uppercase">Copier le lien de cette sélection</button>
                                             </div>
                                             
                                             <div className="grid grid-cols-2 gap-2">
                                                 <div className="flex flex-col gap-1">
                                                     <span className="text-[8px] font-mono text-zinc-500 uppercase">Start</span>
                                                     <input 
-                                                        type="time" 
+                                                        type="time" aria-label="Début du créneau"
                                                         className="bg-zinc-950 border border-zinc-800 text-[10px] font-mono text-white p-1 focus:border-orga-500 outline-none"
                                                         value={customStart}
+                                                        min={slotBounds ? formatTime(slotBounds.start) : undefined}
+                                                        max={customEnd}
+                                                        step={900}
                                                         onChange={(e) => handleTimeChange('start', e.target.value)}
                                                     />
                                                 </div>
                                                 <div className="flex flex-col gap-1">
                                                     <span className="text-[8px] font-mono text-zinc-500 uppercase">End</span>
                                                     <input 
-                                                        type="time" 
+                                                        type="time" aria-label="Fin du créneau"
                                                         className="bg-zinc-950 border border-zinc-800 text-[10px] font-mono text-white p-1 focus:border-orga-500 outline-none"
                                                         value={customEnd}
+                                                        min={customStart}
+                                                        max={slotBounds ? formatTime(slotBounds.end) : undefined}
+                                                        step={900}
                                                         onChange={(e) => handleTimeChange('end', e.target.value)}
                                                     />
                                                 </div>
@@ -379,17 +423,19 @@ export default function TimetableComparePage() {
                                                 <span className="text-[9px] font-mono text-zinc-500 uppercase">Vacant Classrooms</span>
                                                 {loadingAvailable && <Loader2 className="w-3 h-3 text-orga-500 animate-spin" />}
                                             </div>
+                                            {availableError && <p role="alert" className="text-xs text-red-400">{availableError}</p>}
+                                            {!slotIsFree && <p role="alert" className="text-xs text-amber-400">Ce créneau chevauche une occupation. Choisissez un créneau libre.</p>}
                                             <div className="max-h-64 overflow-y-auto custom-scrollbar pr-2 flex flex-wrap gap-2">
                                                 {availableRooms.map(room => (
                                                     <button 
                                                         key={room} 
                                                         className="px-2 py-1 bg-zinc-950 border border-zinc-800 text-[9px] font-mono text-zinc-400 uppercase hover:border-orga-500 hover:text-white transition-all"
-                                                        onClick={() => { setSelectedRoom(room); setRoomSearch(room); }}
+                                                        onClick={() => { setSelectedRoom(room); setSelectedSlot(null); setRoomSearch(''); }}
                                                     >
                                                         {room}
                                                     </button>
                                                 ))}
-                                                {availableRooms.length === 0 && !loadingAvailable && (
+                                                {availableRooms.length === 0 && !loadingAvailable && !availableError && slotIsFree && !dataPending && (
                                                     <p className="text-[9px] font-mono text-zinc-700 uppercase italic py-4 text-center w-full">No vacant rooms detected.</p>
                                                 )}
                                             </div>
@@ -403,12 +449,12 @@ export default function TimetableComparePage() {
                         <div className="lg:col-span-3 space-y-6">
                             <div className="flex items-center justify-between bg-zinc-900/40 border border-zinc-800 p-4 backdrop-blur-md">
                                 <div className="flex items-center gap-4">
-                                    <Button variant="outline" size="sm" onClick={prevWeek} className="rounded-none border-zinc-800 bg-black/40 hover:bg-timetable-500/10 hover:border-timetable-500 transition-all"><ChevronLeft className="w-4 h-4" /></Button>
+                                    <Button aria-label="Semaine précédente" variant="outline" size="sm" onClick={prevWeek} className="rounded-none border-zinc-800 bg-black/40 hover:bg-timetable-500/10 hover:border-timetable-500 transition-all"><ChevronLeft className="w-4 h-4" /></Button>
                                     <div className="flex flex-col items-center min-w-[200px]">
                                         <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Temporal Window</span>
                                         <span className="text-xs font-black text-white uppercase">{weekRange.start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {weekRange.end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                                     </div>
-                                    <Button variant="outline" size="sm" onClick={nextWeek} className="rounded-none border-zinc-800 bg-black/40 hover:bg-timetable-500/10 hover:border-timetable-500 transition-all"><ChevronRight className="w-4 h-4" /></Button>
+                                    <Button aria-label="Semaine suivante" variant="outline" size="sm" onClick={nextWeek} className="rounded-none border-zinc-800 bg-black/40 hover:bg-timetable-500/10 hover:border-timetable-500 transition-all"><ChevronRight className="w-4 h-4" /></Button>
                                 </div>
                                 <div className="flex gap-4">
                                     <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest">
@@ -421,6 +467,7 @@ export default function TimetableComparePage() {
                             </div>
 
                             <Box className="w-full h-[900px]" contentClassName="overflow-auto custom-scrollbar">
+                                {(dataPending || loadingAgendas || loadingRoom || agendaError || roomError || dataError) && <div role="status" className="absolute inset-0 z-40 flex items-center justify-center bg-zinc-950/85 text-sm text-zinc-400">{agendaError || roomError || dataError ? "Disponibilités indisponibles" : <><Loader2 className="mr-3 h-4 w-4 animate-spin" />Chargement des disponibilités…</>}</div>}
                                 <div className="min-w-[1000px] h-full flex flex-col">
                                     <div className="flex border-b border-zinc-800 bg-black/40 sticky top-0 z-30">
                                         <div className="w-20 border-r border-zinc-800 shrink-0" />
@@ -456,19 +503,43 @@ export default function TimetableComparePage() {
                                                             if (top < 0 || top > 100) return null;
 
                                                             if (interval.type === 'busy') {
-                                                                return <div key={idx} className="absolute left-0.5 right-0.5 bg-zinc-900/50 border border-zinc-800 flex items-center justify-center opacity-40 grayscale" style={{ top: `${top}%`, height: `${height}%` }} />;
+                                                                return <div key={idx} title={interval.events.map(event=>event.name).join(" · ")} className="absolute left-0.5 right-0.5 overflow-hidden border border-zinc-700 bg-zinc-800/70 p-1 text-[9px] text-zinc-400" style={{top:`${top}%`,height:`${height}%`}}>{interval.events.map(event=>event.name).join(" · ")}</div>;
                                                             }
 
+                                                            const dayDate = new Date(weekRange.start);
+                                                            dayDate.setDate(dayDate.getDate() + dayIdx);
                                                             const isSelected = selectedSlot && 
-                                                                formatDate(selectedSlot.start) === formatDate(new Date(weekRange.start.getTime() + dayIdx * 86400000)) &&
-                                                                selectedSlot.start.getHours() * 60 + selectedSlot.start.getMinutes() === interval.start;
+                                                                formatDate(selectedSlot.start) === formatDate(dayDate) &&
+                                                                selectedSlot.start.getHours() * 60 + selectedSlot.start.getMinutes() >= interval.start &&
+                                                                selectedSlot.end.getHours() * 60 + selectedSlot.end.getMinutes() <= interval.end;
 
                                                             return (
                                                                 <div 
                                                                     key={idx}
-                                                                    className={`absolute left-0.5 right-0.5 cursor-pointer group transition-all overflow-hidden border-l-4 ${isSelected ? 'bg-emerald-500/30 border-emerald-400 z-20 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-emerald-500/5 border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500 hover:z-10'}`}
+                                                                    className={`absolute left-0.5 right-0.5 cursor-crosshair group touch-none select-none transition-[background-color,border-color,box-shadow] overflow-hidden border-l-4 ${isSelected ? 'bg-emerald-500/15 border-emerald-400 z-20 shadow-[inset_0_0_0_1px_rgba(52,211,153,0.45)]' : 'bg-emerald-500/5 border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500 hover:z-10 hover:shadow-[inset_0_0_0_1px_rgba(52,211,153,0.45),inset_0_0_24px_rgba(16,185,129,0.18)]'}`}
+                                                                    role="button" tabIndex={interval.end-interval.start>=15?0:-1} aria-label={`Créneau libre ${DAYS[dayIdx]} ${formatTime(interval.start)} à ${formatTime(interval.end)}`}
+                                                                    onKeyDown={event=>{if((event.key==="Enter"||event.key===" ")&&interval.end-interval.start>=15){event.preventDefault();selectFreeSlot(dayIdx,interval.start,interval.end,interval.start,Math.min(interval.end,interval.start+60));}}}
                                                                     style={{ top: `${top}%`, height: `${height}%` }}
-                                                                    onClick={() => handleFreeSlotClick(dayIdx, interval.start, interval.end)}
+                                                                    onPointerDown={(event) => {
+                                                                        if (interval.end - interval.start < 15) return;
+                                                                        event.currentTarget.setPointerCapture(event.pointerId);
+                                                                        const anchor = pointerMinute(event, interval.start, interval.end);
+                                                                        dragAnchor.current = anchor;
+                                                                        hasDragged.current = false;
+                                                                        selectFreeSlot(dayIdx, interval.start, interval.end, anchor, Math.min(interval.end, anchor + 60));
+                                                                    }}
+                                                                    onPointerMove={(event) => {
+                                                                        if (dragAnchor.current === null) return;
+                                                                        const minute = pointerMinute(event, interval.start, interval.end);
+                                                                        if (minute !== dragAnchor.current) {
+                                                                            hasDragged.current = true;
+                                                                            selectFreeSlot(dayIdx, interval.start, interval.end, Math.min(dragAnchor.current, minute), Math.max(dragAnchor.current, minute) + 15);
+                                                                        } else if (hasDragged.current) {
+                                                                            selectFreeSlot(dayIdx, interval.start, interval.end, minute, minute + 15);
+                                                                        }
+                                                                    }}
+                                                                    onPointerUp={() => { dragAnchor.current = null; }}
+                                                                    onPointerCancel={() => { dragAnchor.current = null; }}
                                                                 >
                                                                     <div className="p-2 flex flex-col h-full">
                                                                         <div className="flex items-center justify-between">
@@ -478,6 +549,7 @@ export default function TimetableComparePage() {
                                                                         <span className="mt-auto text-[8px] font-mono text-zinc-500 uppercase">
                                                                             {Math.floor(interval.start / 60)}:{(interval.start % 60).toString().padStart(2, '0')} - {Math.floor(interval.end / 60)}:{(interval.end % 60).toString().padStart(2, '0')}
                                                                         </span>
+                                                                        {isSelected && selectedSlot && <div className="absolute left-0 right-0 bg-emerald-400/30 border-y border-emerald-300 pointer-events-none" style={{ top: `${((selectedSlot.start.getHours() * 60 + selectedSlot.start.getMinutes() - interval.start) / (interval.end - interval.start)) * 100}%`, height: `${((selectedSlot.end.getTime() - selectedSlot.start.getTime()) / 60000 / (interval.end - interval.start)) * 100}%` }} />}
                                                                     </div>
                                                                 </div>
                                                             );

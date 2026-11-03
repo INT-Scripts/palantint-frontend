@@ -1,4 +1,5 @@
 "use client";
+import IndoorRoomLink from "@/components/IndoorRoomLink";
 import { PALETTE } from "@/lib/colors";
 
 import { useEffect, useState, useCallback } from "react";
@@ -236,6 +237,7 @@ export default function PalantintClubModal({ clubId, onClose }: PalantintClubMod
                                                     <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">{club.type}</span>
                                                 </div>
                                             )}
+                                            {club.foyer_room && <IndoorRoomLink room={club.foyer_room} />}
                                             {club.foyer_room && (
                                                 <button
                                                     onClick={() => {

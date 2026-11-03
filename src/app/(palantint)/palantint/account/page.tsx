@@ -276,6 +276,9 @@ export default function AccountPage() {
                                     >
                                         {casStatus?.has_credentials ? "Change creds" : "Register creds"}
                                     </Button>
+                                    <Link href="/palantint/print#partages" className="block font-mono text-[10px] uppercase tracking-widest text-print-400 hover:text-print-300">
+                                        Partager mon quota d’impression →
+                                    </Link>
                                 </div>
                             ) : (
                                 <form onSubmit={handleSaveCas} className="space-y-4">

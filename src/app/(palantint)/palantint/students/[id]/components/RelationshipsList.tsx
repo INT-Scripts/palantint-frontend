@@ -268,13 +268,13 @@ export default function RelationshipsList({ studentId, themeColor }: Relationshi
                                 </div>
                             </div>
                             
-                            <button
+                            {!rel.derived && <button
                                 onClick={e => { e.stopPropagation(); removeConnection(rel.id); }}
                                 className="opacity-0 group-hover:opacity-100 text-comms-500 hover:bg-comms-500/10 p-2 transition-all mr-2"
-                                title="Sever Link"
+                                title="Supprimer la relation"
                             >
                                 <Trash2 className="w-4 h-4" />
-                            </button>
+                            </button>}
                         </div>
                     ))}
                 </div>

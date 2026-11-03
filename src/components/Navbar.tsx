@@ -1,347 +1,74 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { Menu, X, User, LogIn, LogOut, Search, MapPin, Share2, CalendarDays, Flame, WashingMachine, Printer, ChevronDown, Users, Layers, Building2, Shield } from "lucide-react";
 import { fetchPrivate } from "@/lib/api";
-import { Menu, User, LogIn, Compass, Home as HomeIcon, LogOut, Search, MapPin, Share2, CalendarDays, Flame, WashingMachine, ChevronDown, Users, Layers } from "lucide-react";
 import GlobalSearch from "./GlobalSearch";
-import { Button } from "@/components/ui/button";
 
 export default function Navbar() {
-    const router = useRouter();
-    const [user, setUser] = useState<{ username: string, is_admin: boolean } | null>(null);
-    const [authLoading, setAuthLoading] = useState(true);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+    const pathname = usePathname();
+    const [user, setUser] = useState<{ username: string; is_admin: boolean } | null>(null);
+    const [open, setOpen] = useState<string | null>(null);
+    const [mobile, setMobile] = useState(false);
+    const root = useRef<HTMLElement>(null);
     useEffect(() => {
-        const token = typeof window !== "undefined" ? localStorage.getItem("palantint_token") : null;
-        if (token) {
-            fetchPrivate("/users/me")
-                .then((data) => setUser(data))
-                .catch(() => {})
-                .finally(() => setAuthLoading(false));
-        } else {
-            Promise.resolve().then(() => {
-                setAuthLoading(false);
-            });
-        }
+        const controller = new AbortController();
+        if (localStorage.getItem("palantint_token")) fetchPrivate("/users/me", {signal: controller.signal}).then(setUser).catch(() => {});
+        return () => controller.abort();
     }, []);
-
-
-    if (authLoading) return <div className="fixed top-0 left-0 w-full h-[72px] sm:h-[80px] bg-transparent z-[100]"></div>;
-
-    return (
-        <>
-            <nav className="fixed top-0 left-0 z-[100] w-full bg-zinc-950/90 backdrop-blur-2xl border-b border-zinc-900 shadow-2xl px-4 sm:px-6 py-3 sm:py-4">
-            <div className="mx-auto w-full flex items-center justify-between gap-2 sm:gap-4"> 
-                <div className="flex items-center gap-4 sm:gap-12">
-                    <div
-                        className="text-xl sm:text-2xl font-black tracking-tighter cursor-pointer hover:opacity-80 transition flex items-center gap-3 sm:gap-4 text-white group uppercase leading-none"
-                        onClick={() => router.push(user ? "/palantint" : "/")}
-                    >
-                        <div className="relative w-10 h-10 border border-zinc-800 flex items-center justify-center overflow-hidden">
-                            <img src="/palantint.svg" alt={user ? "PalantINT Logo" : "INT Logo"} className="w-6 h-6 relative z-10 invert brightness-0" />
-                        </div>
-                        {user ? (
-                            <span className="bg-clip-text text-white">Palant<span className="text-zinc-500">INT</span></span>
-                        ) : (
-                            <span className="bg-clip-text text-white">INT<span className="text-zinc-500"> PORTAL</span></span>
-                        )}
-                    </div>
-
-                        <GlobalSearch className="hidden md:flex" inputClassName="w-85" />
-                </div>
-
-                <div className="flex items-center gap-4 sm:gap-8 shrink-0">
-                    <div className="hidden lg:flex items-center gap-6 text-sm font-mono tracking-widest text-zinc-500 uppercase">
-                        {/* Campus Life Dropdown */}
-                        <div className="relative group py-2">
-                            <button className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors duration-200 uppercase tracking-widest text-xs font-mono text-zinc-400 focus:outline-none border-none bg-transparent">
-                                <span>Campus</span>
-                                <ChevronDown className="w-3 h-3 transition-transform duration-300 group-hover:rotate-180 text-zinc-600 group-hover:text-white" />
-                            </button>
-                            <div className="absolute top-full left-0 mt-2 w-64 bg-zinc-950/95 backdrop-blur-3xl border border-zinc-800 shadow-2xl p-2 rounded-none opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-50 flex flex-col gap-1">
-                                <span 
-                                    className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                    onClick={() => router.push(user ? "/palantint/clubs" : "/clubs")}
-                                >
-                                    <Users className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
-                                    <div>
-                                        <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">Clubs & Associations</p>
-                                        <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-normal">Student clubs & organisations</p>
-                                    </div>
-                                </span>
-                                <span 
-                                    className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                    onClick={() => router.push(user ? "/palantint/campus" : "/campus")}
-                                >
-                                    <MapPin className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
-                                    <div>
-                                        <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">Campus 3D</p>
-                                        <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-normal">Interactive 3D navigation</p>
-                                    </div>
-                                </span>
-                                <span 
-                                    className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                    onClick={() => router.push(user ? "/palantint/apartments" : "/apartments")}
-                                >
-                                    <HomeIcon className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
-                                    <div>
-                                        <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">Apartments</p>
-                                        <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-normal">On-campus housing registry</p>
-                                    </div>
-                                </span>
-                                <span 
-                                    className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                    onClick={() => router.push(user ? "/palantint/foyer" : "/foyer")}
-                                >
-                                    <Layers className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
-                                    <div>
-                                        <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">Foyer Map</p>
-                                        <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-normal">Locaux associatifs interactifs</p>
-                                    </div>
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Directory Dropdown (Only if logged in) */}
-                        {user && (
-                            <div className="relative group py-2">
-                                <button className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors duration-200 uppercase tracking-widest text-xs font-mono text-zinc-400 focus:outline-none border-none bg-transparent">
-                                    <span>Directory</span>
-                                    <ChevronDown className="w-3 h-3 transition-transform duration-300 group-hover:rotate-180 text-zinc-600 group-hover:text-white" />
-                                </button>
-                                <div className="absolute top-full left-0 mt-2 w-64 bg-zinc-950/95 backdrop-blur-3xl border border-zinc-800 shadow-2xl p-2 rounded-none opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-50 flex flex-col gap-1">
-                                    <span 
-                                        className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                        onClick={() => router.push("/palantint/students")}
-                                    >
-                                        <User className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
-                                        <div>
-                                            <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">Students</p>
-                                            <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-normal">Student registry & profiles</p>
-                                        </div>
-                                    </span>
-                                    <span 
-                                        className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                        onClick={() => router.push("/palantint/network")}
-                                    >
-                                        <Share2 className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
-                                        <div>
-                                            <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">Network</p>
-                                            <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-normal">Student connection graph</p>
-                                        </div>
-                                    </span>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Services Dropdown */}
-                        <div className="relative group py-2">
-                            <button className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors duration-200 uppercase tracking-widest text-sm font-mono text-zinc-500 focus:outline-none border-none bg-transparent">
-                                <span>Services</span>
-                                <ChevronDown className="w-3 h-3 transition-transform duration-300 group-hover:rotate-180 text-zinc-600 group-hover:text-white" />
-                            </button>
-                            <div className="absolute top-full left-0 mt-2 w-64 bg-zinc-950/95 backdrop-blur-3xl border border-zinc-800 shadow-2xl p-2 rounded-none opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-300 z-50 flex flex-col gap-1">
-                                <span 
-                                    className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                    onClick={() => router.push(user ? "/palantint/laundry" : "/laundry")}
-                                >
-                                    <WashingMachine className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
-                                    <div>
-                                        <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">Laundry</p>
-                                        <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-normal">Washing machine availability</p>
-                                    </div>
-                                </span>
-                                {user && (
-                                    <>
-                                        <span 
-                                            className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                            onClick={() => router.push("/palantint/timetable")}
-                                        >
-                                            <CalendarDays className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
-                                            <div>
-                                                <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">Timetable</p>
-                                                <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-normal">Academic calendar & classes</p>
-                                            </div>
-                                        </span>
-                                        <span 
-                                            className="flex items-start gap-3 p-3 hover:bg-zinc-900 transition-all duration-200 cursor-pointer group/item text-left normal-case"
-                                            onClick={() => router.push("/palantint/pay5vend")}
-                                        >
-                                            <Flame className="w-4 h-4 text-zinc-500 group-hover/item:text-white transition-colors shrink-0 mt-0.5" />
-                                            <div>
-                                                <p className="text-xs font-bold text-zinc-300 group-hover/item:text-white transition-colors uppercase tracking-wider">PAY5VEND</p>
-                                                <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-normal">Vending machine service</p>
-                                            </div>
-                                        </span>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="lg:hidden">
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-none h-10 w-10 border border-zinc-800"
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        >
-                            <Menu className="h-5 w-5" />
-                        </Button>
-                    </div>
-
-                    {user ? (
-                        <div className="flex items-center gap-2">
-                            <div
-                                className="flex items-center gap-2 sm:gap-4 bg-zinc-950 p-1 sm:p-2 sm:pr-6 border border-zinc-800 cursor-pointer hover:border-zinc-500 transition-all group rounded-none"
-                                onClick={() => router.push(`/palantint/account`)}
-                            >
-                                <div className="w-8 h-8 bg-zinc-800 flex items-center justify-center text-xs font-mono font-bold text-white shrink-0 group-hover:bg-zinc-700 transition-colors">
-                                    {user.username.charAt(0).toUpperCase()}
-                                </div>
-                                <div className="hidden sm:block text-left">
-                                    <p className="text-sm font-bold text-white uppercase tracking-wider leading-tight group-hover:text-white transition-colors">{user.username}</p>
-                                    <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest group-hover:text-zinc-400 transition-colors">
-                                        {user.is_admin ? 'SYS_ADMIN' : 'OPERATIVE'}
-                                    </p>
-                                </div>
-                                <User className="hidden sm:block w-4 h-4 text-zinc-600 group-hover:text-zinc-100 transition-colors ml-2 sm:ml-4 shrink-0" />
-                            </div>
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="hidden sm:flex text-zinc-500 hover:text-comms-500 hover:bg-comms-500/10 bg-zinc-950 border border-zinc-800 rounded-none h-[42px] w-[42px] sm:h-[50px] sm:w-[50px] transition-all shrink-0 cursor-pointer hover:border-comms-500/50"
-                                onClick={() => {
-                                    localStorage.removeItem("palantint_token");
-                                    document.cookie = "palantint_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-                                    window.location.reload();
-                                }}
-                                title="Log Out"
-                            >
-                                <LogOut className="w-4 h-4" />
-                            </Button>
-                        </div>
-                    ) : (
-                        <Button
-                            onClick={() => router.push('/login')}
-                            className="bg-zinc-100 hover:bg-white text-zinc-950 font-mono font-bold uppercase tracking-widest h-10 sm:h-12 px-4 sm:px-8 text-xs sm:text-sm rounded-none shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all shrink-0 border-none"
-                        >
-                            Authenticate
-                        </Button>
-                    )}
-                </div>
+    useEffect(() => {
+        const outside = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) { setOpen(null); setMobile(false); } };
+        const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { setOpen(null); setMobile(false); } };
+        document.addEventListener("pointerdown", outside);
+        document.addEventListener("keydown", escape);
+        return () => { document.removeEventListener("pointerdown", outside); document.removeEventListener("keydown", escape); };
+    }, []);
+    const prefix = user ? "/palantint" : "";
+    const groups = [
+        {name: "Campus", items: [
+            {href: `${prefix}/campus`, label: "Carte du campus", icon: MapPin},
+            {href: `${prefix}/foyer`, label: "Foyer", icon: Layers},
+            {href: `${prefix}/apartments`, label: "Logements", icon: Building2},
+        ]},
+        ...(user ? [{name: "Annuaire", items: [
+            {href: "/palantint/students", label: "Personnes", icon: Search},
+            {href: "/palantint/clubs", label: "Associations", icon: Users},
+            {href: "/palantint/network", label: "Relations", icon: Share2},
+        ]}] : []),
+        {name: "Services", items: [
+            {href: `${prefix}/laundry`, label: "Laveries", icon: WashingMachine},
+            ...(user ? [
+                {href: "/palantint/timetable", label: "Emplois du temps", icon: CalendarDays},
+                {href: "/palantint/pay5vend", label: "Distributeurs", icon: Flame},
+                {href: "/palantint/print", label: "Impressions", icon: Printer},
+            ] : []),
+        ]},
+    ];
+    const close = () => { setOpen(null); setMobile(false); };
+    const logout = () => {
+        for (const key of ["palantint_token", "palantint_refresh_token"]) {
+            localStorage.removeItem(key);
+            document.cookie = `${key}=; path=/; max-age=0`;
+        }
+        window.location.href = "/login";
+    };
+    return <header ref={root} className="fixed inset-x-0 top-0 z-[100] border-b border-zinc-800/80 bg-zinc-950/95 font-mono backdrop-blur-xl">
+        <div className="flex h-[72px] items-center justify-between gap-3 px-4 sm:h-20 sm:gap-5 sm:px-6">
+            <Link href={user ? "/palantint" : "/"} onClick={close} className="flex shrink-0 items-center gap-3 text-xl font-black uppercase tracking-tighter text-white"><Image src="/palantint.svg" alt="" width={28} height={28} className="brightness-0 invert" /><span>{user ? "PalantINT" : "INT Portal"}</span></Link>
+            <GlobalSearch className="hidden min-w-0 flex-1 md:flex md:max-w-sm" inputClassName="w-full" placeholder="Rechercher…" />
+            <nav aria-label="Navigation principale" className="hidden items-center gap-1 lg:flex">{groups.map(group => <div key={group.name} className="relative">
+                <button aria-expanded={open === group.name} aria-controls={`nav-${group.name}`} onClick={() => setOpen(open === group.name ? null : group.name)} className={`flex items-center gap-2 rounded-none border px-3 py-2 text-[11px] font-bold uppercase tracking-widest transition-colors ${open === group.name || group.items.some(item => pathname.startsWith(item.href)) ? "border-zinc-700 bg-zinc-900 text-white" : "border-transparent text-zinc-400 hover:border-zinc-800 hover:text-white"}`}>{group.name}<ChevronDown className={`h-3 w-3 text-zinc-600 transition-transform ${open === group.name ? "rotate-180" : ""}`} /></button>
+                {open === group.name && <div id={`nav-${group.name}`} className="absolute right-0 top-full mt-3 w-56 rounded-none border border-zinc-800 bg-zinc-950 p-1.5 shadow-2xl">{group.items.map(({href, label, icon: Icon}) => <Link key={href} href={href} onClick={close} aria-current={pathname === href ? "page" : undefined} className={`flex items-center gap-3 rounded-none px-3 py-2.5 text-xs ${pathname === href ? "bg-zinc-800 text-white" : "text-zinc-400 hover:bg-zinc-900 hover:text-white"}`}><Icon className="h-4 w-4" />{label}</Link>)}</div>}
+            </div>)}</nav>
+            <div className="flex shrink-0 items-center gap-2">
+                {user?.is_admin && <Link href="/palantint/admin" title="Administration" aria-label="Administration" onClick={close} className={`flex h-9 w-9 items-center justify-center border transition-colors ${pathname.startsWith("/palantint/admin") ? "border-campus-500/50 bg-campus-500/10 text-campus-400" : "border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-white"}`}><Shield className="h-4 w-4" /></Link>}
+                {user ? <><Link href="/palantint/account" title="Mon compte" onClick={close} className="flex items-center gap-2 rounded-none border border-zinc-800 px-2.5 py-2 text-xs text-zinc-300 hover:border-zinc-600"><User className="h-4 w-4" /><span className="hidden max-w-28 truncate sm:block">{user.username}</span></Link><button title="Se déconnecter" aria-label="Se déconnecter" onClick={logout} className="hidden rounded-none p-2 text-zinc-500 hover:bg-zinc-900 hover:text-white sm:block"><LogOut className="h-4 w-4" /></button></> : <Link href="/login" className="rounded-none border border-zinc-700 p-2 text-zinc-300"><LogIn className="h-4 w-4" /><span className="sr-only">Se connecter</span></Link>}
+                <button aria-label={mobile ? "Fermer le menu" : "Ouvrir le menu"} aria-expanded={mobile} aria-controls="mobile-navigation" onClick={() => setMobile(!mobile)} className="rounded-none p-2 text-zinc-400 hover:text-white lg:hidden">{mobile ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
             </div>
-        </nav>
-
-        {/* Mobile Menu Overlay */}
-        {mobileMenuOpen && (
-            <div className="fixed inset-0 top-[73px] z-40 bg-zinc-950/95 backdrop-blur-3xl border-t border-zinc-900 lg:hidden flex flex-col p-6">
-                <div className="flex flex-col gap-6 text-lg font-mono tracking-widest text-zinc-400 uppercase">
-                    {user && (
-                        <button 
-                            className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                            onClick={() => { setMobileMenuOpen(false); router.push("/palantint/students"); }}
-                        >
-                            <span>Students</span>
-                            <Search className="w-5 h-5 text-zinc-600 group-hover:text-white" />
-                        </button>
-                    )}
-                    <button 
-                        className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                        onClick={() => { setMobileMenuOpen(false); router.push(user ? "/palantint/clubs" : "/clubs"); }}
-                    >
-                        <span>Clubs & Associations</span>
-                        <Users className="w-5 h-5 text-zinc-600 group-hover:text-white" />
-                    </button>
-                    <button 
-                        className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                        onClick={() => { setMobileMenuOpen(false); router.push(user ? "/palantint/foyer" : "/foyer"); }}
-                    >
-                        <span>Foyer Map</span>
-                        <Layers className="w-5 h-5 text-zinc-600 group-hover:text-white" />
-                    </button>
-                    <button 
-                        className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                        onClick={() => { setMobileMenuOpen(false); router.push(user ? "/palantint/apartments" : "/apartments"); }}
-                    >
-                        <span>Apartments</span>
-                        <HomeIcon className="w-5 h-5 text-zinc-600 group-hover:text-white" />
-                    </button>
-                    <button 
-                        className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                        onClick={() => { setMobileMenuOpen(false); router.push(user ? "/palantint/laundry" : "/laundry"); }}
-                    >
-                        <span>Laundry</span>
-                        <WashingMachine className="w-5 h-5 text-zinc-600 group-hover:text-white" />
-                    </button>
-                    {user && (
-                        <button 
-                            className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                            onClick={() => { setMobileMenuOpen(false); router.push("/palantint/timetable"); }}
-                        >
-                            <span>Timetable</span>
-                            <CalendarDays className="w-5 h-5 text-zinc-600 group-hover:text-white" />
-                        </button>
-                    )}
-                    {user && (
-                        <button 
-                            className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                            onClick={() => { setMobileMenuOpen(false); router.push("/palantint/network"); }}
-                        >
-                            <span>Network</span>
-                            <Share2 className="w-5 h-5 text-zinc-600 group-hover:text-white" />
-                        </button>
-                    )}
-                    {user && (
-                        <button 
-                            className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                            onClick={() => { setMobileMenuOpen(false); router.push("/palantint/pay5vend"); }}
-                        >
-                            <span>PAY5VEND</span>
-                            <Flame className="w-5 h-5 text-zinc-600 group-hover:text-white" />
-                        </button>
-                    )}
-                    <button 
-                        className="text-left py-4 border-b border-zinc-800 hover:text-white hover:border-zinc-500 transition-colors flex items-center justify-between group"
-                        onClick={() => { setMobileMenuOpen(false); router.push(user ? "/palantint/campus" : "/campus"); }}
-                    >
-                        <span>Campus 3D</span>
-                        <MapPin className="w-5 h-5 text-zinc-600 group-hover:text-white" />
-                    </button>
-                </div>
-                
-                <div className="mt-auto pb-8">
-                     {user ? (
-                         <div className="flex items-center gap-4 bg-zinc-900 p-4 border border-zinc-800 rounded-none">
-                             <div className="w-12 h-12 bg-zinc-800 flex items-center justify-center text-lg font-mono font-bold text-white rounded-none">
-                                 {user.username.charAt(0).toUpperCase()}
-                             </div>
-                             <div className="flex-1 min-w-0">
-                                 <p className="text-base font-bold text-white uppercase tracking-wider truncate">{user.username}</p>
-                                 <p className="text-xs text-zinc-500 font-mono uppercase tracking-widest">{user.is_admin ? "SYS_ADMIN" : "OPERATIVE"}</p>
-                             </div>
-                             <Button variant="ghost" size="icon" className="text-zinc-500 hover:text-comms-500" onClick={() => {
-                                 localStorage.removeItem("palantint_token");
-                                 document.cookie = "palantint_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-                                 window.location.reload();
-                             }}>
-                                 <LogOut className="w-5 h-5" />
-                             </Button>
-                         </div>
-                     ) : (
-                         <Button
-                             onClick={() => { setMobileMenuOpen(false); router.push('/login'); }}
-                             className="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-mono font-bold uppercase tracking-widest h-14 rounded-none border-none"
-                         >
-                             <LogIn className="w-5 h-5 mr-3" />
-                             Authenticate
-                         </Button>
-                     )}
-                </div>
-            </div>
-        )}
-        </>
-    );
+        </div>
+        {mobile && <nav id="mobile-navigation" aria-label="Navigation mobile" className="max-h-[calc(100dvh-80px)] overflow-y-auto border-t border-zinc-800 bg-zinc-950 px-4 pb-5 lg:hidden"><GlobalSearch className="my-3 md:hidden" inputClassName="w-full" placeholder="Rechercher…" />{groups.map(group => <div key={group.name} className="border-b border-zinc-900 py-3"><p className="mb-1 px-2 text-[10px] uppercase tracking-wider text-zinc-600">{group.name}</p>{group.items.map(({href, label, icon: Icon}) => <Link key={href} href={href} onClick={close} className={`flex items-center gap-3 rounded-none px-2 py-2.5 text-sm ${pathname === href ? "bg-zinc-900 text-white" : "text-zinc-400"}`}><Icon className="h-4 w-4" />{label}</Link>)}</div>)}{user && <button onClick={logout} className="mt-4 flex items-center gap-3 p-2 text-sm text-zinc-500"><LogOut className="h-4 w-4" />Se déconnecter</button>}</nav>}
+    </header>;
 }

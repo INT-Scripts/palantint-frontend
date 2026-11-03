@@ -1,6 +1,7 @@
 "use client";
 
-import { FOYER_BUILDINGS, FloorDef as FloorOption } from "@/lib/buildings";
+import type { FloorDef as FloorOption } from "@/lib/buildings";
+import {useBuildingCatalog} from "@/components/BuildingCatalog";
 
 interface PalantintFloorSelectorProps {
   buildings?: Record<string, FloorOption[]>;
@@ -14,7 +15,7 @@ interface PalantintFloorSelectorProps {
 }
 
 export default function PalantintFloorSelector({
-  buildings = FOYER_BUILDINGS,
+  buildings: suppliedBuildings,
   activeBuilding = "Foyer",
   activeFloor,
   onSelectBuilding,
@@ -23,6 +24,8 @@ export default function PalantintFloorSelector({
   accentColor = "rose",
   showAllFloorsOption = false,
 }: PalantintFloorSelectorProps) {
+  const catalog = useBuildingCatalog();
+  const buildings = suppliedBuildings || catalog.foyer;
   const currentFloors = buildings[activeBuilding] || [];
   const currentFloorLabel = currentFloors.find((f) => f.value === activeFloor)?.label || activeFloor;
 

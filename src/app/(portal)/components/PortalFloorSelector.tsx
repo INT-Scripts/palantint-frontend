@@ -1,7 +1,8 @@
 "use client";
 
 import { Layers } from "lucide-react";
-import { FOYER_BUILDINGS, FloorDef as FloorOption } from "@/lib/buildings";
+import type { FloorDef as FloorOption } from "@/lib/buildings";
+import {useBuildingCatalog} from "@/components/BuildingCatalog";
 
 interface PortalFloorSelectorProps {
   buildings?: Record<string, FloorOption[]>;
@@ -15,7 +16,7 @@ interface PortalFloorSelectorProps {
 }
 
 export default function PortalFloorSelector({
-  buildings = FOYER_BUILDINGS,
+  buildings: suppliedBuildings,
   activeBuilding,
   activeFloor,
   onSelectBuilding,
@@ -24,6 +25,8 @@ export default function PortalFloorSelector({
   title = "Sélection du Bâtiment & Étage",
   showAllFloorsOption = false,
 }: PortalFloorSelectorProps) {
+  const catalog = useBuildingCatalog();
+  const buildings = suppliedBuildings || catalog.foyer;
   const currentFloors = buildings[activeBuilding] || [];
   const currentFloorLabel = currentFloors.find(f => f.value === activeFloor)?.label || activeFloor;
 

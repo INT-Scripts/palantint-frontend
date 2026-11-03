@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchPrivate } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { ArrowRight, HardDrive } from "lucide-react";
+import { ArrowRight, HardDrive, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -22,10 +22,6 @@ export default function Homepage() {
   const [user, setUser] = useState<{ username: string; is_admin: boolean } | null>(null);
   const [telemetry, setTelemetry] = useState<TelemetryData | null>(null);
   
-  // High-fidelity futuristic boot diagnostics state
-  const [isBooting, setIsBooting] = useState<boolean>(true);
-  const [bootLines, setBootLines] = useState<string[]>([]);
-
   useEffect(() => {
     Promise.resolve().then(() => {
       document.title = "PalantINT";
@@ -39,81 +35,7 @@ export default function Homepage() {
       .then(res => setTelemetry(res))
       .catch(() => {});
 
-    // Operational diagnostics check trigger (runs every time the portal reloads/mounts)
-    const lines = [
-      "[BOOT] INITIALIZING INT LIBRARIES...",
-      "[INIT] CAS-CONNECTOR  .............. [ SUCCESS ]",
-      "[INIT] TROMBINT       .............. [ AUTHORIZED ]",
-      "[INIT] SI-AGENDA      .............. [ AUTHORIZED ]",
-      "[INIT] LAVER-INT      .............. [ SUCCESS ]",
-      "[BOOT] GATEWAY READY. SECURING TUNNEL..."
-    ];
-
-    let currentLine = 0;
-    const interval = setInterval(() => {
-      if (currentLine < lines.length) {
-        const nextLine = lines[currentLine];
-        if (nextLine !== undefined) {
-          setBootLines(prev => [...prev, nextLine]);
-        }
-        currentLine++;
-      } else {
-        clearInterval(interval);
-        setTimeout(() => {
-          setIsBooting(false);
-        }, 400);
-      }
-    }, 180);
-
-    return () => clearInterval(interval);
   }, []);
-
-  // 1. FULLSCREEN SIMULATED BOOT DIAGNOSTICS GATEWAY
-  if (isBooting) {
-    return (
-      <div className="fixed inset-0 bg-zinc-950 text-white z-[9999] flex flex-col items-center justify-center font-mono px-4 select-none">
-        {/* Background Grid with Plus Signs */}
-        <div className="absolute inset-0 pointer-events-none z-0 opacity-15">
-          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="boot-grid" width="60" height="60" patternUnits="userSpaceOnUse">
-                <line x1="0" y1="30" x2="60" y2="30" stroke="#27272a" strokeWidth="0.5" strokeDasharray="2 4" />
-                <line x1="30" y1="0" x2="30" y2="60" stroke="#27272a" strokeWidth="0.5" strokeDasharray="2 4" />
-                <path d="M26,30 L34,30 M30,26 L30,34" stroke="#3f3f46" strokeWidth="1" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#boot-grid)" />
-          </svg>
-        </div>
-
-        <div className="relative z-10 w-full max-w-lg border border-zinc-800 bg-zinc-900/40 backdrop-blur-xl p-8 rounded-none shadow-[0_0_50px_rgba(24,24,27,0.8)] space-y-4">
-          <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-            <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">System Boot Diagnostic</span>
-            <span className="w-2 h-2 bg-emerald-500 rounded-none animate-pulse" />
-          </div>
-          <div className="space-y-2 text-xs text-zinc-400">
-            {bootLines.map((line, idx) => {
-              if (!line) return null;
-              const isGreen = line.includes("SUCCESS") || line.includes("AUTHORIZED") || line.includes("READY");
-              const isAmber = line.includes("RESTRICTED");
-              return (
-                <div 
-                  key={idx} 
-                  className={isGreen ? "text-emerald-400" : isAmber ? "text-amber-500" : "text-zinc-300"}
-                >
-                  {line}
-                </div>
-              );
-            })}
-          </div>
-          <div className="pt-2 text-[9px] text-zinc-600 flex justify-between uppercase">
-            <span>Core: v21.0.67</span>
-            <span>Evry Node #67</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // 3. AUTHENTICATED SECRET PALANTINT MODE
   return (
@@ -160,6 +82,11 @@ export default function Homepage() {
           </div>
         </section>
 
+        <div className="mb-16 flex justify-center">
+          <button onClick={() => router.push("/palantint/campus")} className="group flex items-center gap-3 border border-zinc-700 bg-zinc-900/40 px-6 py-3 font-mono text-xs font-bold uppercase tracking-widest text-zinc-300 transition-colors hover:border-campus-500/50 hover:bg-campus-500/5 hover:text-white">
+            <MapPin className="h-4 w-4 text-campus-400" />Explorer le campus<ArrowRight className="h-4 w-4 text-zinc-500 transition-transform group-hover:translate-x-0.5" />
+          </button>
+        </div>
         {/* CORE MODULES SECTION */}
         <section className="space-y-12 mb-24">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800 pb-6">

@@ -1,44 +1,33 @@
 "use client";
 
-import { useEffect } from "react";
-import PageHeader from "@/components/PageHeader";
-import { Layers, MapPin, ZoomIn } from "lucide-react";
-import { Box } from "@/components/ui/box";
-import LocalPhotogrammetryMap from "./components/LocalPhotogrammetryMap";
+import { Suspense, useEffect } from "react";
+import { useSearchParams, usePathname } from "next/navigation";
+import dynamic from "next/dynamic";
+import { Map, Box } from "lucide-react";
 
-export default function Campus3DPage() {
-    useEffect(() => {
-        document.title = "Campus 3D";
-    }, []);
+const LocalPhotogrammetryMap = dynamic(() => import("./components/LocalPhotogrammetryMap"), { ssr: false });
+const IndoorCampusMap = dynamic(() => import("./components/IndoorCampusMap"), { ssr: false, loading: () => <div className="flex h-[65vh] items-center justify-center text-sm text-zinc-400">Chargement de la carte…</div> });
 
-    return (
-        <div className="min-h-screen bg-zinc-950 selection:bg-campus-500/30 font-sans">
-            <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-[20%] left-[-10%] w-[30%] h-[50%] bg-campus-600/10 blur-[150px] mix-blend-screen" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[40%] bg-campus-600/10 blur-[150px] mix-blend-screen" />
-                </div>
-
-                <main className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 mt-4 sm:mt-8 pb-32">
-                <div className="space-y-12">
-                    <PageHeader
-                        badgeText="Satellite Data // Active"
-                        title1="Campus"
-                        title2="Digital Twin"
-                        titleGradient="from-campus-400 to-campus-600"
-                        subtitle="High-density 3D reconstruction of the campus."
-                        colorName="campus"
-                    />
-
-                    <Box 
-                        className="w-full h-[800px] p-1"
-                        contentClassName="bg-zinc-950/80 w-full h-full"
-                        title="Campus 3D Map"
-                        icon={<MapPin className="w-4 h-4 text-campus-500" />}
-                    >
-                        <LocalPhotogrammetryMap />
-                    </Box>
-                </div>
-            </main>
+function CampusContent() {
+    useEffect(() => { document.title = "Campus | PalantINT"; }, []);
+    const params = useSearchParams();
+    const pathname = usePathname();
+    const show3D = params.get("view") === "3d";
+    const changeView = (show: boolean) => {
+        const next = new URLSearchParams(window.location.search);
+        if (show) next.set("view", "3d"); else next.delete("view");
+        window.history.pushState(null, "", `${pathname}${next.size ? `?${next}` : ""}`);
+    };
+    return <main className="relative h-[calc(100dvh-72px)] min-h-[500px] sm:h-[calc(100dvh-80px)]">
+        <h1 className="sr-only">Carte du campus</h1>
+        <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 rounded-none border border-zinc-800 bg-zinc-950/90 p-1 shadow-xl backdrop-blur-xl" aria-label="Vue du campus">
+            {[{ show: false, label: "Plan", icon: Map }, { show: true, label: "Vue 3D", icon: Box }].map(({ show, label, icon: Icon }) => <button key={label} title={label} aria-label={label} aria-pressed={show3D === show} onClick={() => changeView(show)} className={`rounded-none p-2.5 ${show3D === show ? "bg-zinc-800 text-white" : "text-zinc-500 hover:text-white"}`}><Icon className="h-4 w-4" /></button>)}
         </div>
-    );
+        {show3D ? <LocalPhotogrammetryMap /> : <IndoorCampusMap />}
+    </main>;
+
+}
+
+export default function CampusPage() {
+    return <Suspense fallback={<div className="h-[75vh] bg-zinc-950" />}><CampusContent /></Suspense>;
 }

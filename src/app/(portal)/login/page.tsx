@@ -41,7 +41,7 @@ export default function LoginPage() {
                     document.cookie = `palantint_refresh_token=${res.refresh_token}; path=/; max-age=${60 * 60}; SameSite=Lax`;
                 }
                 document.cookie = `palantint_token=${res.access_token}; path=/; max-age=${5 * 60}; SameSite=Lax`;
-                router.push("/palantint/account");
+                router.replace("/palantint");
             }
         } catch (err: any) {
             setError(err.message || "Authentication failed");

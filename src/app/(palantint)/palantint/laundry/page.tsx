@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { fetchPublic, fetchPrivate } from "@/lib/api";
 import { 
     WashingMachine, RefreshCw, Clock, Euro, ShieldAlert, 
     CheckCircle2, AlertTriangle, Activity, Database, Heart, Terminal,
     Bell, BellRing
 } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { campusHref } from "@/lib/campus";
 import PageHeader from "@/components/PageHeader";
 
-const BUILDINGS = ["U3", "U4", "U5", "U6", "U7"];
+import {BuildingCatalogBoundary, useBuildingCatalog} from "@/components/BuildingCatalog";
 
 interface Machine {
     serial_number: string;
@@ -34,8 +37,17 @@ interface LogEntry {
     message: string;
 }
 
-export default function LaundryPage() {
-    const [selectedBuilding, setSelectedBuilding] = useState("U3");
+function LaundryContent() {
+    const {laundry: BUILDINGS} = useBuildingCatalog();
+    const params = useSearchParams();
+    const requested = params.get("building") || "U3";
+    const selectedBuilding = BUILDINGS.includes(requested) ? requested : "U3";
+    const setSelectedBuilding = (building: string) => {
+        const next = new URLSearchParams(window.location.search);
+        next.set("building", building);
+        window.history.pushState(null, "", `/palantint/laundry?${next}`);
+    };
+    const request = useRef<AbortController | null>(null);
     const [machines, setMachines] = useState<Machine[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -68,12 +80,16 @@ export default function LaundryPage() {
     };
 
     const loadLaundryData = async (building: string, silent = false) => {
+        request.current?.abort();
+        const controller = new AbortController();
+        request.current = controller;
         if (!silent) setLoading(true);
         setError(null);
         if (!silent) addLog("INFO", `Initiating handshake with Hall ${building} controller...`);
         
         try {
-            const data = await fetchPublic(`/laundry/${building.toLowerCase()}`);
+            const data = await fetchPublic(`/laundry/${building.toLowerCase()}`, {signal:controller.signal});
+            if(controller.signal.aborted)return;
             const sortedData = (data || []).sort((a: Machine, b: Machine) => {
                 if (a.machine_type !== b.machine_type) {
                     return a.machine_type === "mal" ? -1 : 1;
@@ -85,13 +101,12 @@ export default function LaundryPage() {
             setLastUpdated(now);
             if (!silent) addLog("SUCCESS", `Hall ${building} telemetry sync completed. Received ${sortedData.length} records.`);
         } catch (e: any) {
-            console.error(e);
+            if(controller.signal.aborted)return;
             const errMsg = e.message || "Link Synchronisation Fault";
             setError(errMsg);
             if (!silent) addLog("WARN", `Failed handshake with Hall ${building}: ${errMsg}`);
         } finally {
-            setLoading(false);
-            setIsRefreshing(false);
+            if(!controller.signal.aborted){setLoading(false);setIsRefreshing(false);}
         }
     };
 
@@ -106,10 +121,10 @@ export default function LaundryPage() {
 
         // Auto-refresh every 30 seconds
         const timer = setInterval(() => {
-            loadLaundryData(selectedBuilding, true);
+            if(document.visibilityState === "visible")loadLaundryData(selectedBuilding, true);
         }, 30000);
 
-        return () => clearInterval(timer);
+        return () => {clearInterval(timer);request.current?.abort();};
     }, [selectedBuilding]);
 
     const handleManualRefresh = () => {
@@ -119,14 +134,14 @@ export default function LaundryPage() {
 
     // Calculate room stats
     const totalCount = machines.length;
-    const occupiedCount = machines.filter(m => !!m.started_at).length;
-    const availableCount = machines.filter(m => !m.started_at).length;
+    const occupiedCount = machines.filter(m => String(m.machine_state) === "1").length;
+    const availableCount = machines.filter(m => String(m.machine_state) !== "1").length;
     const outOfServiceCount = 0; // Ignore machine_in_service as it is unreliable
 
-    const malAvailable = machines.filter(m => m.machine_type === "mal" && !m.started_at).length;
+    const malAvailable = machines.filter(m => m.machine_type === "mal" && String(m.machine_state) !== "1").length;
     const malTotal = machines.filter(m => m.machine_type === "mal").length;
-    const slAvailable = machines.filter(m => m.machine_type === "sl" && !m.started_at).length;
-    const slTotal = machines.filter(m => m.machine_type === "sl").length;
+    const slAvailable = machines.filter(m => ["sec", "sl"].includes(m.machine_type) && String(m.machine_state) !== "1").length;
+    const slTotal = machines.filter(m => ["sec", "sl"].includes(m.machine_type)).length;
 
     // Helper to format ISO Parisian time to elegant local view
     const formatCycleStart = (startedAt: string | null) => {
@@ -163,6 +178,7 @@ export default function LaundryPage() {
             <main className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 mt-4 sm:mt-8 pb-32">
                 <div className="space-y-8">
                     
+                    <Link href={campusHref({ building: selectedBuilding })} className="inline-flex items-center gap-2 text-xs text-media-400 hover:text-white">Voir {selectedBuilding} sur le plan</Link>
                     {/* Header */}
                     <PageHeader
                         badgeText="Live Touch'n'Pay Telemetry // Active"
@@ -261,12 +277,12 @@ export default function LaundryPage() {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                     {machines.map((m) => {
-                                        const isAvailable = !m.started_at;
-                                        const isOccupied = !!m.started_at;
+                                        const isAvailable = String(m.machine_state) !== "1";
+                                        const isOccupied = String(m.machine_state) === "1";
                                         const isOffline = false; // Ignore machine_in_service as it is unreliable
                                         
                                         const priceEur = m.machine_price ? (Number(m.machine_price) / 100).toFixed(2) : "0.00";
-                                        const isDryer = m.machine_type === "sl";
+                                        const isDryer = ["sec", "sl"].includes(m.machine_type);
                                         const elapsedMin = getElapsedTime(m.started_at);
 
                                         return (
@@ -513,4 +529,8 @@ export default function LaundryPage() {
             </main>
         </div>
     );
+}
+
+export default function LaundryPage() {
+    return <Suspense fallback={<div className="min-h-screen bg-zinc-950" />}><BuildingCatalogBoundary><LaundryContent /></BuildingCatalogBoundary></Suspense>;
 }

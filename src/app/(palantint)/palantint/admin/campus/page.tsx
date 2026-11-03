@@ -1,4 +1,5 @@
 "use client";
+import {readFloorPlan,type FloorPlan} from "@/lib/planGeometry";
 
 import { PALETTE } from "@/lib/colors";
 import React, { Suspense, useMemo, useState, useEffect, useRef, Component, ReactNode } from "react";
@@ -13,10 +14,10 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Link from "next/link";
 import { fetchPrivate } from "@/lib/api";
-import { APARTMENT_BUILDINGS, FOYER_BUILDINGS, FloorDef } from "@/lib/buildings";
+import type {FloorDef} from "@/lib/buildings";
+import {BuildingCatalogBoundary, useBuildingCatalog} from "@/components/BuildingCatalog";
 import { BuildingWireframe } from "../../apartments/components/BuildingModel";
 
-const BUILDING_FLOORS: Record<string, FloorDef[]> = { ...APARTMENT_BUILDINGS, ...FOYER_BUILDINGS };
 
 interface WireframeTransform {
     position: [number, number, number];
@@ -364,7 +365,8 @@ function SceneClickHandler({ onPickPoint }: { onPickPoint: (point: THREE.Vector3
     return null;
 }
 
-export default function CampusCalibrationAdminPage() {
+function CampusCalibrationAdminContent() {
+    const {all: BUILDING_FLOORS} = useBuildingCatalog();
     const [tileUrls, setTileUrls] = useState<string[]>([]);
     const [config, setConfig] = useState<{ tile_mappings: Record<string, string>, markers: BuildingMarker[] }>({
         tile_mappings: {},
@@ -376,7 +378,7 @@ export default function CampusCalibrationAdminPage() {
     const [saving, setSaving] = useState(false);
 
     const [previewFloors, setPreviewFloors] = useState<FloorDef[]>([]);
-    const [previewSvgs, setPreviewSvgs] = useState<Record<string, string>>({});
+    const [previewPlans, setPreviewPlans] = useState<Record<string, FloorPlan>>({});
     const [previewMetadata, setPreviewMetadata] = useState<Record<string, any>>({});
     const [previewOccupants, setPreviewOccupants] = useState<number | null>(null);
 
@@ -418,7 +420,7 @@ export default function CampusCalibrationAdminPage() {
     useEffect(() => {
         if (!selectedBldgId) {
             setPreviewFloors([]);
-            setPreviewSvgs({});
+            setPreviewPlans({});
             setPreviewMetadata({});
             setPreviewOccupants(null);
             return;
@@ -427,17 +429,17 @@ export default function CampusCalibrationAdminPage() {
         setPreviewFloors(floors);
         let cancelled = false;
         (async () => {
-            const svgs: Record<string, string> = {};
+            const plans: Record<string, FloorPlan> = {};
             await Promise.all(floors.map(async (f) => {
                 try {
-                    const res = await fetch(`/api/assets/plans/${selectedBldgId}_${f.value}.svg`);
-                    if (res.ok) svgs[f.value] = await res.text();
+                    const res = await fetch(f.assets.geojson);
+                    if (res.ok) plans[f.value] = await readFloorPlan(res);
                 } catch {}
             }));
             const meta = await fetchPrivate(`/maps/${selectedBldgId}/metadata`).catch(() => ({}));
             const occupantsRes = await fetchPrivate(`/maps/${selectedBldgId}/occupants`).catch(() => null);
             if (!cancelled) {
-                setPreviewSvgs(svgs);
+                setPreviewPlans(plans);
                 setPreviewMetadata(meta || {});
                 setPreviewOccupants(typeof occupantsRes?.occupants === "number" ? occupantsRes.occupants : null);
             }
@@ -729,7 +731,7 @@ export default function CampusCalibrationAdminPage() {
                                                     onChange={(e) => updateSelectedMarker("bldg_id", e.target.value)}
                                                     className="w-full bg-zinc-950 border border-zinc-800 text-white text-xs rounded-md p-1.5 font-mono focus:border-amber-500 focus:outline-hidden"
                                                 >
-                                                    {["U1", "U2", "U3", "U4", "U5", "U6", "U7", "Foyer", "CentraleSupélec", "Autre"].map(b => (
+                                                    {[...new Set([...Object.keys(BUILDING_FLOORS),...config.markers.map(marker=>marker.bldg_id),"Autre"])].map(b => (
                                                         <option key={b} value={b}>{b}</option>
                                                     ))}
                                                 </select>
@@ -939,7 +941,7 @@ export default function CampusCalibrationAdminPage() {
                         <BuildingWireframe
                             floors={previewFloors}
                             activeFloor={previewFloors[0]?.value || ""}
-                            buildingSvgs={previewSvgs}
+                            buildingPlans={previewPlans}
                             buildingMetadata={previewMetadata}
                             autoRotate={false}
                             position={selectedMarker.wireframe.position}
@@ -980,3 +982,5 @@ export default function CampusCalibrationAdminPage() {
         </div>
     );
 }
+
+export default function CampusCalibrationAdminPage() { return <BuildingCatalogBoundary><CampusCalibrationAdminContent /></BuildingCatalogBoundary>; }

@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { fetchPublic } from "@/lib/api";
 import { Users, Search, Info, X, AlertTriangle } from "lucide-react";
 import PortalHeader from "@/components/PortalHeader";
 import PortalFloorSelector from "../components/PortalFloorSelector";
 import PortalClubCard, { Club } from "../components/PortalClubCard";
 import PortalClubModal from "../components/PortalClubModal";
-import { FOYER_BUILDINGS as BUILDINGS } from "@/lib/buildings";
+import {BuildingCatalogBoundary, useBuildingCatalog} from "@/components/BuildingCatalog";
 
-export default function PublicClubsPage() {
+function PublicClubsContent() {
+    const {foyer: BUILDINGS} = useBuildingCatalog();
+  const searchParams = useSearchParams();
   const [clubs, setClubs] = useState<Club[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,6 +21,19 @@ export default function PublicClubsPage() {
   const [activeBuilding, setActiveBuilding] = useState<string>("Foyer");
   const [activeFloor, setActiveFloor] = useState<string>("ALL");
   const [selectedClub, setSelectedClub] = useState<Club | null>(null);
+
+  useEffect(() => {
+    const id = searchParams.get("club");
+    if (!id) {
+      Promise.resolve().then(() => setSelectedClub(null));
+      return;
+    }
+    let active = true;
+    fetchPublic(`/clubs/${encodeURIComponent(id)}`)
+      .then(details => { if (active && details) setSelectedClub(details); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [searchParams]);
 
   useEffect(() => {
     let isMounted = true;
@@ -81,12 +97,11 @@ export default function PublicClubsPage() {
     });
   }, [groupedClubs]);
 
-  const handleSelectClub = async (club: Club) => {
+  const handleSelectClub = (club: Club) => {
     setSelectedClub(club);
-    try {
-      const fullDetails = await fetchPublic(`/clubs/${club.id}`);
-      if (fullDetails) setSelectedClub(fullDetails);
-    } catch { /* keep basic state */ }
+    const url = new URL(window.location.href);
+    url.searchParams.set("club", String(club.id));
+    window.history.replaceState(null, "", url);
   };
 
   const getOriginBadgeStyle = (origin?: string) => {
@@ -217,9 +232,18 @@ export default function PublicClubsPage() {
       {/* Detail Modal */}
       <PortalClubModal
         club={selectedClub}
-        onClose={() => setSelectedClub(null)}
+        onClose={() => {
+          setSelectedClub(null);
+          const url = new URL(window.location.href);
+          url.searchParams.delete("club");
+          window.history.replaceState(null, "", url);
+        }}
         getOriginBadgeStyle={getOriginBadgeStyle}
       />
     </section>
   );
+}
+
+export default function PublicClubsPage() {
+  return <Suspense fallback={<div className="min-h-screen bg-stone-50" />}><BuildingCatalogBoundary><PublicClubsContent /></BuildingCatalogBoundary></Suspense>;
 }

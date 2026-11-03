@@ -1,6 +1,8 @@
 "use client";
+import FloorPlanCanvas from "@/components/FloorPlanCanvas";
+import {readFloorPlan,type FloorPlan} from "@/lib/planGeometry";
 
-import { useEffect, useState, useRef, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { fetchPrivate, fetchPublic } from "@/lib/api";
@@ -15,48 +17,31 @@ const BuildingModel = dynamic(() => import("./components/BuildingModel"), { ssr:
 import PalantintDirectoryPanel from "../components/PalantintDirectoryPanel";
 import PalantintApartmentDetailCard from "./components/PalantintApartmentDetailCard";
 import PalantintApartmentList from "./components/PalantintApartmentList";
-import { APARTMENT_BUILDINGS as BUILDINGS } from "@/lib/buildings";
-
-function parseNumeric(val: any): number {
-    if (val === null || val === undefined) return 0;
-    if (typeof val === "number") return isNaN(val) ? 0 : val;
-    const cleaned = String(val).replace(",", ".").replace(/[^\d.-]/g, "");
-    const num = parseFloat(cleaned);
-    return isNaN(num) ? 0 : num;
-}
-
-function getPngPath(bldg: string, floor: string) {
-    if (bldg === "Foyer") return `/api/assets/plans/Foyer_${floor}.png`;
-    let f = floor;
-    if (bldg === "U5" && floor === "-0.5") f = "_-1";
-    else if (bldg === "U5" && floor === "0.5") f = "_0";
-    return `/api/assets/plans/${bldg}-${f}.png`;
-}
+import {BuildingCatalogBoundary, useBuildingCatalog} from "@/components/BuildingCatalog";
 
 function ApartmentsContent() {
+    const {housing: BUILDINGS, all: ALL_BUILDINGS} = useBuildingCatalog();
+    const planAsset = (building: string, floor: string, kind: "geojson") => ALL_BUILDINGS[building]?.find(value=>value.value===floor)?.assets[kind] || "";
     const router = useRouter();
     const searchParams = useSearchParams();
-    const svgRef = useRef<HTMLDivElement>(null);
-    const tooltipRef = useRef<HTMLDivElement>(null);
-    const hoveredRoomRef = useRef<string | null>(null);
 
     const [bldg, setBldg] = useState("U7");
     const [floor, setFloor] = useState("1");
     const [occupied, setOccupied] = useState<Record<string, any>>({});
     const [apartmentsDetails, setApartmentsDetails] = useState<Record<string, any>>({});
     const [search, setSearch] = useState("");
-    const [svgContent, setSvgContent] = useState<string>("");
-    const [buildingSvgs, setBuildingSvgs] = useState<Record<string, string>>({});
+    const [plan,setPlan] = useState<FloorPlan|null>(null);
+    const [buildingPlans, setBuildingPlans] = useState<Record<string, FloorPlan>>({});
     const [buildingMetadata, setBuildingMetadata] = useState<Record<string, any>>({});
     const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         document.title = "Apartments";
-        
+
         const bldgQ = searchParams.get("bldg");
         const floorQ = searchParams.get("floor");
-        
+
         if (bldgQ && BUILDINGS[bldgQ.toUpperCase()]) {
             setBldg(bldgQ.toUpperCase());
             if (floorQ && BUILDINGS[bldgQ.toUpperCase()].find(f => f.value === floorQ)) {
@@ -70,25 +55,18 @@ function ApartmentsContent() {
             if (cleanRoom.length === 4) {
                 setSearch(cleanRoom);
                 setSelectedRoom(cleanRoom);
-                
-                const b = `U${cleanRoom[0]}`;
-                if (BUILDINGS[b]) {
-                    let f = cleanRoom[1];
-                    if (b === "U5" && f === "0") {
-                        const roomNum = parseInt(cleanRoom.substring(2)) || 0;
-                        f = roomNum >= 10 ? "0.5" : "-0.5";
-                    }
-                    if (BUILDINGS[b].find(fl => fl.value === f)) {
-                        setBldg(b);
-                        setFloor(f);
-                    }
-                }
+
+
             }
         }
 
         fetchPublic("/students/apartments/details")
             .then(data => {
                 setApartmentsDetails(data || {});
+                const plan = roomQ ? data?.[roomQ.replace(/\D/g, "")]?.plan : null;
+                if (plan && BUILDINGS[plan.building]?.some(floor=>floor.value===plan.floor)) {
+                    setBldg(plan.building); setFloor(plan.floor);
+                }
             })
             .catch(console.error);
 
@@ -102,34 +80,34 @@ function ApartmentsContent() {
 
     useEffect(() => {
         const controller = new AbortController();
-        fetch(`/api/assets/plans/${bldg}_${floor}.svg`, { signal: controller.signal })
-            .then(r => r.ok ? r.text() : "")
+        fetch(planAsset(bldg,floor,"geojson"), { signal: controller.signal })
+            .then(readFloorPlan)
             .then(text => {
                 if (text !== undefined) {
-                    setSvgContent(text);
+                    setPlan(text);
                 }
             })
-            .catch(e => { if (e.name !== "AbortError") setSvgContent(""); });
+            .catch(e => { if (e.name !== "AbortError") setPlan(null); });
         return () => controller.abort();
     }, [bldg, floor]);
 
     useEffect(() => {
         let isMounted = true;
         const fetchAll = async () => {
-            const svgs: Record<string, string> = {};
+            const plans: Record<string, FloorPlan> = {};
             await Promise.all(BUILDINGS[bldg].map(async (f) => {
                 try {
-                    const res = await fetch(`/api/assets/plans/${bldg}_${f.value}.svg`);
+                    const res = await fetch(f.assets.geojson);
                     if (res.ok) {
-                        svgs[f.value] = await res.text();
+                        plans[f.value] = await readFloorPlan(res);
                     }
                 } catch (e) {}
             }));
-            
+
             const meta = await fetchPrivate(`/maps/${bldg}/metadata`);
-            
+
             if (isMounted) {
-                setBuildingSvgs(svgs);
+                setBuildingPlans(plans);
                 setBuildingMetadata(meta || {});
             }
         };
@@ -137,219 +115,20 @@ function ApartmentsContent() {
         return () => { isMounted = false; };
     }, [bldg]);
 
-    const occupiedRef = useRef(occupied);
-    useEffect(() => {
-        occupiedRef.current = occupied;
-    }, [occupied]);
-
-    const apartmentsDetailsRef = useRef(apartmentsDetails);
-    useEffect(() => {
-        apartmentsDetailsRef.current = apartmentsDetails;
-    }, [apartmentsDetails]);
-
-    useEffect(() => {
-        const el = svgRef.current;
-        if (!el || !svgContent) return;
-
-        const handleMouseMove = (e: MouseEvent) => {
-            const link = (e.target as Element).closest?.("a[data-room]");
-            if (link) {
-                const roomNum = link.getAttribute("data-room") || "";
-                
-                if (tooltipRef.current) {
-                    tooltipRef.current.style.display = 'block';
-                    
-                    const rect = el.getBoundingClientRect();
-                    const tooltipWidth = tooltipRef.current.offsetWidth || 240;
-                    const tooltipHeight = tooltipRef.current.offsetHeight || 220;
-
-                    let x = e.clientX - rect.left + 16;
-                    let y = e.clientY - rect.top + 16;
-
-                    if (x + tooltipWidth > rect.width - 12) {
-                        x = Math.max(12, e.clientX - rect.left - tooltipWidth - 16);
-                    }
-                    if (y + tooltipHeight > rect.height - 12) {
-                        y = Math.max(12, e.clientY - rect.top - tooltipHeight - 16);
-                    }
-
-                    tooltipRef.current.style.left = `${x}px`;
-                    tooltipRef.current.style.top = `${y}px`;
-
-                    if (hoveredRoomRef.current !== roomNum) {
-                        if (hoveredRoomRef.current) {
-                            const prev = el.querySelector(`a[data-room="${hoveredRoomRef.current}"]`);
-                            if (prev) prev.removeAttribute("data-hover");
-                        }
-                        link.setAttribute("data-hover", "true");
-                        
-                        hoveredRoomRef.current = roomNum;
-                        const occupants = occupiedRef.current[roomNum] || [];
-                        const occupantsHtml = occupants.length > 0 
-                            ? occupants.map((o: any) => `
-                                <div class="flex items-center gap-2 text-[11px] text-zinc-200 font-mono mt-1 bg-zinc-950/60 border border-zinc-800/40 px-2 py-0.5 uppercase rounded-none">
-                                    <div class="w-1.5 h-1.5 rounded-full bg-housing-500 animate-pulse"></div>
-                                    <span class="font-bold text-zinc-200">${o.first_name?.[0] || ""}. ${o.last_name || ""}</span>
-                                </div>
-                            `).join('')
-                            : `<div class="text-[9px] text-zinc-500 font-mono italic uppercase px-1.5 py-0.5 bg-zinc-950/30 border border-zinc-900/50">Aucun occupant</div>`;
-                        
-                        const logData = apartmentsDetailsRef.current[roomNum];
-                        let logHtml = '';
-                        if (logData) {
-                            const baseRent = parseNumeric(logData.Tarif);
-                            const allocBoursier = parseNumeric(logData['Allocation boursier']);
-                            const allocNonBoursier = parseNumeric(logData['Allocation non boursier']);
-
-                            const netBoursier = baseRent > 0 && allocBoursier > 0 ? baseRent - allocBoursier : (baseRent || 0);
-                            const netNonBoursier = baseRent > 0 && allocNonBoursier > 0 ? baseRent - allocNonBoursier : (baseRent || 0);
-                            const surf = parseNumeric(logData.Superficie);
-
-                            logHtml = `
-                                <div class="mt-2 pt-1.5 border-t border-zinc-800/60 flex flex-col gap-1.5">
-                                    <div class="grid grid-cols-2 gap-1 font-mono text-[9px]">
-                                        <div class="flex flex-col p-1 bg-zinc-950/50 border border-zinc-900">
-                                            <span class="text-[7px] text-zinc-500 uppercase font-bold">Type</span>
-                                            <span class="font-bold text-white uppercase truncate" title="${logData.Type || '-'}">${logData.Type || '-'}</span>
-                                        </div>
-                                        <div class="flex flex-col p-1 bg-zinc-950/50 border border-zinc-900">
-                                            <span class="text-[7px] text-zinc-500 uppercase font-bold">Superficie</span>
-                                            <span class="font-bold text-white">${surf > 0 ? `${surf} m²` : (logData.Superficie || '-')}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="flex justify-between items-center p-1.5 bg-housing-500/10 border border-housing-500/20 font-mono text-[10px]">
-                                        <span class="text-zinc-300 uppercase font-bold">Loyer Brut</span>
-                                        <span class="font-black text-housing-400">${baseRent > 0 ? `${baseRent} €/m` : (logData.Tarif || '-')}</span>
-                                    </div>
-                                    
-                                    <div class="flex flex-col gap-0.5 bg-zinc-950/60 border border-zinc-900/60 p-1.5 font-mono text-[9px]">
-                                        <div class="flex justify-between items-center gap-3 text-emerald-400">
-                                            <span>Boursier:</span>
-                                            <span class="font-bold">${netBoursier > 0 ? `${netBoursier} €` : '-'} <span class="text-[7.5px] text-zinc-500 font-normal">(-${allocBoursier}€ APL/ALS)</span></span>
-                                        </div>
-                                        <div class="flex justify-between items-center gap-3 text-zinc-300">
-                                            <span>Non-Boursier:</span>
-                                            <span class="font-bold">${netNonBoursier > 0 ? `${netNonBoursier} €` : '-'} <span class="text-[7.5px] text-zinc-500 font-normal">(-${allocNonBoursier}€ APL/ALS)</span></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        }
-
-                        tooltipRef.current.innerHTML = `
-                            <div class="flex flex-col gap-2 font-mono">
-                                <div class="flex items-center justify-between gap-4 border-b border-zinc-800/80 pb-1.5">
-                                    <span class="text-xs font-black text-white uppercase">Chambre ${roomNum}</span>
-                                </div>
-                                <div>
-                                    <div class="text-[9px] text-zinc-400 uppercase tracking-widest mb-1">Occupants:</div>
-                                    ${occupantsHtml}
-                                </div>
-                                ${logHtml}
-                            </div>
-                        `;
-                    }
-                }
-            } else {
-                if (hoveredRoomRef.current !== null) {
-                    const prev = el.querySelector(`a[data-room="${hoveredRoomRef.current}"]`);
-                    if (prev) prev.removeAttribute("data-hover");
-                    hoveredRoomRef.current = null;
-                    if (tooltipRef.current) {
-                        tooltipRef.current.style.display = 'none';
-                    }
-                }
-            }
-        };
-
-        const handleClick = (e: MouseEvent) => {
-            const link = (e.target as Element).closest?.("a[data-room]");
-            if (link) {
-                e.preventDefault();
-                const roomNum = link.getAttribute("data-room") || "";
-                setSelectedRoom(roomNum);
-                setSearch(roomNum);
-            }
-        };
-
-        const handleMouseLeave = () => {
-            if (hoveredRoomRef.current) {
-                const prev = el.querySelector(`a[data-room="${hoveredRoomRef.current}"]`);
-                if (prev) prev.removeAttribute("data-hover");
-            }
-            hoveredRoomRef.current = null;
-            if (tooltipRef.current) tooltipRef.current.style.display = 'none';
-        };
-
-        el.addEventListener("mousemove", handleMouseMove);
-        el.addEventListener("click", handleClick);
-        el.addEventListener("mouseleave", handleMouseLeave);
-
-        if (tooltipRef.current) tooltipRef.current.style.display = 'none';
-
-        return () => {
-            el.removeEventListener("mousemove", handleMouseMove);
-            el.removeEventListener("click", handleClick);
-            el.removeEventListener("mouseleave", handleMouseLeave);
-        };
-    }, [svgContent]); 
-
-    useEffect(() => {
-        const el = svgRef.current;
-        if (!el || !svgContent) return;
-
-        const apply = () => {
-            el.querySelectorAll("a[data-room]").forEach(a => {
-                const roomNum = a.getAttribute("data-room") || "";
-                const isSelected = roomNum === selectedRoom;
-                const isOccupied = Array.isArray(occupied[roomNum]) && occupied[roomNum].length > 0;
-
-                if (isSelected) {
-                    a.setAttribute("data-active", "true");
-                } else {
-                    a.removeAttribute("data-active");
-                }
-
-                if (isOccupied) {
-                    a.setAttribute("data-occupied", "true");
-                } else {
-                    a.removeAttribute("data-occupied");
-                }
-            });
-        };
-
-        apply();
-        const raf = requestAnimationFrame(apply);
-        return () => cancelAnimationFrame(raf);
-    }, [selectedRoom, occupied, apartmentsDetails, svgContent]);
-
     const belongsToCurrentView = (aptNum: string) => {
-        if (aptNum.length !== 4 || isNaN(Number(aptNum))) return false;
-        const b = bldg.replace("U", "");
-        let f = floor;
-        if (f === "-0.5" || f === "0.5") f = "0";
-        return aptNum[0] === b && aptNum[1] === f;
+        const plan = apartmentsDetails[aptNum]?.plan;
+        return plan?.building === bldg && plan?.floor === floor;
     };
 
     // All rooms for this building/floor, occupied or not — vacancy is shown
-    // via the SVG map coloring and the empty "Occupants" section in the
+    // via the GeoJSON map coloring and the empty "Occupants" section in the
     // detail popup, not by hiding the room from the list.
     const currentViewApts = Object.keys(apartmentsDetails)
         .filter(belongsToCurrentView)
         .sort((a, b) => Number(a) - Number(b));
 
-    const getBuildingResidentCount = useCallback((b: string) => {
-        const b_num = b.replace("U", "");
-        return Object.keys(occupied).filter(apt => apt[0] === b_num).length;
-    }, [occupied]);
-
-    const getFloorResidentCount = useCallback((b: string, f: string) => {
-        const b_num = b.replace("U", "");
-        let f_val = f;
-        if (f_val === "-0.5" || f_val === "0.5") f_val = "0";
-        return Object.keys(occupied).filter(apt => apt[0] === b_num && apt[1] === f_val).length;
-    }, [occupied]);
+    const getBuildingResidentCount = useCallback((building: string) => Object.keys(occupied).filter(room=>apartmentsDetails[room]?.plan?.building===building).length, [occupied,apartmentsDetails]);
+    const getFloorResidentCount = useCallback((building: string, floor: string) => Object.keys(occupied).filter(room=>apartmentsDetails[room]?.plan?.building===building && apartmentsDetails[room]?.plan?.floor===floor).length, [occupied,apartmentsDetails]);
 
     const renderSelectors = () => {
         const ControlBox = ({ label, currentLabel, currentValue, children, className = "" }: any) => (
@@ -369,8 +148,8 @@ function ApartmentsContent() {
                 type="button"
                 onClick={onClick}
                 className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold font-mono border transition-all cursor-pointer ${
-                    active 
-                        ? "bg-housing-500/20 text-white border-housing-500 shadow-sm shadow-housing-500/20" 
+                    active
+                        ? "bg-housing-500/20 text-white border-housing-500 shadow-sm shadow-housing-500/20"
                         : "bg-zinc-950/60 border-zinc-800/80 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 hover:border-zinc-700"
                 } ${className}`}
             >
@@ -393,9 +172,9 @@ function ApartmentsContent() {
                         ))}
                     </div>
                 </ControlBox>
-                <ControlBox 
-                    label="Étages" 
-                    currentLabel="Selection" 
+                <ControlBox
+                    label="Étages"
+                    currentLabel="Selection"
                     currentValue={BUILDINGS[bldg].find(f => f.value === floor)?.label || floor}
                     className="col-span-12 md:col-span-7 lg:col-span-8 xl:col-span-7 border-t md:border-t-0 md:border-l border-zinc-800"
                 >
@@ -433,21 +212,16 @@ function ApartmentsContent() {
                             const val = v.trim().replace(/\D/g, "");
                             if (val.length === 4) {
                                 setSelectedRoom(val);
-                                const b = `U${val[0]}`;
-                                if (BUILDINGS[b]) {
-                                    let f = val[1];
-                                    if (b === "U5" && f === "0") {
-                                        const roomNum = parseInt(val.substring(2)) || 0;
-                                        f = roomNum >= 10 ? "0.5" : "-0.5";
-                                    }
-                                    if (BUILDINGS[b].find(fl => fl.value === f)) {
-                                        setBldg(b);
-                                        setFloor(f);
-                                    }
+                                const plan = apartmentsDetails[val]?.plan;
+                                if (plan && BUILDINGS[plan.building]?.some(floor=>floor.value===plan.floor)) {
+                                    setBldg(plan.building); setFloor(plan.floor);
                                 }
+
                             }
                         }}
                     />
+
+                    <button onClick={() => router.push(`/palantint/campus?building=${encodeURIComponent(bldg)}${selectedRoom ? `&room=${encodeURIComponent(selectedRoom)}` : ""}`)} className="w-fit border border-campus-500/40 px-4 py-2 text-xs font-bold text-campus-400 hover:bg-campus-500/10">Voir ce bâtiment sur la carte géographique</button>
 
                     {/* Building & Floor Selector (Top) */}
                     {renderSelectors()}
@@ -480,71 +254,14 @@ function ApartmentsContent() {
                             }
                         >
                             <div
-                                ref={svgRef}
                                 className="flex-1 flex flex-col overflow-hidden relative z-0 p-3 sm:p-5 w-full select-none items-center justify-center min-h-0"
                             >
                                 <div className="w-full h-full flex-1 flex items-center justify-center min-h-0">
-                                    <div 
-                                        className="w-full h-full flex items-center justify-center
-                                                   [&_svg]:w-full [&_svg]:max-w-full [&_svg]:h-full [&_svg]:max-h-[78vh] [&_svg]:block [&_svg]:m-auto [&_svg]:object-contain
-                                                   [&_a[data-room]]:cursor-pointer!
-                                                   [&_a[data-room]_text]:pointer-events-none!
-                                                   [&_a[data-room]_tspan]:pointer-events-none!
-                                                   [&_a[data-room]_.room-area]:pointer-events-all!
-                                                   [&_a[data-room]_.room-area]:transition-all!
-                                                   [&_a[data-room]_.room-area]:duration-150!
-                                                   [&_.room-area]:fill-zinc-800/20!
-                                                   [&_.room-area]:stroke-zinc-700/60!
-                                                   [&_.room-area]:stroke-[1px]!
-                                                   [&_a[data-room][data-occupied='true']_.room-area]:fill-orange-500/32!
-                                                   [&_a[data-room][data-occupied='true']_.room-area]:stroke-orange-500!
-                                                   [&_a[data-room][data-occupied='true']_.room-area]:stroke-[1.5px]!
-                                                   [&_a[data-room][data-occupied='true']_.room-label]:fill-orange-300!
-                                                   [&_a[data-room][data-occupied='true']_.room-label]:font-bold!
-                                                   [&_a[data-room][data-active='true']_.room-area]:fill-blue-600/80!
-                                                   [&_a[data-room][data-occupied='true'][data-active='true']_.room-area]:fill-blue-600/80!
-                                                   [&_a[data-room][data-selected='true']_.room-area]:fill-blue-600/80!
-                                                   [&_a[data-room][data-occupied='true'][data-selected='true']_.room-area]:fill-blue-600/80!
-                                                   [&_a[data-room][data-active='true']_.room-area]:stroke-blue-500!
-                                                   [&_a[data-room][data-occupied='true'][data-active='true']_.room-area]:stroke-blue-500!
-                                                   [&_a[data-room][data-selected='true']_.room-area]:stroke-blue-500!
-                                                   [&_a[data-room][data-occupied='true'][data-selected='true']_.room-area]:stroke-blue-500!
-                                                   [&_a[data-room][data-active='true']_.room-area]:stroke-2!
-                                                   [&_a[data-room][data-occupied='true'][data-active='true']_.room-area]:stroke-2!
-                                                   [&_a[data-room][data-selected='true']_.room-area]:stroke-2!
-                                                   [&_a[data-room][data-occupied='true'][data-selected='true']_.room-area]:stroke-2!
-                                                   [&_a[data-room]:hover_.room-area]:fill-blue-500/55!
-                                                   [&_a[data-room][data-occupied='true']:hover_.room-area]:fill-blue-500/55!
-                                                   [&_a[data-room][data-hover='true']_.room-area]:fill-blue-500/55!
-                                                   [&_a[data-room][data-occupied='true'][data-hover='true']_.room-area]:fill-blue-500/55!
-                                                   [&_a[data-room]:hover_.room-area]:stroke-blue-400!
-                                                   [&_a[data-room][data-occupied='true']:hover_.room-area]:stroke-blue-400!
-                                                   [&_a[data-room][data-hover='true']_.room-area]:stroke-blue-400!
-                                                   [&_a[data-room][data-occupied='true'][data-hover='true']_.room-area]:stroke-blue-400!
-                                                   [&_a[data-room]:hover_.room-area]:stroke-[2.5px]!
-                                                   [&_a[data-room][data-occupied='true']:hover_.room-area]:stroke-[2.5px]!
-                                                   [&_a[data-room][data-hover='true']_.room-area]:stroke-[2.5px]!
-                                                   [&_a[data-room][data-occupied='true'][data-hover='true']_.room-area]:stroke-[2.5px]!
-                                                   [&_.room-label]:font-sans!
-                                                   [&_a[data-room][data-active='true']_.room-label]:fill-white!
-                                                   [&_a[data-room][data-selected='true']_.room-label]:fill-white!
-                                                   [&_a[data-room][data-active='true']_.room-label]:font-black!
-                                                   [&_a[data-room][data-selected='true']_.room-label]:font-black!
-                                                   [&_a[data-room]:hover_.room-label]:fill-white!
-                                                   [&_a[data-room]:hover_.room-label]:font-black!
-                                                   [&_a[data-room][data-hover='true']_.room-label]:fill-white!
-                                                   [&_a[data-room][data-hover='true']_.room-label]:font-black!"
-                                        dangerouslySetInnerHTML={{
-                                            __html: svgContent || `<div class="m-auto flex flex-col items-center justify-center text-zinc-600 gap-4 font-mono uppercase tracking-widest"><svg class="w-16 h-16 opacity-30 text-housing-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="square" stroke-linejoin="miter" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg><span class="text-xs text-housing-500/80 text-center">PLAN_NOT_FOUND</span></div>`,
-                                        }}
-                                    />
+                                    <FloorPlanCanvas plan={plan?.metadata.building === bldg && plan.metadata.floor === floor ? plan : null} selectedRoom={selectedRoom} onSelectRoom={setSelectedRoom} details={apartmentsDetails} occupied={occupied} />
                                 </div>
                             </div>
 
-                            <div
-                                ref={tooltipRef}
-                                className="absolute z-50 pointer-events-none select-none bg-zinc-950/95 backdrop-blur-xl border border-housing-500/40 p-3.5 rounded-none shadow-2xl hidden text-left transition-opacity duration-75 min-w-[240px]"
-                            />
+
 
                             <div className="px-5 py-3 border-t border-zinc-800 bg-zinc-900/50 flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-zinc-400 shrink-0">
                                 <div className="flex items-center gap-5">
@@ -617,33 +334,12 @@ function ApartmentsContent() {
                                 bldg={bldg}
                                 floors={BUILDINGS[bldg]}
                                 activeFloor={floor}
-                                buildingSvgs={buildingSvgs}
+                                buildingPlans={buildingPlans}
                                 buildingMetadata={buildingMetadata}
                             />
                         </Box>
 
-                        <Box
-                            className="h-[600px] p-1"
-                            contentClassName="flex items-center justify-center bg-zinc-950/20 p-8"
-                            icon={<MapPin className="w-4 h-4 text-housing-500" />}
-                            title="Floor Map Reference"
-                        >
-                            <a
-                                href={getPngPath(bldg, floor)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="absolute inset-0 p-4"
-                            >
-                                <img
-                                    src={getPngPath(bldg, floor)}
-                                    alt={`Plan ${bldg} Étage ${floor}`}
-                                    className="w-full h-full object-contain brightness-90 saturate-[0.8] contrast-125 hover:brightness-110 transition-all"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = "none";
-                                    }}
-                                />
-                            </a>
-                        </Box>
+
                     </div>
                 </div>
             </main>
@@ -660,7 +356,7 @@ export default function ApartmentsPage() {
                 </div>
             }
         >
-            <ApartmentsContent />
+            <BuildingCatalogBoundary><ApartmentsContent /></BuildingCatalogBoundary>
         </Suspense>
     );
 }

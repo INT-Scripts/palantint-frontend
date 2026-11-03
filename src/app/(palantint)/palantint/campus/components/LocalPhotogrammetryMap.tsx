@@ -1,4 +1,7 @@
 "use client";
+import {readFloorPlan,type FloorPlan} from "@/lib/planGeometry";
+import {usePreferredPlans,PreferredPlanMeshes,PreferredPlanControls} from "./PreferredPlanLayer";
+import { GeoCampusMeshes, GeoCampusControls, useGeoCampus } from "./GeoCampusLayer";
 import { PALETTE } from "@/lib/colors";
 
 import React, { Suspense, useMemo, useState, useEffect, useRef, useCallback, Component, ReactNode } from "react";
@@ -7,7 +10,8 @@ import { OrbitControls, Environment, useGLTF, Preload, Html, Bvh, AdaptiveDpr } 
 import * as THREE from "three";
 import { Building2, X, ArrowRight } from "lucide-react";
 import { fetchPrivate } from "@/lib/api";
-import { APARTMENT_BUILDINGS, FOYER_BUILDINGS, FloorDef } from "@/lib/buildings";
+import type {FloorDef} from "@/lib/buildings";
+import {BuildingCatalogBoundary, useBuildingCatalog} from "@/components/BuildingCatalog";
 import { BuildingWireframe } from "../../apartments/components/BuildingModel";
 
 interface WireframeTransform {
@@ -31,7 +35,6 @@ interface BuildingMarker {
     details: BuildingDetails;
 }
 
-const BUILDING_FLOORS: Record<string, FloorDef[]> = { ...APARTMENT_BUILDINGS, ...FOYER_BUILDINGS };
 const DEFAULT_WIREFRAME_SCALE = 10;
 const DEFAULT_FLOOR_HEIGHT = 0.5;
 const OVERVIEW_CAMERA_POS = new THREE.Vector3(0, 500, 500);
@@ -400,13 +403,25 @@ function BuildingDetailPanel({ marker, occupants, onClose, onBrowse }: {
     );
 }
 
-export default function LocalPhotogrammetryMap() {
+function LocalPhotogrammetryMapContent() {
+    const {all: BUILDING_FLOORS} = useBuildingCatalog();
     const [tileUrls, setTileUrls] = useState<string[]>([]);
 
     const [config, setConfig] = useState<{ tile_mappings: Record<string, string>, markers: BuildingMarker[] }>({
         tile_mappings: {},
         markers: []
     });
+
+    const geo = useGeoCampus();
+    const preferredPlans = usePreferredPlans();
+    const readyPlans = geo.selected ? [] : preferredPlans;
+    const replacementIds = readyPlans.flatMap(overlay=>overlay.campus_building_ids.filter(id=>overlay.campus_requirements[id].every(code=>readyPlans.some(item=>item.building===code))));
+    const visiblePlans = geo.building ? readyPlans.filter(overlay=>overlay.campus_building_ids.includes(geo.building!.id) && replacementIds.includes(geo.building!.id)) : readyPlans.filter(overlay=>overlay.campus_building_ids.some(id=>replacementIds.includes(id)));
+    const [showPhoto, setShowPhoto] = useState(true);
+    const [showPlans, setShowPlans] = useState(true);
+    const [configReady, setConfigReady] = useState(false);
+    const photoVisible = showPhoto || (geo.finished && configReady && !geo.registration);
+    const plansVisible = showPlans && !!geo.registration;
 
     // Tracks which tiles have finished loading (or failed) so the building
     // footprints only appear once the whole map is actually on screen,
@@ -422,7 +437,7 @@ export default function LocalPhotogrammetryMap() {
 
     const [focusedMarkerId, setFocusedMarkerId] = useState<string | null>(null);
     const [focusedFloors, setFocusedFloors] = useState<FloorDef[]>([]);
-    const [focusedSvgs, setFocusedSvgs] = useState<Record<string, string>>({});
+    const [focusedPlans, setFocusedPlans] = useState<Record<string, FloorPlan>>({});
     const [focusedMetadata, setFocusedMetadata] = useState<Record<string, any>>({});
     const [focusedActiveFloor, setFocusedActiveFloor] = useState<string>("");
     const [focusedOccupants, setFocusedOccupants] = useState<number | null>(null);
@@ -437,7 +452,8 @@ export default function LocalPhotogrammetryMap() {
 
         fetchPrivate("/maps/3d-config")
             .then(setConfig)
-            .catch(console.error);
+            .catch(console.error)
+            .finally(() => setConfigReady(true));
     }, []);
 
     // Match by the marker's own stable id, not bldg_id — multiple footprints can
@@ -453,7 +469,7 @@ export default function LocalPhotogrammetryMap() {
     useEffect(() => {
         if (!focusedBldgId) {
             setFocusedFloors([]);
-            setFocusedSvgs({});
+            setFocusedPlans({});
             setFocusedMetadata({});
             setFocusedOccupants(null);
             return;
@@ -463,17 +479,17 @@ export default function LocalPhotogrammetryMap() {
         setFocusedActiveFloor(floors[0]?.value || "");
         let cancelled = false;
         (async () => {
-            const svgs: Record<string, string> = {};
+            const plans: Record<string, FloorPlan> = {};
             await Promise.all(floors.map(async (f) => {
                 try {
-                    const res = await fetch(`/api/assets/plans/${focusedBldgId}_${f.value}.svg`);
-                    if (res.ok) svgs[f.value] = await res.text();
+                    const res = await fetch(f.assets.geojson);
+                    if (res.ok) plans[f.value] = await readFloorPlan(res);
                 } catch {}
             }));
             const meta = await fetchPrivate(`/maps/${focusedBldgId}/metadata`).catch(() => ({}));
             const occupantsRes = await fetchPrivate(`/maps/${focusedBldgId}/occupants`).catch(() => null);
             if (!cancelled) {
-                setFocusedSvgs(svgs);
+                setFocusedPlans(plans);
                 setFocusedMetadata(meta || {});
                 setFocusedOccupants(typeof occupantsRes?.occupants === "number" ? occupantsRes.occupants : null);
             }
@@ -527,14 +543,14 @@ export default function LocalPhotogrammetryMap() {
             >
                 <color attach="background" args={[PALETTE.zinc[950]]} />
 
-                <Suspense fallback={null}>
+                {photoVisible && <Suspense fallback={null}>
                     <Environment preset="city" />
-                </Suspense>
+                </Suspense>}
 
                 <ambientLight intensity={3} />
                 <directionalLight position={[100, 500, 100]} intensity={2} />
 
-                <group
+                {photoVisible && <group
                     position={[-150, 0, -150]}
                     onPointerDown={handleTerrainPointerDown}
                     onPointerUp={handleTerrainPointerUp}
@@ -544,14 +560,16 @@ export default function LocalPhotogrammetryMap() {
                             <SafeScannedModel
                                 key={url}
                                 url={url}
-                                dimmed={!!focusedMarker}
+                                dimmed={!!focusedMarker || (plansVisible && !!geo.building)}
                                 onSettled={() => handleTileSettled(url)}
                             />
                         ))}
                     </Bvh>
-                </group>
+                </group>}
 
-                {config.markers.map((m) => (
+                {plansVisible && <><GeoCampusMeshes geo={geo} photo={photoVisible} excludedBuildings={replacementIds}/><PreferredPlanMeshes overlays={visiblePlans} geo={geo} photo={photoVisible}/></>}
+
+                {(!plansVisible && photoVisible) && config.markers.map((m) => (
                     <BuildingFootprintMesh
                         key={m.id}
                         marker={m}
@@ -561,11 +579,11 @@ export default function LocalPhotogrammetryMap() {
                     />
                 ))}
 
-                {focusedMarker && focusedFloors.length > 0 && (
+                {!plansVisible && focusedMarker && focusedFloors.length > 0 && (
                     <BuildingWireframe
                         floors={focusedFloors}
                         activeFloor={focusedActiveFloor}
-                        buildingSvgs={focusedSvgs}
+                        buildingPlans={focusedPlans}
                         buildingMetadata={focusedMetadata}
                         autoRotate={false}
                         position={wireframeTransform.position}
@@ -575,7 +593,7 @@ export default function LocalPhotogrammetryMap() {
                     />
                 )}
 
-                <CameraRig flightTarget={flightTarget} />
+                <CameraRig flightTarget={plansVisible ? geo.flightTarget : flightTarget} />
 
                 <AdaptiveDpr pixelated />
                 <Preload all />
@@ -588,7 +606,9 @@ export default function LocalPhotogrammetryMap() {
                 />
             </Canvas>
 
-            {focusedMarker && (
+            {plansVisible && geo.building && visiblePlans.length>0 && <PreferredPlanControls overlays={visiblePlans} geo={geo}/>}
+            <GeoCampusControls geo={geo} photo={photoVisible} plans={plansVisible} customFloors={visiblePlans.length>0 && !!geo.building} onPhoto={() => setShowPhoto(value => !value)} onPlans={() => { setShowPlans(value => !value); if (showPlans) setShowPhoto(true); setFocusedMarkerId(null); }} />
+            {!plansVisible && focusedMarker && (
                 <BuildingDetailPanel
                     marker={focusedMarker}
                     occupants={focusedOccupants}
@@ -599,3 +619,5 @@ export default function LocalPhotogrammetryMap() {
         </div>
     );
 }
+
+export default function LocalPhotogrammetryMap() { return <BuildingCatalogBoundary><LocalPhotogrammetryMapContent /></BuildingCatalogBoundary>; }

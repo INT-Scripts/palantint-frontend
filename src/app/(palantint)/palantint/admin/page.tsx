@@ -6,8 +6,7 @@ import { fetchPrivate } from "@/lib/api";
 import { 
     Users, Database, Calendar, Shield, Activity, 
     Search, Fingerprint, ShieldAlert, X, Key,
-    Tags, Plus, Pencil, Trash2, Check, Map, Compass, MapPin
-} from "lucide-react";
+    Tags, Plus, Pencil, Trash2, Check, Map, Compass, MapPin, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SearchBar from "@/components/ui/SearchBar";
 import Link from "next/link";
@@ -146,6 +145,11 @@ export default function AdminDashboardPage() {
                     <Link href="/palantint/admin/campus">
                         <Button variant="outline" className="bg-amber-500/5 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500 hover:text-amber-300 font-mono text-[10px] uppercase tracking-widest h-10 px-6 group rounded-none">
                             <MapPin className="w-3.5 h-3.5 mr-2" /> 3D Campus Calibration
+                        </Button>
+                    </Link>
+                    <Link href="/palantint/admin/print">
+                        <Button variant="outline" className="bg-print-500/5 border-print-500/30 text-print-400 hover:bg-print-500/10 hover:border-print-500 hover:text-print-300 font-mono text-[10px] uppercase tracking-widest h-10 px-6 rounded-none">
+                            <Printer className="w-3.5 h-3.5 mr-2" /> Impressions
                         </Button>
                     </Link>
                     <Link href="/palantint/admin/maps">

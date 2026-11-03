@@ -5,7 +5,7 @@ import { fetchPublic } from "@/lib/api";
 import { WashingMachine, RefreshCw, Euro, AlertTriangle } from "lucide-react";
 import PortalHeader from "@/components/PortalHeader";
 
-const BUILDINGS = ["U3", "U4", "U5", "U6", "U7"];
+import {BuildingCatalogBoundary, useBuildingCatalog} from "@/components/BuildingCatalog";
 
 interface Machine {
   machine_nbr: string;
@@ -40,7 +40,8 @@ function getMachineStyle(isOccupied: boolean, isWasher: boolean) {
   return isWasher ? CARD_STYLES.washer : CARD_STYLES.dryer;
 }
 
-export default function PublicLaundryPage() {
+function PublicLaundryContent() {
+  const {laundry: BUILDINGS} = useBuildingCatalog();
   const [selectedBuilding, setSelectedBuilding] = useState("U3");
   const [machines, setMachines] = useState<Machine[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,3 +163,5 @@ export default function PublicLaundryPage() {
     </section>
   );
 }
+
+export default function PublicLaundryPage() { return <BuildingCatalogBoundary><PublicLaundryContent /></BuildingCatalogBoundary>; }

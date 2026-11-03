@@ -1,21 +1,34 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { fetchPublic } from "@/lib/api";
 import PageHeader from "@/components/PageHeader";
 import PalantintClubCard, { PalantintClub } from "../components/PalantintClubCard";
 import PalantintClubModal from "../components/PalantintClubModal";
 import PalantintFloorSelector from "../components/PalantintFloorSelector";
 import { PALETTE } from "@/lib/colors";
-import { FOYER_BUILDINGS as BUILDINGS } from "@/lib/buildings";
+import {BuildingCatalogBoundary, useBuildingCatalog} from "@/components/BuildingCatalog";
 
-export default function ClubsPage() {
+function ClubsContent() {
+    const {foyer: BUILDINGS} = useBuildingCatalog();
+  const searchParams = useSearchParams();
   const [clubs, setClubs] = useState<PalantintClub[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [activeFloor, setActiveFloor] = useState("ALL");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
+
+  useEffect(() => { setSelectedClubId(searchParams.get("club")); }, [searchParams]);
+
+  const selectClub = (clubId: string | null) => {
+    setSelectedClubId(clubId);
+    const url = new URL(window.location.href);
+    if (clubId) url.searchParams.set("club", clubId);
+    else url.searchParams.delete("club");
+    window.history.replaceState(null, "", url);
+  };
 
   useEffect(() => {
     document.title = "Associations — PalantINT";
@@ -132,7 +145,7 @@ export default function ClubsPage() {
                       isHovered={hoveredId === club.id}
                       onMouseEnter={() => setHoveredId(club.id)}
                       onMouseLeave={() => setHoveredId(null)}
-                      onClick={() => setSelectedClubId(club.id)}
+                      onClick={() => selectClub(club.id)}
                       getOriginBadgeStyle={getOriginBadgeStyle}
                     />
                   ))}
@@ -143,7 +156,11 @@ export default function ClubsPage() {
         </div>
       </main>
 
-      <PalantintClubModal clubId={selectedClubId} onClose={() => setSelectedClubId(null)} />
+      <PalantintClubModal clubId={selectedClubId} onClose={() => selectClub(null)} />
     </div>
   );
+}
+
+export default function ClubsPage() {
+  return <Suspense fallback={<div className="min-h-screen bg-zinc-950" />}><BuildingCatalogBoundary><ClubsContent /></BuildingCatalogBoundary></Suspense>;
 }

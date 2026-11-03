@@ -1,5 +1,6 @@
 export interface Apartment {
   Logement: string;
+  plan: {building:string;floor:string} | null;
   Bâtiment: string;
   Etage: number | string;
   Type: string;
@@ -21,19 +22,5 @@ export function parseNumeric(val: any): number {
 
 export function matchFloor(apt: Apartment, targetFloor: string): boolean {
   if (!targetFloor || targetFloor === "ALL") return true;
-  const rawFloor = String(apt.Etage ?? "").trim();
-  if (rawFloor === targetFloor) return true;
-  const numApt = parseFloat(rawFloor);
-  const numTarget = parseFloat(targetFloor);
-  if (!isNaN(numApt) && !isNaN(numTarget) && numApt === numTarget) return true;
-  if (targetFloor === "0") {
-    const lower = rawFloor.toLowerCase();
-    if (lower.includes("rdc") || lower.includes("rez")) return true;
-  }
-  const extracted = rawFloor.match(/-?\d+(\.\d+)?/);
-  if (extracted && extracted[0] === targetFloor) return true;
-  if (apt.Logement && apt.Logement.length === 4) {
-    if (apt.Logement.charAt(1) === targetFloor) return true;
-  }
-  return false;
+  return apt.plan?.floor === targetFloor;
 }

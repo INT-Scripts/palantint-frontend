@@ -7,6 +7,8 @@ import { format, startOfWeek, addDays, isSameDay, parseISO } from "date-fns";
 import { X, Users, Search, MapPin, User as UserIcon, ChevronLeft, ChevronRight, Activity, Clock, BookOpen, FileText, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { timetableHref } from "@/lib/timetableContext";
+import IndoorRoomLink from "@/components/IndoorRoomLink";
 
 interface AgendaCalendarProps {
     studentId: string;
@@ -68,6 +70,13 @@ export default function AgendaCalendar({ studentId, themeColor }: AgendaCalendar
                     </h2>
                 </div>
                 <div className="flex gap-4 items-center">
+                    <button
+                        type="button"
+                        onClick={() => router.push(timetableHref({ students: [studentId], week: weekStart }))}
+                        className="px-3 py-1 border border-timetable-500/40 text-timetable-400 hover:bg-timetable-500/10 text-[10px] font-mono font-bold uppercase"
+                    >
+                        Comparer les disponibilités
+                    </button>
                     <button
                         onClick={() => setCurrentDate(addDays(currentDate, -7))}
                         className="p-1 px-3 bg-zinc-900 border border-zinc-700 font-mono font-bold hover:text-white transition-colors flex items-center justify-center"
@@ -323,6 +332,17 @@ export default function AgendaCalendar({ studentId, themeColor }: AgendaCalendar
                                         </p>
                                     </div>
                                 )}
+
+                                {eventDetails.room && (
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push(timetableHref({ students: [studentId], room: eventDetails.room, week: startOfWeek(parseISO(eventDetails.start_time), { weekStartsOn: 1 }) }))}
+                                        className="w-full border border-timetable-500/40 px-3 py-2 text-timetable-400 hover:bg-timetable-500/10 text-[10px] font-mono font-bold uppercase"
+                                    >
+                                        Vérifier cette salle dans l’emploi du temps
+                                    </button>
+                                )}
+                                {eventDetails.room && <IndoorRoomLink room={eventDetails.room} />}
 
                                 {/* Attendees Preview */}
                                 <div className="space-y-2 pt-2 border-t border-zinc-800">

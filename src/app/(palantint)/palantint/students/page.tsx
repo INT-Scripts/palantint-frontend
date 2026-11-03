@@ -1,4 +1,5 @@
 "use client";
+import {BuildingCatalogBoundary, useBuildingCatalog} from "@/components/BuildingCatalog";
 
 import { useEffect, useState } from "react";
 import { fetchPrivate, getStudentImageUrl } from "@/lib/api";
@@ -10,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export default function DashboardPage() {
+function DashboardContent() {
+  const {housing} = useBuildingCatalog();
   const [students, setStudents] = useState<any[]>([]);
   const [telemetry, setTelemetry] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -190,7 +192,7 @@ export default function DashboardPage() {
                   className="w-full bg-zinc-950 border border-zinc-850 hover:border-zinc-700 text-zinc-300 text-xs font-mono py-3 pl-4 pr-10 rounded-none outline-none focus:border-student-500 appearance-none cursor-pointer hover:bg-zinc-900/40 transition-all uppercase tracking-wider"
                 >
                   <option value="">[ALL_BUILDINGS]</option>
-                  {["U1", "U2", "U3", "U4", "U5", "U6", "U7"].map((b) => (
+                  {Object.keys(housing).map((b) => (
                     <option key={b} value={b}>{b} RESIDENCE</option>
                   ))}
                 </select>
@@ -333,3 +335,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+export default function DashboardPage() {return <BuildingCatalogBoundary><DashboardContent /></BuildingCatalogBoundary>;}

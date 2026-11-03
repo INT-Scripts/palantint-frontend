@@ -30,7 +30,7 @@ interface SearchApartment {
     student_name: string;
 }
 
-export default function GlobalSearch({ className = "", inputClassName = "" }: { className?: string, inputClassName?: string }) {
+export default function GlobalSearch({ className = "", inputClassName = "", placeholder = "SEARCH DATABASE..." }: { className?: string, inputClassName?: string, placeholder?: string }) {
     const router = useRouter();
     const [search, setSearch] = useState("");
     const [results, setResults] = useState<{
@@ -113,7 +113,7 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
                 </div>
             )}
             
-            {!isSearching && results.students.length === 0 && results.clubs.length === 0 && (!results.class_groups || results.class_groups.length === 0) && results.apartments.length === 0 && (
+            {!isSearching && results.students.length === 0 && results.clubs.length === 0 && (!hasToken || !results.class_groups || results.class_groups.length === 0) && results.apartments.length === 0 && (
                 <div className="p-6 text-[10px] text-zinc-600 font-mono text-center uppercase tracking-[0.2em] italic">
                     No matches found for &quot;{search}&quot;
                 </div>
@@ -152,13 +152,13 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
                         <Users className="w-4 h-4 text-orga-500" />,
                         c.name,
                         `Slug: ${c.slug}`,
-                        `${prefix}/clubs/${c.id}`,
+                        `${prefix}/clubs?club=${encodeURIComponent(String(c.id))}`,
                         'orga'
                     ))}
                 </div>
             )}
 
-            {results.class_groups && results.class_groups.length > 0 && (
+            {hasToken && results.class_groups && results.class_groups.length > 0 && (
                 <div>
                     <div className="px-4 py-2 bg-zinc-900/50 border-y border-zinc-800/50 text-[9px] font-black text-zinc-500 font-mono uppercase tracking-[0.2em]">Academic Classes</div>
                     {results.class_groups.map(cg => renderResultItem(
@@ -176,7 +176,7 @@ export default function GlobalSearch({ className = "", inputClassName = "" }: { 
     return (
         <SearchBar
             id="global-search-input"
-            placeholder="SEARCH DATABASE..."
+            placeholder={placeholder}
             value={search}
             onChange={setSearch}
             results={dropdown}

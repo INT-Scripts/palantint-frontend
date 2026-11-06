@@ -3,6 +3,9 @@ import AppWrapper from "@/components/AppWrapper";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
+  title: { default: "PalantINT", template: "%s" },
+  description: null,
+  robots: { index: false, follow: false },
   icons: {
     icon: "/palantint.svg",
   },

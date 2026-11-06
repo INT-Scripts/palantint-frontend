@@ -128,8 +128,8 @@ function FoyerContent() {
       <PortalHeader
         icon={<Layers className="w-4 h-4 text-rose-500" />}
         badgeText="Plans des Locaux Associatifs"
-        title="Foyer Map"
-        subtitle="Interactive floor plans for the Club Foyer — hover rooms to see allocations, click to select and explore."
+        title="Plan du foyer"
+        subtitle="Les plans du foyer : survole une salle pour voir qui l’occupe, clique pour la sélectionner."
         accentColor="rose"
       />
 

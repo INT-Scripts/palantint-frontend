@@ -1,11 +1,32 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// When set, the operator space only answers on this host and the public portal hides it.
+const PRIVATE_HOST = process.env.PRIVATE_HOST;
+
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const response = await route(request);
+  if (PRIVATE_HOST && request.headers.get("host") === PRIVATE_HOST) {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
+  return response;
+}
+
+async function route(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
 
   // Protect any route under /palantint (operator space)
   const isPrivateKey = pathname === "/palantint" || pathname.startsWith("/palantint/");
+
+  if (PRIVATE_HOST) {
+    const onPrivateHost = request.headers.get("host") === PRIVATE_HOST;
+    if (!onPrivateHost && (isPrivateKey || pathname === "/login")) {
+      return NextResponse.redirect(`https://${PRIVATE_HOST}${pathname}${search}`);
+    }
+    if (onPrivateHost && pathname === "/") {
+      return NextResponse.redirect(`https://${PRIVATE_HOST}/palantint`);
+    }
+  }
 
   if (isPrivateKey) {
     const token = request.cookies.get("palantint_token")?.value;

@@ -40,6 +40,10 @@ export default function PortalLayout({
 
         {/* Footer */}
         <footer className="border-t border-zinc-200/85 dark:border-stone-800/80 bg-transparent py-16 mt-auto transition-colors duration-300 relative overflow-hidden">
+          <p className="max-w-6xl mx-auto px-4 mb-8 text-sm text-zinc-500 dark:text-stone-400">
+            Projet étudiant non officiel, sans lien avec l’administration de Télécom SudParis ou d’IMT-BS. Pour la vie sur le campus, lire le{" "}
+            <a href="https://bananint.fr/blog/vie-etudiante-telecom-sudparis" className="underline underline-offset-4 hover:text-zinc-950 dark:hover:text-white transition-colors">carnet BananINT</a>.
+          </p>
           {/* Massive graphic watermark text */}
           <div className="w-full text-center select-none pointer-events-none mt-4 -mb-10 transition-colors">
             <span className="text-[14vw] font-black tracking-tighter leading-none text-stone-300 dark:text-stone-800 uppercase font-sans">

@@ -8,8 +8,8 @@ import ThemeToggle from "@/components/ThemeToggle";
 const LINKS = [
   { href: "/clubs", label: "Clubs" },
   { href: "/foyer", label: "Foyer" },
-  { href: "/apartments", label: "Apartments" },
-  { href: "/laundry", label: "Laundry" },
+  { href: "/apartments", label: "Logements" },
+  { href: "/laundry", label: "Laveries" },
   { href: "/campus", label: "Campus 3D" },
 ];
 
@@ -31,7 +31,7 @@ export default function PortalNav() {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          aria-label={open ? "Close menu" : "Open menu"}
+          aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
           aria-expanded={open}
           className="md:hidden p-2 -mr-2 rounded-lg text-zinc-600 dark:text-stone-400 hover:text-zinc-950 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
         >

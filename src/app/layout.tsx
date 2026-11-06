@@ -13,8 +13,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "INT Portal",
-  description: "Advanced Student Directory and Network Tracker",
+  metadataBase: new URL("https://portal.bananint.fr"),
+  title: { default: "INT Portal", template: "%s | INT Portal" },
+  description: "Les services du campus de Télécom SudParis et IMT-BS à Évry : associations, plan du foyer et laveries des résidences. Projet étudiant non officiel.",
   icons: {
     icon: "/intportal.svg",
   },
@@ -26,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="fr" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{

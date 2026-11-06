@@ -84,9 +84,9 @@ function PublicLaundryContent() {
 
       <PortalHeader
         icon={<WashingMachine className="w-4 h-4" />}
-        badgeText="Laundry"
-        title="Laundry"
-        subtitle="Check which washing machines and dryers are free before heading over."
+        badgeText="Laveries"
+        title="Laveries"
+        subtitle="Regarde quelles machines à laver et quels séchoirs sont libres avant de descendre."
         accentColor="blue"
       />
 

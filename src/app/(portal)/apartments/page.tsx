@@ -136,9 +136,9 @@ function ApartmentsContent() {
       {/* Title Header */}
       <PortalHeader
         icon={<Building2 className="w-4 h-4 text-amber-500" />}
-        badgeText="Maisel Campus Housing"
-        title="Interactive Floor Plans & Catalog"
-        subtitle="Hover any room on the architectural map to view room details, surface area, and base/scholarship pricing."
+        badgeText="Logements MAISEL"
+        title="Plans et catalogue des logements"
+        subtitle="Survole une chambre sur le plan pour voir sa surface et ses tarifs."
         accentColor="amber"
       />
 

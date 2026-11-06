@@ -1,15 +1,21 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Building2, Users, WashingMachine, MapPin } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: { absolute: "INT Portal : les services du campus de Télécom SudParis" },
+  alternates: { canonical: "/" },
+};
 
 export default function PortalHomePage() {
   return (
     <section className="flex-1 max-w-6xl mx-auto w-full px-4 py-20 sm:py-28 flex flex-col justify-center relative z-10">
       <div className="max-w-3xl mb-16">
         <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-zinc-950 dark:text-stone-50 mb-6 leading-none">
-          All your campus services <br className="hidden sm:inline" /> in one unified place.
+          Les services du campus <br className="hidden sm:inline" /> au même endroit.
         </h1>
         <p className="text-lg sm:text-xl text-zinc-600 dark:text-stone-400 leading-relaxed max-w-2xl">
-          Check live laundry room occupancy, explore campus housing, browse accredited student clubs, and view interactive foyer floor plans.
+          Télécom SudParis et IMT-BS, à Évry : les laveries en direct, les logements, les associations et les plans du foyer.
         </p>
       </div>
 
@@ -24,16 +30,16 @@ export default function PortalHomePage() {
             </div>
             <h3 className="font-semibold text-lg text-zinc-900 dark:text-stone-100 transition-colors inline-block">
               <span className="relative pb-1">
-                Clubs & Orgs
+                Clubs et associations
                 <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-gradient-to-r from-emerald-500 to-teal-500 group-hover:w-full transition-all duration-300" />
               </span>
             </h3>
             <p className="text-zinc-500 dark:text-stone-400 text-sm mt-3 leading-relaxed">
-              Discover student clubs, accredited associations, contacts, and campus activities.
+              Les clubs et les associations du campus, et ce qu’ils proposent.
             </p>
           </div>
           <div className="flex items-center gap-1.5 text-zinc-400 dark:text-stone-500 text-xs font-semibold uppercase tracking-wider mt-8 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-all group-hover:translate-x-1 duration-300">
-            Explore list →
+            Voir la liste →
           </div>
         </Link>
 
@@ -45,16 +51,16 @@ export default function PortalHomePage() {
             </div>
             <h3 className="font-semibold text-lg text-zinc-900 dark:text-stone-100 transition-colors inline-block">
               <span className="relative pb-1">
-                Foyer Map
+                Plan du foyer
                 <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-gradient-to-r from-rose-500 to-pink-500 group-hover:w-full transition-all duration-300" />
               </span>
             </h3>
             <p className="text-zinc-500 dark:text-stone-400 text-sm mt-3 leading-relaxed">
-              Interactive 2D & 3D floor maps of association rooms in the Club Foyer building.
+              Les plans 2D et 3D des locaux associatifs du foyer.
             </p>
           </div>
           <div className="flex items-center gap-1.5 text-zinc-400 dark:text-stone-500 text-xs font-semibold uppercase tracking-wider mt-8 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-all group-hover:translate-x-1 duration-300">
-            View floor plans →
+            Voir les plans →
           </div>
         </Link>
 
@@ -66,16 +72,16 @@ export default function PortalHomePage() {
             </div>
             <h3 className="font-semibold text-lg text-zinc-900 dark:text-stone-100 transition-colors inline-block">
               <span className="relative pb-1">
-                Campus Housing
+                Logements
                 <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-gradient-to-r from-amber-500 to-orange-500 group-hover:w-full transition-all duration-300" />
               </span>
             </h3>
             <p className="text-zinc-500 dark:text-stone-400 text-sm mt-3 leading-relaxed">
-              View detailed apartment sizes, pricing guides, scholarship rates, and floor details.
+              Surfaces, tarifs et étages des logements de la MAISEL.
             </p>
           </div>
           <div className="flex items-center gap-1.5 text-zinc-400 dark:text-stone-500 text-xs font-semibold uppercase tracking-wider mt-8 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-all group-hover:translate-x-1 duration-300">
-            Housing info →
+            Voir les logements →
           </div>
         </Link>
 
@@ -87,16 +93,16 @@ export default function PortalHomePage() {
             </div>
             <h3 className="font-semibold text-lg text-zinc-900 dark:text-stone-100 transition-colors inline-block">
               <span className="relative pb-1">
-                Laundry Status
+                Laveries
                 <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-gradient-to-r from-blue-500 to-indigo-500 group-hover:w-full transition-all duration-300" />
               </span>
             </h3>
             <p className="text-zinc-500 dark:text-stone-400 text-sm mt-3 leading-relaxed">
-              Real-time tracking of washing machines and dryers across all campus buildings.
+              Les machines à laver et les séchoirs libres, en temps réel.
             </p>
           </div>
           <div className="flex items-center gap-1.5 text-zinc-400 dark:text-stone-500 text-xs font-semibold uppercase tracking-wider mt-8 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-all group-hover:translate-x-1 duration-300">
-            Check availability →
+            Voir les machines →
           </div>
         </Link>
 

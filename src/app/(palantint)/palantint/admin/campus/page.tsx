@@ -16,7 +16,7 @@ import Link from "next/link";
 import { fetchPrivate } from "@/lib/api";
 import type {FloorDef} from "@/lib/buildings";
 import {BuildingCatalogBoundary, useBuildingCatalog} from "@/components/BuildingCatalog";
-import { BuildingWireframe } from "../../apartments/components/BuildingModel";
+import { BuildingWireframe } from "@/components/BuildingModel";
 
 
 interface WireframeTransform {

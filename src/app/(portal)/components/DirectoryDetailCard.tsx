@@ -26,10 +26,8 @@ const ACCENT = {
   blue: { border: "border-blue-500/80", dot: "bg-blue-500", badge: "bg-blue-600", accentBox: "bg-blue-500/10 border-blue-500/20", accentText: "text-blue-600 dark:text-blue-400" },
 } as const;
 
-// Shared "popup" detail card used by both the apartments and foyer directory
-// panels — one component per space (see (palantint)/palantint/components/
-// PalantintDetailStatCard for the palantint counterpart) so the two pages
-// can't visually drift apart.
+// Shared "popup" detail card used by both the public apartments and foyer
+// directory panels, so the two pages can't visually drift apart.
 export default function DirectoryDetailCard({ accentColor, title, badge, onClose, stats, footer }: DirectoryDetailCardProps) {
   const accent = ACCENT[accentColor];
 

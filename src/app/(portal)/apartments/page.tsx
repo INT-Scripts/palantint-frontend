@@ -11,7 +11,7 @@ import PublicFloorViewer from "./components/PublicFloorViewer";
 import PortalFloorSelector from "../components/PortalFloorSelector";
 
 // Canvas/WebGL sizing breaks under SSR hydration — must be client-only.
-const BuildingModel = dynamic(() => import("@/app/(palantint)/palantint/apartments/components/BuildingModel"), { ssr: false });
+const BuildingModel = dynamic(() => import("@/components/BuildingModel"), { ssr: false });
 import PortalDirectoryPanel from "../components/PortalDirectoryPanel";
 import ApartmentDetailCard from "./components/ApartmentDetailCard";
 import ApartmentTable from "./components/ApartmentTable";

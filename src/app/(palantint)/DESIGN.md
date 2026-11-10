@@ -1,6 +1,6 @@
 # Design de PalantINT
 
-Dernière mise à jour : 2026-11-10.
+Dernière mise à jour : 2026-11-11.
 
 Ce document est le contrat visuel de l’espace privé `/palantint` et de ses composants partagés. Il consigne les choix confirmés par l’utilisateur et les motifs présents dans la navigation, l’accueil et les cartes. Toute création ou modification d’interface PalantINT doit les respecter, y compris les cartes 2D/3D, le graphe, les formulaires et l’administration.
 
@@ -68,8 +68,9 @@ La carte est le contenu principal. Son interface reprend le langage visuel de la
 - Les plans historiques placés géographiquement remplacent les salles Wemap qu’ils couvrent : leurs numéros font foi. Les autres bâtiments gardent les salles Wemap.
 - **Recherche seule en haut à gauche** ; le sélecteur de bâtiment a été retiré. La recherche vide propose les bâtiments, la recherche saisie les lieux ; un clic sur un bâtiment de la carte le sélectionne.
 - **Panneau latéral gauche** (pleine hauteur, façon cartographie grand public ; feuille basse sur mobile) dès qu’un bâtiment ou un lieu est sélectionné :
-  - bâtiment : silhouette, nom, niveaux, liens Logements et Laverie des résidences, liste des lieux de l’étage actif ;
-  - lieu : retour au bâtiment, titre et niveau, rangée d’actions libellées (agenda, plan détaillé, logements, Foyer, disponibilités, copier le lien), occupants et associations, prochains événements, informations (bâtiment, niveau, surface, catégories, horaires, accès, source Wemap ou plan historique). Les liens résidences/laverie restent visibles.
+  - bâtiment : silhouette, nom, niveaux, résumé de chaque résidence (logements et occupés, nombre et loyers par type, lien Laverie), liste des lieux de l’étage actif ;
+  - lieu : retour au bâtiment, titre et niveau, rangée d’actions libellées (agenda, disponibilités, copier le lien), fiche logement d’un appartement (type, surface, loyer, montants boursier et non boursier après aide), occupants et associations (logo, nom, lien), prochains événements, informations (bâtiment, niveau, surface, catégories, horaires, accès, source Wemap ou plan historique). Les liens laverie restent visibles.
+- **La carte remplace les pages Logements et Foyer.** `/palantint/apartments` et `/palantint/foyer` redirigent vers la sélection correspondante de la carte ; ne pas recréer de visionneuse de plan séparée. Les liens internes vers un logement ou un local utilisent `campusHref({ room })`. Hors connexion, le portail public garde ses propres pages.
 - **Quitter une sélection** pas à pas : la croix du panneau quitte le bâtiment, la flèche revient du lieu au bâtiment ; Échap et un clic sur une zone vide de la carte remontent d’un niveau.
 - En 3D, la sélection d’un bâtiment estompe les surfaces et extrude l’étage actif à sa hauteur.
 - **Commandes de navigation thémées** en bas à droite (vue d’ensemble, noms des lieux, zoom, boussole en 3D), sans les contrôles MapLibre par défaut.

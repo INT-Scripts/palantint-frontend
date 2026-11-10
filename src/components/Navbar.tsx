@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, User, LogIn, LogOut, Search, MapPin, Share2, CalendarDays, Flame, WashingMachine, Printer, ChevronDown, Users, Layers, Building2, Shield } from "lucide-react";
 import { fetchPrivate } from "@/lib/api";
+import { campusHref } from "@/lib/campus";
 import GlobalSearch from "./GlobalSearch";
 
 export default function Navbar() {
@@ -30,8 +31,11 @@ export default function Navbar() {
     const groups = [
         {name: "Campus", items: [
             {href: `${prefix}/campus`, label: "Carte du campus", icon: MapPin},
-            {href: `${prefix}/foyer`, label: "Foyer", icon: Layers},
-            {href: `${prefix}/apartments`, label: "Logements", icon: Building2},
+            // Signed in, the Foyer and the flats are shown in the campus map panel.
+            ...(user ? [{href: campusHref({building: "Foyer"}), label: "Foyer", icon: Layers}] : [
+                {href: "/foyer", label: "Foyer", icon: Layers},
+                {href: "/apartments", label: "Logements", icon: Building2},
+            ]),
         ]},
         ...(user ? [{name: "Annuaire", items: [
             {href: "/palantint/students", label: "Personnes", icon: Search},

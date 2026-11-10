@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link2, Users, Image as ImageIcon, CalendarDays, Edit, MapPin, Briefcase, GraduationCap, Mail, X, Check, StickyNote, Home, Network, Lock, MessageSquare } from "lucide-react";
-import IndoorRoomLink from "@/components/IndoorRoomLink";
+import { campusHref } from "@/lib/campus";
 import AgendaCalendar from "./components/AgendaCalendar";
 import MediaGallery from "./components/MediaGallery";
 import RelationshipsList from "./components/RelationshipsList";
@@ -209,10 +209,9 @@ export default function StudentProfilePage() {
                                                     <Mail className="w-3.5 h-3.5 text-student-500/50" /> {student.email}
                                                 </div>
                                             )}
-                                            {student.apartment && <IndoorRoomLink room={student.apartment} />}
                                             {student.apartment && (
                                                 <button
-                                                    onClick={() => router.push(`/palantint/apartments?room=${student.apartment}`)}
+                                                    onClick={() => router.push(campusHref({ room: student.apartment }))}
                                                     className="flex items-center gap-2 text-[10px] px-4 py-1.5 bg-housing-500/5 border border-housing-500/20 text-housing-500 hover:bg-housing-500/10 hover:border-housing-500 transition-all cursor-pointer font-mono font-bold uppercase tracking-widest group rounded-none"
                                                 >
                                                     <Home className="w-3.5 h-3.5" />

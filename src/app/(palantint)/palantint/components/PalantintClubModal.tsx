@@ -1,5 +1,5 @@
 "use client";
-import IndoorRoomLink from "@/components/IndoorRoomLink";
+import { campusHref } from "@/lib/campus";
 import { PALETTE } from "@/lib/colors";
 
 import { useEffect, useState, useCallback } from "react";
@@ -237,13 +237,12 @@ export default function PalantintClubModal({ clubId, onClose }: PalantintClubMod
                                                     <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">{club.type}</span>
                                                 </div>
                                             )}
-                                            {club.foyer_room && <IndoorRoomLink room={club.foyer_room} />}
                                             {club.foyer_room && (
                                                 <button
                                                     onClick={() => {
                                                         const roomId = club.foyer_room;
                                                         onClose();
-                                                        router.push(`/palantint/foyer?room=${encodeURIComponent(roomId)}`);
+                                                        router.push(campusHref({ room: roomId }));
                                                     }}
                                                     className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors cursor-pointer"
                                                 >

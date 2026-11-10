@@ -191,7 +191,7 @@ export default function Homepage() {
 
             {/* Housing & Occupancies Module (Amber Accents) */}
             <Card className="p-0 border-zinc-800 hover:border-amber-500/40 bg-zinc-900/20 backdrop-blur-xl transition-all cursor-pointer rounded-none group relative overflow-hidden"
-              onClick={() => router.push("/palantint/apartments")}
+              onClick={() => router.push("/palantint/campus")}
             >
               <div className="absolute top-0 left-0 w-full h-[2px] bg-zinc-800 group-hover:bg-amber-500 transition-colors" />
               <div className="absolute -inset-px bg-gradient-to-r from-amber-500/0 via-amber-500/5 to-amber-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />

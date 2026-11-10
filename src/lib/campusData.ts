@@ -1,5 +1,6 @@
 import { fetchPrivate } from "./api";
-import type { CampusPlans, CampusBuilding } from "./campus";
+import type { FeatureCollection, Geometry } from "geojson";
+import type { CampusPlans, CampusBuilding, PlaceProperties } from "./campus";
 
 type Match = { feature_id: string; building_id: number | null; levels: number[] };
 let session: string | null = null;
@@ -25,3 +26,28 @@ export const loadCampus = () => Promise.all([
     referenceRequest<{ buildings: CampusBuilding[] }>("/maps/indoor/manifest"),
 ]);
 export const lookupCampusRoom = (room: string) => referenceRequest<Match[]>(`/maps/indoor/lookup?q=${encodeURIComponent(room)}`);
+
+export type DrawnPlans = FeatureCollection<Geometry, PlaceProperties> & { metadata: { superseded: string[]; plans: { plan: string; building: string; floor: string; level: number | null; building_id: number | null; method: string; rms_m?: number }[] } };
+export type AerialIndex = { attribution: string; minzoom: number; maxzoom: number; bounds: [number, number, number, number] };
+export type BasemapData = FeatureCollection<Geometry, Record<string, string | number>> & { metadata: { attribution: string } };
+
+// Optional context layers: the map stays usable when a collection has not run yet.
+const optional = <T,>(endpoint: string) => referenceRequest<T>(endpoint).catch(() => null);
+export const loadCampusContext = () => Promise.all([
+    optional<DrawnPlans>("/maps/indoor/plans"),
+    optional<BasemapData>("/maps/indoor/basemap"),
+    optional<AerialIndex>("/maps/indoor/aerial"),
+]);
+export type ReliefTile = { z: number; x: number; y: number; lod: "detail" | "context"; path: string; bounds: [number, number, number, number] };
+export type ReliefIndex = { attribution: string; tiles: ReliefTile[] };
+export type ScanRegistration = { origin: [number, number]; a: number; b: number; tx: number; tz: number; scale: number; altitude: number; anchors: number; error: number };
+// The campus scan is placed by the server registration; without it only the IGN relief is shown.
+export const loadSurfaces = async () => {
+    const [relief, tiles, alignment] = await Promise.all([
+        optional<ReliefIndex>("/maps/indoor/relief"),
+        optional<{ tiles: string[] }>("/maps/3d-tiles"),
+        optional<{ registration: ScanRegistration | null }>("/maps/indoor/registration"),
+    ]);
+    const urls = (tiles?.tiles || []).filter(url => url.endsWith(".gltf"));
+    return { relief: relief?.tiles.length ? relief : null, scan: urls.length && alignment?.registration ? { urls, registration: alignment.registration } : null };
+};

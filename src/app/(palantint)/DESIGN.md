@@ -1,6 +1,6 @@
 # Design de PalantINT
 
-Dernière mise à jour : 2026-11-03.
+Dernière mise à jour : 2026-11-10.
 
 Ce document est le contrat visuel de l’espace privé `/palantint` et de ses composants partagés. Il consigne les choix confirmés par l’utilisateur et les motifs présents dans la navigation, l’accueil et les cartes. Toute création ou modification d’interface PalantINT doit les respecter, y compris les cartes 2D/3D, le graphe, les formulaires et l’administration.
 
@@ -63,17 +63,26 @@ Ce bouton ne doit pas devenir un grand bandeau, une carte promotionnelle, un nou
 
 La carte est le contenu principal. Son interface reprend le langage visuel de la navbar : panneaux Zinc, angles droits, monospace, bordures fines et accent `campus` pour la sélection.
 
-- Donner la priorité à l’espace de carte, avec des commandes compactes superposées. Éviter les grands panneaux explicatifs permanents.
-- La sélection des bâtiments privilégie des **silhouettes ou contours visuels** et un nom court. Référence : `src/components/palantint/BuildingPicker.tsx`.
+- **Une seule carte.** Plan, satellite et 3D sont trois vues de la même carte MapLibre, pas des composants séparés. Recherche, bâtiment, étage, lieu et URL (`view`) sont partagés ; changer de vue conserve la sélection.
+- **Un seul sélecteur de vue**, en bas au centre : « Plan » (fond OpenStreetMap local), « Satellite » (orthophoto IGN), « 3D ». Chaque vue apporte ses propres fonds : pas d’interrupteur de couche séparé. La 3D affiche toujours la photogrammétrie du campus (scan calibré, référence là où il existe) et le relief LiDAR IGN des alentours (terrain + sursol), jamais dessiné sous le scan.
+- Les plans historiques placés géographiquement remplacent les salles Wemap qu’ils couvrent : leurs numéros font foi. Les autres bâtiments gardent les salles Wemap.
+- **Recherche seule en haut à gauche** ; le sélecteur de bâtiment a été retiré. La recherche vide propose les bâtiments, la recherche saisie les lieux ; un clic sur un bâtiment de la carte le sélectionne.
+- **Panneau latéral gauche** (pleine hauteur, façon cartographie grand public ; feuille basse sur mobile) dès qu’un bâtiment ou un lieu est sélectionné :
+  - bâtiment : silhouette, nom, niveaux, liens Logements et Laverie des résidences, liste des lieux de l’étage actif ;
+  - lieu : retour au bâtiment, titre et niveau, rangée d’actions libellées (agenda, plan détaillé, logements, Foyer, disponibilités, copier le lien), occupants et associations, prochains événements, informations (bâtiment, niveau, surface, catégories, horaires, accès, source Wemap ou plan historique). Les liens résidences/laverie restent visibles.
+- **Quitter une sélection** pas à pas : la croix du panneau quitte le bâtiment, la flèche revient du lieu au bâtiment ; Échap et un clic sur une zone vide de la carte remontent d’un niveau.
+- En 3D, la sélection d’un bâtiment estompe les surfaces et extrude l’étage actif à sa hauteur.
+- **Commandes de navigation thémées** en bas à droite (vue d’ensemble, noms des lieux, zoom, boussole en 3D), sans les contrôles MapLibre par défaut.
+
+- Donner la priorité à l’espace de carte, avec des commandes compactes superposées. Éviter les grands panneaux explicatifs permanents ; le panneau latéral n’apparaît qu’avec une sélection.
+- Les bâtiments se reconnaissent par leur **silhouette** et un nom court. Référence : `src/components/palantint/BuildingOutline.tsx`.
 - Les étages utilisent un **rail compact**, avec un état sélectionné visible et « RDC » pour le niveau géographique zéro. Les valeurs et libellés viennent des données serveur.
 - Les noms de lieux, surbrillances, contours et états actifs doivent permettre de comprendre la sélection avec un minimum de texte.
-- La fiche du lieu reste compacte et contextuelle. Replier les détails secondaires et proposer les liens utiles réellement disponibles : agenda, occupants, association ou retour au plan.
-- Conserver bâtiment, salle et étage lorsque la correspondance serveur permet de passer entre 2D et 3D. Ne pas confondre les valeurs d’étage des anciens plans avec celles du GeoJSON.
-- **Photogrammétrie activée par défaut en 3D**, avec une commande explicite pour la masquer.
+- Conserver bâtiment, salle et étage lorsque la correspondance serveur permet de passer entre les vues. Ne pas confondre les valeurs d’étage des anciens plans avec celles du GeoJSON.
 - **Pas d’icône d’information générique en 3D ni de bouton de téléchargement/export GeoJSON dans l’interface cartographique.** Les API et les outils techniques restent distincts des commandes proposées à l’utilisateur de la carte.
 - Ne pas ajouter de contrôle sans action utile et compréhensible. Un problème réel de chargement ou d’alignement doit rester identifiable et permettre une récupération adaptée.
 
-Références d’implémentation : `palantint/campus/page.tsx`, `IndoorCampusMap.tsx`, `GeoCampusLayer.tsx` et `LocalPhotogrammetryMap.tsx` sous ce groupe de routes.
+Références d’implémentation : `palantint/campus/page.tsx`, `CampusMap.tsx`, `CampusPanel.tsx`, `MapControls.tsx` et `reliefLayer.ts` sous ce groupe de routes.
 
 ## Interactions et accessibilité
 
@@ -87,6 +96,6 @@ Une interface principalement visuelle reste utilisable sans deviner ses icônes.
 
 ## Vérification avant livraison
 
-Pour une modification visuelle, contrôler la cohérence avec la navbar et une page du même module, la palette sémantique, les états de survol/focus/sélection, ainsi que l’usage sur petit écran. Pour les cartes, vérifier les sélecteurs de bâtiment et d’étage, les deux modes et la photogrammétrie par défaut.
+Pour une modification visuelle, contrôler la cohérence avec la navbar et une page du même module, la palette sémantique, les états de survol/focus/sélection, ainsi que l’usage sur petit écran. Pour les cartes, vérifier la recherche, le panneau latéral et la sortie de sélection, le rail d’étages, les trois vues et la présence de la photogrammétrie en 3D.
 
 Les choix explicites ci-dessus ne doivent pas être remplacés par les valeurs par défaut d’une bibliothèque de composants. Toute nouvelle convention approuvée par l’utilisateur doit être consignée ici pour les modifications suivantes.

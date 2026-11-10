@@ -7,7 +7,7 @@ import type { Feature, FeatureCollection, Geometry, Position } from "geojson";
 import type { ExpressionSpecification, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Search, X, MapPin, Layers, Loader2, ArrowRight, Building2 } from "lucide-react";
-import { loadCampus, loadCampusContext, loadSurfaces, lookupCampusRoom, type AerialIndex, type BasemapData, type DrawnPlans } from "@/lib/campusData";
+import { loadCampus, loadCampusContext, loadSurfaces, resolveCampusRoom, type AerialIndex, type BasemapData, type DrawnPlans, type ResidenceSummary } from "@/lib/campusData";
 import { fetchPrivate } from "@/lib/api";
 import { floorName, normalizePlace as text, isCampusDestination, campusDestinations, type Place as PlanFeature, type CampusPlans as Plans, type CampusBuilding as Building, type PlaceProperties as Properties } from "@/lib/campus";
 import { createReliefLayer } from "./reliefLayer";
@@ -51,6 +51,7 @@ export default function CampusMap() {
     const [drawn, setDrawn] = useState<DrawnPlans | null>(null);
     const [basemap, setBasemap] = useState<BasemapData | null>(null);
     const [aerialIndex, setAerialIndex] = useState<AerialIndex | null>(null);
+    const [housing, setHousing] = useState<Record<string, ResidenceSummary> | null>(null);
     const [error, setError] = useState("");
     const [search, setSearch] = useState("");
     const [contextResponse, setContextResponse] = useState<{ locationId: string; data: Context | null } | null>(null);
@@ -78,7 +79,7 @@ export default function CampusMap() {
         loadCampus()
             .then(([data, manifest]) => { if (active) { setPlans(data); setBuildings(manifest.buildings); } })
             .catch(() => { if (active) setError("Les plans du campus ne sont pas disponibles pour le moment."); });
-        loadCampusContext().then(([drawnPlans, osm, aerialTiles]) => { if (active) { setDrawn(drawnPlans); setBasemap(osm); setAerialIndex(aerialTiles); } });
+        loadCampusContext().then(([drawnPlans, osm, aerialTiles, residences]) => { if (active) { setDrawn(drawnPlans); setBasemap(osm); setAerialIndex(aerialTiles); setHousing(residences); } });
         return () => { active = false; };
     }, [retry]);
 
@@ -98,10 +99,10 @@ export default function CampusMap() {
     useEffect(() => {
         if (!roomQuery || featureQuery) return;
         let active = true;
-        const select = (feature: string, building: string | number | null | undefined, levels: number[]) => {
+        const select = (feature: string | null, building: string | number | null | undefined, levels: number[]) => {
             const next = new URLSearchParams(window.location.search);
             if (next.get("room") !== roomQuery) return;
-            next.set("feature", feature);
+            if (feature) next.set("feature", feature);
             next.delete("room");
             if (building !== null && building !== undefined) next.set("building", String(building));
             if (levels.length) next.set("level", String(levels[0]));
@@ -109,8 +110,8 @@ export default function CampusMap() {
         };
         const local = drawnFeatures.filter(feature => feature.properties.kind === "room" && text(feature.properties.name || "") === text(roomQuery));
         if (local.length === 1) { select(String(local[0].id), local[0].properties.building_id, local[0].properties.levels); return; }
-        lookupCampusRoom(roomQuery).then(matches => {
-            if (active && matches.length === 1) select(matches[0].feature_id, matches[0].building_id, matches[0].levels);
+        resolveCampusRoom(roomQuery).then(target => {
+            if (active && (target.feature || target.building)) select(target.feature, target.building, target.level === null ? [] : [target.level]);
         }).catch(() => {});
         return () => { active = false; };
     }, [roomQuery, featureQuery, pathname, drawnFeatures]);
@@ -386,7 +387,7 @@ export default function CampusMap() {
         </Map>
         <div ref={hoverLabel} hidden className="pointer-events-none absolute left-0 top-0 z-30 max-w-40 rounded-none border border-zinc-800 bg-zinc-950/95 px-2.5 py-1.5 text-xs text-white shadow-xl" />
         {panelOpen && <div className="absolute inset-x-0 bottom-0 z-20 max-h-[58%] sm:inset-x-auto sm:left-0 sm:top-0 sm:max-h-none sm:w-[380px] sm:pt-[76px] sm:bg-zinc-950/95">
-            <CampusPanel building={building} buildingFeature={buildingFeature} level={level} rooms={floorRooms} selected={selected} context={context ?? null} loadingContext={loadingContext} drawnRoom={drawnRoom} copied={copied}
+            <CampusPanel building={building} buildingFeature={buildingFeature} level={level} rooms={floorRooms} selected={selected} context={context ?? null} loadingContext={loadingContext} drawnRoom={drawnRoom} housing={housing} copied={copied}
                 onSelect={select} onCloseBuilding={() => focusBuilding(null)} onClosePlace={closePlace} onCopy={copyLink} />
         </div>}
         <div className="absolute left-3 top-3 z-30 w-[min(352px,calc(100%-24px))] sm:left-3.5 sm:top-4">

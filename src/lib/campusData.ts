@@ -26,10 +26,14 @@ export const loadCampus = () => Promise.all([
     referenceRequest<{ buildings: CampusBuilding[] }>("/maps/indoor/manifest"),
 ]);
 export const lookupCampusRoom = (room: string) => referenceRequest<Match[]>(`/maps/indoor/lookup?q=${encodeURIComponent(room)}`);
+// Drawn plan rooms first, then Wemap, then at least the building of a known residence.
+export const resolveCampusRoom = (room: string) => referenceRequest<{ building: string | null; level: number | null; feature: string | null }>(`/maps/indoor/legacy?room=${encodeURIComponent(room)}`);
 
 export type DrawnPlans = FeatureCollection<Geometry, PlaceProperties> & { metadata: { superseded: string[]; plans: { plan: string; building: string; floor: string; level: number | null; building_id: number | null; method: string; rms_m?: number }[] } };
 export type AerialIndex = { attribution: string; minzoom: number; maxzoom: number; bounds: [number, number, number, number] };
 export type BasemapData = FeatureCollection<Geometry, Record<string, string | number>> & { metadata: { attribution: string } };
+export type RentRange = { min: number; max: number } | null;
+export type ResidenceSummary = { apartments: number; occupied: number; rent: RentRange; types: { type: string; count: number; rent: RentRange }[] };
 
 // Optional context layers: the map stays usable when a collection has not run yet.
 const optional = <T,>(endpoint: string) => referenceRequest<T>(endpoint).catch(() => null);
@@ -37,6 +41,7 @@ export const loadCampusContext = () => Promise.all([
     optional<DrawnPlans>("/maps/indoor/plans"),
     optional<BasemapData>("/maps/indoor/basemap"),
     optional<AerialIndex>("/maps/indoor/aerial"),
+    optional<Record<string, ResidenceSummary>>("/maps/indoor/housing"),
 ]);
 export type ReliefTile = { z: number; x: number; y: number; lod: "detail" | "context"; path: string; bounds: [number, number, number, number] };
 export type ReliefIndex = { attribution: string; tiles: ReliefTile[] };

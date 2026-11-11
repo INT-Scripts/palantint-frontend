@@ -12,17 +12,23 @@ import FloorPlanCanvas from "@/components/FloorPlanCanvas";
 import type { FloorPlan } from "@/lib/planGeometry";
 import { fetchPrivate } from "@/lib/api";
 import { floorName, normalizePlace as text, isCampusDestination, campusDestinations, type Place as PlanFeature, type CampusPlans as Plans, type CampusBuilding as Building, type PlaceProperties as Properties } from "@/lib/campus";
-import { createReliefLayer } from "./reliefLayer";
+import { createReliefLayer, type SceneLine, type SceneMarker } from "./reliefLayer";
 import CampusPanel, { OCCUPANCY_TONES, type DrawnRoom, type OccupancyState, type PlaceContext as Context, type PlaceTools } from "./CampusPanel";
 import type { MapOverlay } from "./PlaceActions";
 import { NavigationControls, PanelSheet, ViewSwitch, type CampusView } from "./MapControls";
 
-type Viewport = { west: number; east: number; north: number; south: number; zoom: number; width: number; height: number };
+type Viewport = { west: number; east: number; north: number; south: number; zoom: number; pitch: number; width: number; height: number };
 
 const style: StyleSpecification = { version: 8, sources: {}, layers: [{ id: "background", type: "background", paint: { "background-color": "#09090b" } }] };
 const isPolygon: ExpressionSpecification = ["in", ["geometry-type"], ["literal", ["Polygon", "MultiPolygon"]]];
 const STOREY_M = 3.2;
 const PITCH_3D = 60;
+// With the 3D surfaces, the scene and every extrusion are raised by two storeys: MapLibre
+// cannot extrude below its ground plane, and basements need room under the ground.
+const LIFT = 2 * STOREY_M;
+// Height of a marker above its floor: about mid-room.
+const MARKER_ABOVE_FLOOR = 1.3;
+const EARTH_CIRCUMFERENCE = 2 * Math.PI * 6378137;
 // Street-level camera of the immersive view: the steepest pitch the map allows, close in.
 const IMMERSIVE = { pitch: 75, zoom: 20.6 };
 const PINS_KEY = "palantint_campus_pins";
@@ -239,7 +245,7 @@ export default function CampusMap() {
         loadSurfaces().then(({ relief: index, scan }) => {
             if ((!index && !scan) || !mapRef.current) { setReliefState("missing"); return; }
             const center = map.getCenter();
-            reliefLayer.current = createReliefLayer(index, scan, [center.lng, center.lat], tokenHeaders);
+            reliefLayer.current = createReliefLayer(index, scan, [center.lng, center.lat], tokenHeaders, LIFT);
             map.addLayer(reliefLayer.current, "campus-buildings-3d");
             // Hidden until the 3D view is shown, from the first frame.
             if (!shownMode.current) map.setLayoutProperty("relief", "visibility", "none");
@@ -305,12 +311,31 @@ export default function CampusMap() {
         const xy = feature && !localFeatures.includes(feature) ? placeCenter(feature) : null;
         return xy ? [{ type: "Feature" as const, properties: { id }, geometry: { type: "Point" as const, coordinates: xy } }] : [];
     }) }), [pins, featureIndex, localFeatures]);
+    // The same people and bookmarks for the 3D layer: a room at mid-height of its floor, a building on its roof.
+    useEffect(() => {
+        const layer = reliefLayer.current;
+        if (!layer) return;
+        if (!(is3D && reliefState === "ready")) { layer.setMarkers([], []); return; }
+        const offMapIds = new Set(localFeatures.map(feature => String(feature.id)));
+        const marker = (feature: PlanFeature | undefined, role: SceneMarker["role"]): SceneMarker | null => {
+            const xy = feature && !offMapIds.has(String(feature.id)) ? placeCenter(feature) : null;
+            if (!feature || !xy) return null;
+            const p = feature.properties;
+            const height = p.kind === "building" ? buildingHeights.get(String(p.building_id)) ?? 6 : (p.levels[0] ?? 0) * STOREY_M + MARKER_ABOVE_FLOOR;
+            return { lngLat: [xy[0], xy[1]], height, role };
+        };
+        const hub = overlay?.hub ? marker(locationIndex.get(overlay.hub), "hub") : null;
+        const homes = (overlay?.homes || []).filter(home => home.location_id !== overlay?.hub).flatMap(home => { const point = marker(locationIndex.get(home.location_id), "home"); return point ? [point] : []; });
+        const bookmarks = pins.flatMap(id => { const point = marker(featureIndex.get(id), "pin"); return point ? [point] : []; });
+        const lines: SceneLine[] = hub ? homes.map(home => ({ from: hub, to: home })) : [];
+        layer.setMarkers([...homes, ...bookmarks, ...(hub ? [hub] : [])], lines);
+    }, [is3D, reliefState, overlay, pins, locationIndex, featureIndex, localFeatures, buildingHeights]);
 
     // This source changes only with the floor/building, never with hover, typing,
     // or a detail response. MapLibre keeps its worker-side index.
     const renderData: FeatureCollection<Geometry, Properties> = useMemo(() => ({
         type: "FeatureCollection",
-        features: filtered.map(feature => ({ ...feature, properties: { ...feature.properties, actionable: destinationIds.has(String(feature.id)), occupancy: occupancy?.get(feature.properties.location_id || "") ?? null, height_m: buildingHeights.get(String(feature.properties.building_id)) ?? 6, base_m: Math.max(0, level) * STOREY_M } })),
+        features: filtered.map(feature => ({ ...feature, properties: { ...feature.properties, actionable: destinationIds.has(String(feature.id)), occupancy: occupancy?.get(feature.properties.location_id || "") ?? null, height_m: buildingHeights.get(String(feature.properties.building_id)) ?? 6, base_m: level * STOREY_M } })),
     }), [filtered, destinationIds, occupancy, buildingHeights, level]);
 
     // OpenStreetMap buildings already drawn by Wemap are kept out of the 3D city.
@@ -342,12 +367,12 @@ export default function CampusMap() {
             // Floors float above the ground in 3D, so only ground-level names stay pinned there.
             const room = viewport.zoom >= 19 && destinationIds.has(String(feature.id)) && p.kind !== "building" && (!is3D || level <= 0);
             return xy && p.name && ((p.kind === "building" && viewport.zoom < 20) || room) && within(xy);
-        }).map(feature => ({ id: String(feature.id), xy: feature.properties.label_coordinates!, name: feature.properties.name!, kind: feature.properties.kind === "building" ? "building" : "room" }));
+        }).map(feature => ({ id: String(feature.id), xy: feature.properties.label_coordinates!, name: feature.properties.name!, kind: feature.properties.kind === "building" ? "building" : "room", height: feature.properties.kind === "building" ? buildingHeights.get(String(feature.properties.building_id)) ?? 6 : 0 }));
         const roads = viewport.zoom < 16 ? [] : [...roadLabels].flatMap(([name, lines]) => {
             const center = [(viewport.west + viewport.east) / 2, (viewport.north + viewport.south) / 2];
             const points = lines.map(line => (line.geometry as { coordinates: Position[] }).coordinates).map(coordinates => coordinates[Math.floor(coordinates.length / 2)]).filter(within);
             const best = points.sort((a, b) => Math.hypot(a[0] - center[0], a[1] - center[1]) - Math.hypot(b[0] - center[0], b[1] - center[1]))[0];
-            return best ? [{ id: `road:${name}`, xy: best, name, kind: "road" }] : [];
+            return best ? [{ id: `road:${name}`, xy: best, name, kind: "road", height: 0 }] : [];
         });
         const boxes: { x: number; y: number; width: number }[] = [];
         return [...places, ...roads].filter(label => {
@@ -359,12 +384,18 @@ export default function CampusMap() {
             boxes.push({ x, y, width });
             return boxes.length <= 80;
         });
-    }, [filtered, labels, viewport, destinationIds, roadLabels, is3D, level]);
+    }, [filtered, labels, viewport, destinationIds, roadLabels, is3D, level, buildingHeights]);
+    // Labels are drawn on the ground plane: in 3D, building names are raised to the roof.
+    const labelOffset = (label: { xy: Position; height: number }): [number, number] => {
+        if (!is3D || !viewport || !label.height) return [0, 0];
+        const pixelsPerMetre = 512 * 2 ** viewport.zoom / (EARTH_CIRCUMFERENCE * Math.cos(label.xy[1] * Math.PI / 180));
+        return [0, -(lift + label.height) * pixelsPerMetre * Math.sin(viewport.pitch * Math.PI / 180)];
+    };
 
     const updateViewport = () => {
         const map = mapRef.current;
         const bounds = map?.getBounds();
-        if (map && bounds) setViewport({ west: bounds.getWest(), east: bounds.getEast(), north: bounds.getNorth(), south: bounds.getSouth(), zoom: map.getZoom(), width: map.getCanvas().clientWidth, height: map.getCanvas().clientHeight });
+        if (map && bounds) setViewport({ west: bounds.getWest(), east: bounds.getEast(), north: bounds.getNorth(), south: bounds.getSouth(), zoom: map.getZoom(), pitch: map.getPitch(), width: map.getCanvas().clientWidth, height: map.getCanvas().clientHeight });
     };
     const focusBuilding = (id: string | null) => { setSearch(""); setSearchOpen(false); setQuery({ building: id, feature: null, room: null, level: null }); };
     const closePlace = () => setQuery({ feature: null, room: null });
@@ -441,6 +472,9 @@ export default function CampusMap() {
     };
     const transformRequest = (url: string) => url.includes("/api/private/") ? { url, headers: tokenHeaders() } : { url };
     const flat = is3D && reliefState === "ready" ? "none" : "visible";
+    const lift = reliefState === "ready" ? LIFT : 0;
+    // In 3D with the surfaces, people and bookmarks are drawn by the 3D layer at their floor's height.
+    const markers3D = is3D && reliefState === "ready";
     const roomFilter: ExpressionSpecification = ["all", isPolygon, ["in", ["get", "kind"], ["literal", ["room", "corridor", "stairs", "elevator"]]]];
     const attribution = ["Wemap", basemap && !aerial && "© OpenStreetMap", (aerial || is3D) && "© IGN"].filter(Boolean).join(" · ");
     const panelOpen = !!building || (!!selected && selected.properties.kind !== "building");
@@ -485,9 +519,9 @@ export default function CampusMap() {
                 <Layer id="destinations" minzoom={17.8} type="fill" filter={["all", isPolygon, ["!=", ["get", "kind"], "building"], ["==", ["get", "actionable"], true]]} layout={{ visibility: flat }} paint={{ "fill-color": "#67e8f9", "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.25, 0] }} />
                 <Layer id="destination-points" minzoom={18} type="circle" filter={["all", ["==", ["geometry-type"], "Point"], ["==", ["get", "actionable"], true]]} layout={{ visibility: flat }} paint={{ "circle-radius": 7, "circle-color": "#67e8f9", "circle-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.5, 0] }} />
                 <Layer id="selected-room" type="line" filter={["==", ["get", "source_feature_id"], selectedId]} layout={{ visibility: flat }} paint={{ "line-color": "#fbbf24", "line-width": 3 }} />
-                <Layer id="campus-buildings-3d" type="fill-extrusion" filter={["all", isPolygon, ["==", ["get", "kind"], "building"], ["!=", ["to-string", ["get", "building_id"]], buildingId || ""]]} layout={{ visibility: is3D ? "visible" : "none" }} paint={{ "fill-extrusion-color": ["case", ["boolean", ["feature-state", "hover"], false], "#7c6fb0", "#3f3f46"], "fill-extrusion-height": ["get", "height_m"], "fill-extrusion-opacity": showRelief && reliefState === "ready" ? 0.01 : 0.9 }} />
-                <Layer id="building-shell-3d" type="fill-extrusion" filter={["all", isPolygon, ["==", ["get", "kind"], "building"], ["==", ["to-string", ["get", "building_id"]], buildingId || ""]]} layout={{ visibility: is3D && building ? "visible" : "none" }} paint={{ "fill-extrusion-color": "#a78bfa", "fill-extrusion-height": ["get", "base_m"], "fill-extrusion-opacity": 0.25 }} />
-                <Layer id="rooms-3d" type="fill-extrusion" filter={roomFilter} layout={{ visibility: is3D && building ? "visible" : "none" }} paint={{ "fill-extrusion-color": ["case", ["==", ["get", "source_feature_id"], selectedId], "#fbbf24", ["boolean", ["feature-state", "hover"], false], "#67e8f9", ["==", ["get", "occupancy"], "occupied"], OCCUPANCY_TONES.occupied.fill, ["==", ["get", "occupancy"], "vacant"], OCCUPANCY_TONES.vacant.fill, ["==", ["get", "kind"], "room"], ["case", ["==", ["get", "actionable"], true], "#0e7490", "#3f3f46"], "#52525b"], "fill-extrusion-base": ["get", "base_m"], "fill-extrusion-height": ["+", ["get", "base_m"], ["case", ["==", ["get", "kind"], "room"], 2.6, 0.4]], "fill-extrusion-opacity": 0.88 }} />
+                <Layer id="campus-buildings-3d" type="fill-extrusion" filter={["all", isPolygon, ["==", ["get", "kind"], "building"], ["!=", ["to-string", ["get", "building_id"]], buildingId || ""]]} layout={{ visibility: is3D ? "visible" : "none" }} paint={{ "fill-extrusion-color": ["case", ["boolean", ["feature-state", "hover"], false], "#7c6fb0", "#3f3f46"], "fill-extrusion-base": lift, "fill-extrusion-height": ["+", lift, ["get", "height_m"]], "fill-extrusion-opacity": showRelief && reliefState === "ready" ? 0.01 : 0.9 }} />
+                <Layer id="building-shell-3d" type="fill-extrusion" filter={["all", isPolygon, ["==", ["get", "kind"], "building"], ["==", ["to-string", ["get", "building_id"]], buildingId || ""]]} layout={{ visibility: is3D && building ? "visible" : "none" }} paint={{ "fill-extrusion-color": "#a78bfa", "fill-extrusion-base": lift, "fill-extrusion-height": ["max", lift, ["+", lift, ["get", "base_m"]]], "fill-extrusion-opacity": 0.25 }} />
+                <Layer id="rooms-3d" type="fill-extrusion" filter={roomFilter} layout={{ visibility: is3D && building ? "visible" : "none" }} paint={{ "fill-extrusion-color": ["case", ["==", ["get", "source_feature_id"], selectedId], "#fbbf24", ["boolean", ["feature-state", "hover"], false], "#67e8f9", ["==", ["get", "occupancy"], "occupied"], OCCUPANCY_TONES.occupied.fill, ["==", ["get", "occupancy"], "vacant"], OCCUPANCY_TONES.vacant.fill, ["==", ["get", "kind"], "room"], ["case", ["==", ["get", "actionable"], true], "#0e7490", "#3f3f46"], "#52525b"], "fill-extrusion-base": ["max", 0, ["+", lift, ["get", "base_m"]]], "fill-extrusion-height": ["max", 0, ["+", lift, ["get", "base_m"], ["case", ["==", ["get", "kind"], "room"], 2.6, 0.4]]], "fill-extrusion-opacity": 0.88 }} />
             </Source>
             {basemap && <Source id="basemap" type="geojson" data={basemap}>
                 <Layer id="osm-landuse" type="fill" filter={["in", ["get", "kind"], ["literal", ["landuse", "vegetation", "leisure", "parking", "pedestrian_area"]]]} layout={{ visibility: aerial ? "none" : flat }} paint={{ "fill-color": ["match", ["get", "kind"], "vegetation", "#0f1f17", "leisure", "#112419", "parking", "#16161a", "pedestrian_area", "#1a1a1e", "#121214"], "fill-opacity": 0.9 }} />
@@ -505,17 +539,17 @@ export default function CampusMap() {
                 <Layer id="osm-buildings" type="fill" filter={["==", ["get", "kind"], "building"]} layout={{ visibility: aerial || is3D ? "none" : "visible" }} paint={{ "fill-color": "#1c1c20", "fill-outline-color": "#3f3f46" }} />
             </Source>}
             <Source id="overlay" type="geojson" data={overlayData}>
-                <Layer id="overlay-lines" type="line" filter={["==", ["geometry-type"], "LineString"]} paint={{ "line-color": "#a78bfa", "line-width": 1.5, "line-opacity": 0.7, "line-dasharray": [2, 1] }} />
-                <Layer id="overlay-homes" type="circle" filter={["==", ["get", "role"], "home"]} paint={{ "circle-radius": ["interpolate", ["linear"], ["zoom"], 15, 4, 20, 8], "circle-color": "#a78bfa", "circle-opacity": 0.85, "circle-stroke-color": "#f4f4f5", "circle-stroke-width": 1.5 }} />
-                <Layer id="overlay-hub" type="circle" filter={["==", ["get", "role"], "hub"]} paint={{ "circle-radius": ["interpolate", ["linear"], ["zoom"], 15, 6, 20, 11], "circle-color": "#09090b", "circle-stroke-color": "#a78bfa", "circle-stroke-width": 3 }} />
+                <Layer id="overlay-lines" type="line" filter={["==", ["geometry-type"], "LineString"]} layout={{ visibility: markers3D ? "none" : "visible" }} paint={{ "line-color": "#a78bfa", "line-width": 1.5, "line-opacity": 0.7, "line-dasharray": [2, 1] }} />
+                <Layer id="overlay-homes" type="circle" filter={["==", ["get", "role"], "home"]} layout={{ visibility: markers3D ? "none" : "visible" }} paint={{ "circle-radius": ["interpolate", ["linear"], ["zoom"], 15, 4, 20, 8], "circle-color": "#a78bfa", "circle-opacity": 0.85, "circle-stroke-color": "#f4f4f5", "circle-stroke-width": 1.5 }} />
+                <Layer id="overlay-hub" type="circle" filter={["==", ["get", "role"], "hub"]} layout={{ visibility: markers3D ? "none" : "visible" }} paint={{ "circle-radius": ["interpolate", ["linear"], ["zoom"], 15, 6, 20, 11], "circle-color": "#09090b", "circle-stroke-color": "#a78bfa", "circle-stroke-width": 3 }} />
             </Source>
             <Source id="pins" type="geojson" data={pinData}>
-                <Layer id="pins" type="circle" paint={{ "circle-radius": 6, "circle-color": "#fbbf24", "circle-stroke-color": "#09090b", "circle-stroke-width": 2 }} />
+                <Layer id="pins" type="circle" layout={{ visibility: markers3D ? "none" : "visible" }} paint={{ "circle-radius": 6, "circle-color": "#fbbf24", "circle-stroke-color": "#09090b", "circle-stroke-width": 2 }} />
             </Source>
             {context3D && <Source id="city-3d" type="geojson" data={context3D}>
                 <Layer id="osm-buildings-3d" type="fill-extrusion" layout={{ visibility: is3D && !(showRelief && reliefState === "ready") ? "visible" : "none" }} paint={{ "fill-extrusion-color": "#27272a", "fill-extrusion-height": ["case", ["has", "height"], ["to-number", ["get", "height"], 8], ["has", "building_levels"], ["*", ["to-number", ["get", "building_levels"], 2], STOREY_M], 8], "fill-extrusion-opacity": 0.85 }} />
             </Source>}
-            {visibleLabels.map(label => <Marker key={label.id} ref={marker => { if (marker) { const element = marker.getElement(); element.setAttribute("aria-hidden", "true"); element.setAttribute("role", "presentation"); element.tabIndex = -1; } }} style={{ pointerEvents: "none" }} longitude={label.xy[0]} latitude={label.xy[1]}><span className={`pointer-events-none block max-w-32 text-center text-[10px] leading-tight ${label.kind === "building" ? "bg-zinc-950/90 p-1 font-bold text-white" : label.kind === "road" ? "bg-zinc-950/70 px-1 italic text-zinc-400" : "bg-zinc-950/80 px-1 text-sky-100"}`}>{label.name}</span></Marker>)}
+            {visibleLabels.map(label => <Marker key={label.id} ref={marker => { if (marker) { const element = marker.getElement(); element.setAttribute("aria-hidden", "true"); element.setAttribute("role", "presentation"); element.tabIndex = -1; } }} style={{ pointerEvents: "none" }} longitude={label.xy[0]} latitude={label.xy[1]} offset={labelOffset(label)}><span className={`pointer-events-none block max-w-32 text-center text-[10px] leading-tight ${label.kind === "building" ? "bg-zinc-950/90 p-1 font-bold text-white" : label.kind === "road" ? "bg-zinc-950/70 px-1 italic text-zinc-400" : "bg-zinc-950/80 px-1 text-sky-100"}`}>{label.name}</span></Marker>)}
         </Map>
         {offMap && <div className="absolute inset-0 z-[5] bg-zinc-950 max-sm:bottom-[38%] sm:left-[380px]">
             <FloorPlanCanvas plan={offMapPlan} tones={offMapTones} selectedRoom={selected?.properties.room_id as string | undefined} className="h-full" controlsClassName="left-3 top-3 max-sm:top-[68px]"

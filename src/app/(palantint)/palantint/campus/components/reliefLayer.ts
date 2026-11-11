@@ -16,6 +16,27 @@ const MASK_PIXELS = 1024;
 const EDGE_OVERLAP = 10;
 
 export type CampusScan = { urls: string[]; registration: ScanRegistration };
+/** A point of the map drawn in 3D at its height (metres above the campus ground), always in view. */
+export type SceneMarker = { lngLat: [number, number]; height: number; role: "home" | "hub" | "pin" };
+export type SceneLine = { from: SceneMarker; to: SceneMarker };
+const MARKER_STYLE = { home: { color: "#a78bfa", size: 11 }, hub: { color: "#f4f4f5", size: 15 }, pin: { color: "#fbbf24", size: 12 } } as const;
+
+/** A round, outlined dot, drawn once and used by every marker. */
+function markerSprite() {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 64;
+    const context = canvas.getContext("2d")!;
+    context.beginPath();
+    context.arc(32, 32, 26, 0, Math.PI * 2);
+    context.fillStyle = "#ffffff";
+    context.fill();
+    context.lineWidth = 8;
+    context.strokeStyle = "#09090b";
+    context.stroke();
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+}
 
 /** Scan scene (x right, y up, z towards the viewer) → layer scene (EPSG:3857 metres east/south, metres up). */
 function scanMatrix(registration: ScanRegistration, anchor: MercatorCoordinate) {
@@ -124,7 +145,11 @@ async function reliefMesh(data: ArrayBuffer) {
  * values stay small; the mercator offset is folded into the camera matrix in
  * double precision.
  */
-export function createReliefLayer(relief: ReliefIndex | null, scan: CampusScan | null, origin: [number, number], headers: () => Record<string, string>) {
+/**
+ * `lift` raises the whole scene (metres): MapLibre cannot extrude below its ground plane, so
+ * the map draws its extrusions that much higher too, and basements keep room under the ground.
+ */
+export function createReliefLayer(relief: ReliefIndex | null, scan: CampusScan | null, origin: [number, number], headers: () => Record<string, string>, lift = 0) {
     const scene = new THREE.Scene();
     const camera = new THREE.Camera();
     const anchor = MercatorCoordinate.fromLngLat(origin, 0);
@@ -132,7 +157,7 @@ export function createReliefLayer(relief: ReliefIndex | null, scan: CampusScan |
     const model = new THREE.Matrix4().set(
         1 / CIRCUMFERENCE, 0, 0, anchor.x,
         0, 0, 1 / CIRCUMFERENCE, anchor.y,
-        0, metre, 0, 0,
+        0, metre, 0, metre * lift,
         0, 0, 0, 1,
     );
     const materials = new Set<THREE.MeshBasicMaterial>();
@@ -328,7 +353,45 @@ bool scanCovered(vec2 uv) {
         schedule();
     };
 
-    const layer: CustomLayerInterface & { setDimmed: (value: boolean) => void } = {
+    // People and bookmarks placed on the map, drawn over the surfaces at the height of their floor.
+    const sprite = markerSprite();
+    const markerGroup = new THREE.Group();
+    markerGroup.renderOrder = 10;
+    scene.add(markerGroup);
+    const toScene = ({ lngLat, height }: SceneMarker) => {
+        const point = MercatorCoordinate.fromLngLat(lngLat, 0);
+        return new THREE.Vector3((point.x - anchor.x) * CIRCUMFERENCE, height, (point.y - anchor.y) * CIRCUMFERENCE);
+    };
+    const clearMarkers = () => {
+        for (const child of [...markerGroup.children]) {
+            markerGroup.remove(child);
+            const object = child as THREE.Points | THREE.LineSegments;
+            object.geometry.dispose();
+            (object.material as THREE.Material).dispose();
+        }
+    };
+    const setMarkers = (markers: SceneMarker[], lines: SceneLine[]) => {
+        clearMarkers();
+        if (lines.length) {
+            const geometry = new THREE.BufferGeometry().setFromPoints(lines.flatMap(line => [toScene(line.from), toScene(line.to)]));
+            const segments = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: MARKER_STYLE.home.color, transparent: true, opacity: 0.75, depthTest: false, depthWrite: false }));
+            segments.renderOrder = 10;
+            markerGroup.add(segments);
+        }
+        for (const role of ["home", "pin", "hub"] as const) {
+            const points = markers.filter(marker => marker.role === role).map(toScene);
+            if (!points.length) continue;
+            const dots = new THREE.Points(new THREE.BufferGeometry().setFromPoints(points), new THREE.PointsMaterial({
+                color: MARKER_STYLE[role].color, size: MARKER_STYLE[role].size * (window.devicePixelRatio || 1), sizeAttenuation: false,
+                map: sprite, transparent: true, alphaTest: 0.1, depthTest: false, depthWrite: false,
+            }));
+            dots.renderOrder = 11;
+            markerGroup.add(dots);
+        }
+        map?.triggerRepaint();
+    };
+
+    const layer: CustomLayerInterface & { setDimmed: (value: boolean) => void; setMarkers: typeof setMarkers } = {
         id: "relief",
         type: "custom",
         renderingMode: "3d",
@@ -358,12 +421,15 @@ bool scanCovered(vec2 uv) {
                     (object.material as THREE.Material).dispose();
                 }
             });
+            clearMarkers();
+            sprite.dispose();
             maskTexture.dispose();
             draco.dispose();
             renderer?.dispose();
             renderer = null;
             map = null;
         },
+        setMarkers,
         setDimmed(value) {
             if (dimmed === value) return;
             dimmed = value;

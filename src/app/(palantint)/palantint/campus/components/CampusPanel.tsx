@@ -22,9 +22,8 @@ export type PlaceContext = {
     agenda_room: string | null;
     apartment: ApartmentDetails | null;
 };
-export type DrawnRoom = { plan?: { building: string; floor: string; room: string }; clubs?: ClubLink[] };
+export type DrawnRoom = { clubs?: ClubLink[] };
 
-const levelLabel = (value: number) => value === 0 ? "RDC" : String(value);
 const naturalOrder = new Intl.Collator("fr", { numeric: true, sensitivity: "base" });
 const euros = (value: number | null) => value === null ? "—" : `${value} €`;
 const rentRange = (range: RentRange) => !range ? "—" : range.min === range.max ? euros(range.min) : `${range.min}–${range.max} €`;
@@ -111,6 +110,8 @@ export default function CampusPanel({ building, buildingFeature, level, levelCou
     const p = place?.properties;
     const clubs = context?.clubs.length ? context.clubs : drawnRoom?.clubs || [];
     const residences = building?.residences || [];
+    const area = !context?.apartment && p?.geometry_area_m2 ? Math.round(p.geometry_area_m2) : null;
+    const hasInformation = !!p && !!(area || p.tag_names?.length || p.opening_hours || p.access || p.wheelchair || p.description);
 
     return <aside aria-label={place ? "Lieu sélectionné" : "Bâtiment sélectionné"} className="flex h-full flex-col overflow-hidden border-zinc-800 bg-zinc-950/95 shadow-2xl backdrop-blur-xl sm:border-r">
         <header className="flex items-start gap-3 px-5 pb-4 pt-5">
@@ -141,19 +142,17 @@ export default function CampusPanel({ building, buildingFeature, level, levelCou
                         {clubs.map(club => <ClubRow key={club.id || club.name} club={club} />)}
                     </div>
                 </Section>}
-                <Section title="Informations">
+                {/* Building and level are in the header; a flat's surface is in its housing section. */}
+                {hasInformation && <Section title="Informations">
                     <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-                        {building && <><dt className="text-zinc-500">Bâtiment</dt><dd className="text-zinc-200">{building.name}</dd></>}
-                        <dt className="text-zinc-500">Niveau</dt><dd className="text-zinc-200">{p!.levels.map(levelLabel).join(" · ") || "—"}</dd>
-                        {!!p!.geometry_area_m2 && <><dt className="text-zinc-500">Surface</dt><dd className="text-zinc-200">≈ {Math.round(p!.geometry_area_m2)} m²</dd></>}
+                        {area && <><dt className="text-zinc-500">Surface</dt><dd className="text-zinc-200">≈ {area} m²</dd></>}
                         {!!p!.tag_names?.length && <><dt className="text-zinc-500">Catégories</dt><dd className="text-zinc-200">{p!.tag_names.join(" · ")}</dd></>}
                         {p!.opening_hours && <><dt className="text-zinc-500">Horaires</dt><dd className="text-zinc-200">{p!.opening_hours}</dd></>}
                         {p!.access && <><dt className="text-zinc-500">Accès</dt><dd className="text-zinc-200">{p!.access}</dd></>}
                         {p!.wheelchair && <><dt className="text-zinc-500">Fauteuil</dt><dd className="text-zinc-200">{p!.wheelchair === "yes" ? "Accessible" : p!.wheelchair === "no" ? "Non accessible" : p!.wheelchair}</dd></>}
-                        <dt className="text-zinc-500">Source</dt><dd className="text-zinc-200">{drawnRoom?.plan ? `Plan historique ${drawnRoom.plan.building}, étage ${drawnRoom.plan.floor}` : "Wemap"}</dd>
                     </dl>
                     {p!.description && <p className="mt-3 text-sm leading-relaxed text-zinc-400">{p!.description}</p>}
-                </Section>
+                </Section>}
                 {/* Below the place information, at a limited height, so both stay in view. */}
                 {context?.agenda_room && <Section title="Agenda"><PlaceAgenda locationId={context.id} agendaRoom={context.agenda_room} upcoming={context.events} /></Section>}
             </> : building && <Section title={`Lieux · ${floorName(level)}`}>

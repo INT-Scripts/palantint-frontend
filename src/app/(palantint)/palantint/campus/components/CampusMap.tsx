@@ -6,14 +6,15 @@ import Map, { Source, Layer, Marker, type MapRef, type MapLayerMouseEvent } from
 import type { Feature, FeatureCollection, Geometry, Position } from "geojson";
 import type { ExpressionSpecification, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Search, X, MapPin, Layers, Loader2, ArrowRight, Building2 } from "lucide-react";
+import { Search, X, MapPin, Layers, Loader2, ArrowRight, Building2, Pin } from "lucide-react";
 import { loadCampus, loadCampusContext, loadOccupancy, loadSurfaces, resolveCampusRoom, type AerialIndex, type BasemapData, type DrawnPlans, type LocalPlans, type ResidenceSummary } from "@/lib/campusData";
 import FloorPlanCanvas from "@/components/FloorPlanCanvas";
 import type { FloorPlan } from "@/lib/planGeometry";
 import { fetchPrivate } from "@/lib/api";
 import { floorName, normalizePlace as text, isCampusDestination, campusDestinations, type Place as PlanFeature, type CampusPlans as Plans, type CampusBuilding as Building, type PlaceProperties as Properties } from "@/lib/campus";
 import { createReliefLayer } from "./reliefLayer";
-import CampusPanel, { OCCUPANCY_TONES, type DrawnRoom, type OccupancyState, type PlaceContext as Context } from "./CampusPanel";
+import CampusPanel, { OCCUPANCY_TONES, type DrawnRoom, type OccupancyState, type PlaceContext as Context, type PlaceTools } from "./CampusPanel";
+import type { MapOverlay } from "./PlaceActions";
 import { NavigationControls, PanelSheet, ViewSwitch, type CampusView } from "./MapControls";
 
 type Viewport = { west: number; east: number; north: number; south: number; zoom: number; width: number; height: number };
@@ -22,12 +23,21 @@ const style: StyleSpecification = { version: 8, sources: {}, layers: [{ id: "bac
 const isPolygon: ExpressionSpecification = ["in", ["geometry-type"], ["literal", ["Polygon", "MultiPolygon"]]];
 const STOREY_M = 3.2;
 const PITCH_3D = 60;
+// Street-level camera of the immersive view: the steepest pitch the map allows, close in.
+const IMMERSIVE = { pitch: 75, zoom: 20.6 };
+const PINS_KEY = "palantint_campus_pins";
+const readPins = (): string[] => { try { return JSON.parse(localStorage.getItem(PINS_KEY) || "[]"); } catch { return []; } };
 const levelLabel = (value: number) => value === 0 ? "RDC" : String(value);
 const tokenHeaders = (): Record<string, string> => {
     const token = localStorage.getItem("palantint_token");
     return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+/** Where a place is marked: its label point, else the centre of its bounds. */
+function placeCenter(feature: PlanFeature | undefined): Position | null {
+    const box = feature?.bbox;
+    return feature?.properties.label_coordinates || (box && box.length >= 4 ? [(box[0] + box[2]) / 2, (box[1] + box[3]) / 2] : null);
+}
 function polygonCenter(geometry: Geometry): Position | null {
     const ring = geometry.type === "Polygon" ? geometry.coordinates[0] : geometry.type === "MultiPolygon" ? geometry.coordinates[0]?.[0] : null;
     if (!ring?.length) return null;
@@ -61,6 +71,12 @@ export default function CampusMap() {
     const [contextResponse, setContextResponse] = useState<{ locationId: string; data: Context | null } | null>(null);
     const [viewport, setViewport] = useState<Viewport | null>(null);
     const [copied, setCopied] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
+    // People placed on the map by a place action; kept while other places are opened.
+    const [overlay, setOverlay] = useState<(MapOverlay & { action: string }) | null>(null);
+    // Pinned places stay marked on the map between visits, for this browser only.
+    const [pins, setPins] = useState<string[]>([]);
+    const immersiveTarget = useRef<Position | null>(null);
     const [retry, setRetry] = useState(0);
     const hovered = useRef<string | number | null>(null);
     const hoverLabel = useRef<HTMLDivElement>(null);
@@ -87,6 +103,8 @@ export default function CampusMap() {
             .catch(() => { if (active) setError("Les plans du campus ne sont pas disponibles pour le moment."); });
         loadCampusContext().then(([drawnPlans, osm, aerialTiles, residences, offMap]) => { if (active) { setDrawn(drawnPlans); setBasemap(osm); setAerialIndex(aerialTiles); setHousing(residences); setLocalPlans(offMap); } });
         // Without it the flats keep the neutral room colours.
+        fetchPrivate("/users/me").then(user => { if (active) setIsAdmin(!!user?.is_admin); }).catch(() => {});
+        setPins(readPins());
         loadOccupancy().then(data => { if (active) setOccupancy(new globalThis.Map([...data.occupied.map(id => [id, "occupied"] as const), ...data.vacant.map(id => [id, "vacant"] as const)])); }).catch(() => {});
         return () => { active = false; };
     }, [retry]);
@@ -179,7 +197,9 @@ export default function CampusMap() {
         const map = mapRef.current;
         if (!loaded || !map || shownMode.current === is3D) return;
         shownMode.current = is3D;
-        map.easeTo({ pitch: is3D ? PITCH_3D : 0, bearing: is3D ? (map.getBearing() || -20) : 0, duration: 600 });
+        const target = is3D ? immersiveTarget.current : null;
+        immersiveTarget.current = null;
+        map.easeTo(target ? { center: target as [number, number], ...IMMERSIVE, bearing: map.getBearing() || -20, duration: 900 } : { pitch: is3D ? PITCH_3D : 0, bearing: is3D ? (map.getBearing() || -20) : 0, duration: 600 });
     }, [is3D, loaded]);
 
     useEffect(() => {
@@ -261,6 +281,31 @@ export default function CampusMap() {
         return !p.levels.length || p.levels.includes(level);
     }), [plans, drawnFeatures, superseded, selectedId, buildingId, level]);
 
+    // Places on the map by location, for the people overlays: drawn plans win over Wemap.
+    const locationIndex = useMemo(() => {
+        const index = new globalThis.Map<string, PlanFeature>();
+        for (const feature of [...(plans?.features || []), ...drawnFeatures]) if (feature.properties.location_id) index.set(feature.properties.location_id, feature);
+        for (const feature of localFeatures) if (feature.properties.location_id && !index.has(feature.properties.location_id)) index.set(feature.properties.location_id, feature);
+        return index;
+    }, [plans, drawnFeatures, localFeatures]);
+    const overlayData: FeatureCollection = useMemo(() => {
+        // Off-map residences (U6) have no geographic position: they stay in the list only.
+        const offMapIds = new Set(localFeatures.map(feature => String(feature.id)));
+        const at = (id?: string) => { const feature = id ? locationIndex.get(id) : undefined; return feature && !offMapIds.has(String(feature.id)) ? placeCenter(feature) : null; };
+        const hub = at(overlay?.hub);
+        const homes = (overlay?.homes || []).flatMap(home => { const xy = at(home.location_id); return xy ? [{ home, xy }] : []; });
+        return { type: "FeatureCollection", features: [
+            ...(hub ? homes.filter(({ home }) => home.location_id !== overlay?.hub).map(({ xy }) => ({ type: "Feature" as const, properties: {}, geometry: { type: "LineString" as const, coordinates: [hub, xy] } })) : []),
+            ...homes.map(({ home, xy }) => ({ type: "Feature" as const, properties: { role: "home", count: home.people.length }, geometry: { type: "Point" as const, coordinates: xy } })),
+            ...(hub ? [{ type: "Feature" as const, properties: { role: "hub" }, geometry: { type: "Point" as const, coordinates: hub } }] : []),
+        ] };
+    }, [overlay, locationIndex, localFeatures]);
+    const pinData: FeatureCollection = useMemo(() => ({ type: "FeatureCollection", features: pins.flatMap(id => {
+        const feature = featureIndex.get(id);
+        const xy = feature && !localFeatures.includes(feature) ? placeCenter(feature) : null;
+        return xy ? [{ type: "Feature" as const, properties: { id }, geometry: { type: "Point" as const, coordinates: xy } }] : [];
+    }) }), [pins, featureIndex, localFeatures]);
+
     // This source changes only with the floor/building, never with hover, typing,
     // or a detail response. MapLibre keeps its worker-side index.
     const renderData: FeatureCollection<Geometry, Properties> = useMemo(() => ({
@@ -324,7 +369,7 @@ export default function CampusMap() {
     const focusBuilding = (id: string | null) => { setSearch(""); setSearchOpen(false); setQuery({ building: id, feature: null, room: null, level: null }); };
     const closePlace = () => setQuery({ feature: null, room: null });
     // Leaving a focus goes one step back: the place first, then the building.
-    const unfocus = () => { if (selected && selected.properties.kind !== "building") closePlace(); else if (building) focusBuilding(null); };
+    const unfocus = () => { if (selected && selected.properties.kind !== "building") closePlace(); else if (building) focusBuilding(null); else setOverlay(null); };
     const onClick = (event: MapLayerMouseEvent) => {
         const target = event.features?.[0];
         const feature = featureIndex.get(String(target?.properties?.source_feature_id));
@@ -361,6 +406,36 @@ export default function CampusMap() {
         if (bounds) camera(bounds, { padding: 40, duration: 400 });
     };
     const changeView = (next: CampusView) => setQuery({ view: next === "plan" ? null : next });
+    const togglePin = () => {
+        if (!selected) return;
+        const id = String(selected.id);
+        const next = pins.includes(id) ? pins.filter(pin => pin !== id) : [...pins, id];
+        setPins(next);
+        try { localStorage.setItem(PINS_KEY, JSON.stringify(next)); } catch { /* the pin stays for this visit */ }
+    };
+    const tools: PlaceTools = {
+        isAdmin,
+        pinned: !!selected && pins.includes(String(selected.id)),
+        onTogglePin: togglePin,
+        onImmersive: () => {
+            const center = placeCenter(selected);
+            const map = mapRef.current;
+            if (!center || !map) return;
+            if (is3D) map.easeTo({ center: center as [number, number], ...IMMERSIVE, bearing: map.getBearing() || -20, duration: 900 });
+            else { immersiveTarget.current = center; changeView("3d"); }
+        },
+        // Same resolution as a shared `room` link: drawn plans, then the server's room correspondences.
+        onGoToRoom: room => setQuery({ room, feature: null, building: null, level: null }),
+        overlay,
+        onOverlay: setOverlay,
+        describe: id => {
+            const feature = locationIndex.get(id);
+            if (!feature) return null;
+            const home = buildings.find(item => item.id === String(feature.properties.building_id));
+            return [feature.properties.name, home?.name || (typeof feature.properties.building_id === "string" ? feature.properties.building_id : null)].filter(Boolean).join(" · ");
+        },
+        onSelectLocation: id => { const feature = locationIndex.get(id); if (feature) select(feature); },
+    };
     const copyLink = async () => {
         try { await navigator.clipboard.writeText(window.location.href); setCopied(true); } catch { setCopied(false); }
     };
@@ -371,7 +446,10 @@ export default function CampusMap() {
     const panelOpen = !!building || (!!selected && selected.properties.kind !== "building");
     const buildingFeature = building?.feature_id ? featureIndex.get(building.feature_id) : undefined;
     const floorRooms = useMemo(() => buildingId ? destinations.filter(feature => String(feature.properties.building_id) === buildingId && feature.properties.kind !== "building" && feature.properties.levels.includes(level)) : [], [destinations, buildingId, level]);
-    const showResults = searchOpen && (!!search.trim() || !buildingId);
+    const pinnedPlaces = pins.flatMap(id => { const feature = featureIndex.get(id); return feature ? [feature] : []; });
+    // Inside a building an empty search lists nothing but the pins; the panel lists its places.
+    const listResults = !!search.trim() || !buildingId;
+    const showResults = searchOpen && (listResults || !!pinnedPlaces.length);
     const offMapFloor = offMap?.floors.find(floor => floor.level === level);
     const offMapPlan = useMemo<FloorPlan | null>(() => offMapFloor ? {
         type: "FeatureCollection",
@@ -426,6 +504,14 @@ export default function CampusMap() {
                 <Layer id="osm-rail" type="line" filter={["==", ["get", "kind"], "railway"]} layout={{ visibility: aerial ? "none" : flat }} paint={{ "line-color": "#52525b", "line-width": 1.5, "line-dasharray": [3, 2] }} />
                 <Layer id="osm-buildings" type="fill" filter={["==", ["get", "kind"], "building"]} layout={{ visibility: aerial || is3D ? "none" : "visible" }} paint={{ "fill-color": "#1c1c20", "fill-outline-color": "#3f3f46" }} />
             </Source>}
+            <Source id="overlay" type="geojson" data={overlayData}>
+                <Layer id="overlay-lines" type="line" filter={["==", ["geometry-type"], "LineString"]} paint={{ "line-color": "#a78bfa", "line-width": 1.5, "line-opacity": 0.7, "line-dasharray": [2, 1] }} />
+                <Layer id="overlay-homes" type="circle" filter={["==", ["get", "role"], "home"]} paint={{ "circle-radius": ["interpolate", ["linear"], ["zoom"], 15, 4, 20, 8], "circle-color": "#a78bfa", "circle-opacity": 0.85, "circle-stroke-color": "#f4f4f5", "circle-stroke-width": 1.5 }} />
+                <Layer id="overlay-hub" type="circle" filter={["==", ["get", "role"], "hub"]} paint={{ "circle-radius": ["interpolate", ["linear"], ["zoom"], 15, 6, 20, 11], "circle-color": "#09090b", "circle-stroke-color": "#a78bfa", "circle-stroke-width": 3 }} />
+            </Source>
+            <Source id="pins" type="geojson" data={pinData}>
+                <Layer id="pins" type="circle" paint={{ "circle-radius": 6, "circle-color": "#fbbf24", "circle-stroke-color": "#09090b", "circle-stroke-width": 2 }} />
+            </Source>
             {context3D && <Source id="city-3d" type="geojson" data={context3D}>
                 <Layer id="osm-buildings-3d" type="fill-extrusion" layout={{ visibility: is3D && !(showRelief && reliefState === "ready") ? "visible" : "none" }} paint={{ "fill-extrusion-color": "#27272a", "fill-extrusion-height": ["case", ["has", "height"], ["to-number", ["get", "height"], 8], ["has", "building_levels"], ["*", ["to-number", ["get", "building_levels"], 2], STOREY_M], 8], "fill-extrusion-opacity": 0.85 }} />
             </Source>}
@@ -438,7 +524,7 @@ export default function CampusMap() {
         </div>}
         <div ref={hoverLabel} hidden className="pointer-events-none absolute left-0 top-0 z-30 max-w-40 rounded-none border border-zinc-800 bg-zinc-950/95 px-2.5 py-1.5 text-xs text-white shadow-xl" />
         {panelOpen && <PanelSheet>
-            <CampusPanel building={building} buildingFeature={buildingFeature} level={level} levelCount={levels.length} rooms={floorRooms} occupancy={occupancy} selected={selected} context={context ?? null} loadingContext={loadingContext} drawnRoom={drawnRoom} housing={housing} copied={copied}
+            <CampusPanel building={building} buildingFeature={buildingFeature} level={level} levelCount={levels.length} rooms={floorRooms} occupancy={occupancy} selected={selected} context={context ?? null} loadingContext={loadingContext} drawnRoom={drawnRoom} housing={housing} copied={copied} tools={tools}
                 onSelect={select} onCloseBuilding={() => focusBuilding(null)} onClosePlace={closePlace} onCopy={copyLink} />
         </PanelSheet>}
         <div className="absolute left-3 top-3 z-30 w-[min(352px,calc(100%-24px))] sm:left-3.5 sm:top-4">
@@ -450,14 +536,18 @@ export default function CampusMap() {
                     className="h-11 w-full rounded-none bg-transparent pl-10 pr-10 text-sm text-white outline-none placeholder:text-zinc-600 focus:ring-1 focus:ring-campus-400" />
                 {search && <button title="Effacer" aria-label="Effacer la recherche" onClick={() => setSearch("")} className="absolute right-2 top-2 p-1.5 text-zinc-400 hover:text-white"><X className="h-4 w-4" /></button>}
                 {showResults && <div id="campus-search-results" className="max-h-[50dvh] overflow-y-auto border-t border-zinc-800/60 p-1.5">
-                    {searchResults.map(feature => {
+                    {/* Pinned places first while nothing is typed. */}
+                    {!search.trim() && pinnedPlaces.map(feature => <button key={`pin:${feature.id}`} onMouseDown={event => event.preventDefault()} onClick={() => select(feature)} className="flex w-full items-center gap-3 rounded-none px-3 py-2.5 text-left text-sm text-zinc-300 hover:bg-zinc-900">
+                        <Pin className="h-4 w-4 shrink-0 text-timetable-400" /><span className="min-w-0 flex-1 truncate">{feature.properties.name}</span><span className="shrink-0 text-[10px] text-zinc-500">Épinglé</span><ArrowRight className="h-3 w-3 text-zinc-600" />
+                    </button>)}
+                    {listResults && searchResults.map(feature => {
                         const isBuilding = feature.properties.kind === "building";
                         const Icon = isBuilding ? Building2 : MapPin;
                         return <button key={String(feature.id)} onMouseDown={event => event.preventDefault()} onClick={() => isBuilding && feature.properties.building_id ? focusBuilding(String(feature.properties.building_id)) : select(feature)} className="flex w-full items-center gap-3 rounded-none px-3 py-2.5 text-left text-sm text-zinc-300 hover:bg-zinc-900">
                             <Icon className="h-4 w-4 shrink-0 text-campus-400" /><span className="min-w-0 flex-1 truncate">{feature.properties.name}</span><span className="shrink-0 text-[10px] text-zinc-500">{isBuilding ? "Bâtiment" : feature.properties.levels.map(levelLabel).join(" · ")}</span><ArrowRight className="h-3 w-3 text-zinc-600" />
                         </button>;
                     })}
-                    {!searchResults.length && <p className="px-3 py-4 text-xs text-zinc-500">Aucun résultat</p>}
+                    {listResults && !searchResults.length && <p className="px-3 py-4 text-xs text-zinc-500">Aucun résultat</p>}
                 </div>}
             </div>
         </div>

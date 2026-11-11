@@ -1,12 +1,12 @@
 "use client";
 
-import type { ComponentType, ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, Building2, CalendarDays, Check, Copy, Layers, Loader2, MapPin, Users, WashingMachine, X } from "lucide-react";
+import { ArrowLeft, Building2, Layers, Loader2, MapPin, Users, WashingMachine, X } from "lucide-react";
 import BuildingOutline from "@/components/palantint/BuildingOutline";
 import { floorName, type CampusBuilding as Building, type Place } from "@/lib/campus";
 import type { RentRange, ResidenceSummary } from "@/lib/campusData";
-import { timetableHref } from "@/lib/timetableContext";
+import { Section } from "./panelParts";
+import PlaceActions, { OverlaySection, type MapOverlay } from "./PlaceActions";
 import PlaceAgenda from "./PlaceAgenda";
 
 type ClubLink = { id: string | null; name: string; logo_url?: string | null };
@@ -39,19 +39,6 @@ const naturalOrder = new Intl.Collator("fr", { numeric: true, sensitivity: "base
 const euros = (value: number | null) => value === null ? "—" : `${value} €`;
 const rentRange = (range: RentRange) => !range ? "—" : range.min === range.max ? euros(range.min) : `${range.min}–${range.max} €`;
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-    return <section className="border-t border-zinc-800/80 px-5 py-4">
-        <h3 className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">{title}</h3>
-        {children}
-    </section>;
-}
-
-function Action({ href, onClick, icon: Icon, label, tone }: { href?: string; onClick?: () => void; icon: ComponentType<{ className?: string }>; label: string; tone: string }) {
-    const body = <><span className={`flex h-10 w-10 items-center justify-center border border-zinc-800 ${tone}`}><Icon className="h-4 w-4" /></span><span className="w-16 text-center text-[10px] leading-tight text-zinc-400">{label}</span></>;
-    const style = "flex flex-col items-center gap-1.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-campus-400";
-    return href ? <Link href={href} title={label} className={style}>{body}</Link> : <button onClick={onClick} title={label} className={style}>{body}</button>;
-}
 
 function LaundryLink({ code }: { code: string }) {
     return <Link title={`Laverie ${code}`} aria-label={`Laverie ${code}`} href={`/palantint/laundry?building=${code}`} className="border-l border-zinc-800 p-2 text-media-400 hover:bg-zinc-900"><WashingMachine className="h-4 w-4" /></Link>;
@@ -100,7 +87,20 @@ function ClubRow({ club }: { club: ClubLink }) {
         : <div className="flex items-center gap-2 p-2 text-sm text-zinc-400">{body}</div>;
 }
 
-export default function CampusPanel({ building, buildingFeature, level, levelCount, rooms, occupancy, selected, context, loadingContext, drawnRoom, housing, copied, onSelect, onCloseBuilding, onClosePlace, onCopy }: {
+/** Map commands the place actions use, owned by the map. */
+export type PlaceTools = {
+    isAdmin: boolean;
+    pinned: boolean;
+    onTogglePin: () => void;
+    onImmersive: () => void;
+    onGoToRoom: (room: string) => void;
+    overlay: (MapOverlay & { action?: string }) | null;
+    onOverlay: (overlay: (MapOverlay & { action: string }) | null) => void;
+    describe: (locationId: string) => string | null;
+    onSelectLocation: (locationId: string) => void;
+};
+
+export default function CampusPanel({ building, buildingFeature, level, levelCount, rooms, occupancy, selected, context, loadingContext, drawnRoom, housing, copied, tools, onSelect, onCloseBuilding, onClosePlace, onCopy }: {
     building?: Building;
     buildingFeature?: Place;
     level: number;
@@ -115,6 +115,7 @@ export default function CampusPanel({ building, buildingFeature, level, levelCou
     drawnRoom: DrawnRoom | null;
     housing: Record<string, ResidenceSummary> | null;
     copied: boolean;
+    tools: PlaceTools;
     onSelect: (feature: Place) => void;
     onCloseBuilding: () => void;
     onClosePlace: () => void;
@@ -143,14 +144,13 @@ export default function CampusPanel({ building, buildingFeature, level, levelCou
             <button onClick={onCloseBuilding} title="Quitter le bâtiment" aria-label="Quitter le bâtiment" className="p-1 text-zinc-500 hover:text-white"><X className="h-4 w-4" /></button>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto">
+            {tools.overlay && <OverlaySection overlay={tools.overlay} describe={tools.describe} onSelect={tools.onSelectLocation} onClear={() => tools.onOverlay(null)} />}
             {building && !place && !!residences.length && <div className="px-5 pb-4"><ResidenceSummaries building={building} housing={housing} /></div>}
             {place ? <>
-                <div className="flex flex-wrap gap-4 border-t border-zinc-800/80 px-5 py-4">
-                    {context?.agenda_room && <Action href={timetableHref({ room: context.agenda_room, week: new Date() })} icon={CalendarDays} label="Agenda" tone="text-timetable-400" />}
-                    {(context?.occupants.length || 0) > 1 && <Action href={timetableHref({ students: context!.occupants.map(person => person.id), week: new Date() })} icon={Users} label="Disponibilités" tone="text-timetable-400" />}
-                    <Action onClick={onCopy} icon={copied ? Check : Copy} label={copied ? "Lien copié" : "Copier le lien"} tone={copied ? "text-emerald-400" : "text-zinc-300"} />
-                    {loadingContext && <Loader2 className="m-3 h-4 w-4 animate-spin text-zinc-500" />}
-                </div>
+                {/* Reset with each place: a result belongs to the place it was asked for. */}
+                <PlaceActions key={String(place.id)} locationId={p!.location_id || null} context={context} clubs={clubs} copied={copied} onCopy={onCopy} isAdmin={tools.isAdmin} pinned={tools.pinned}
+                    onTogglePin={tools.onTogglePin} onImmersive={tools.onImmersive} onGoToRoom={tools.onGoToRoom} overlay={tools.overlay} onOverlay={tools.onOverlay} />
+                {loadingContext && <p className="flex items-center gap-2 px-5 pb-3 text-xs text-zinc-500"><Loader2 className="h-3.5 w-3.5 animate-spin" />Chargement du lieu…</p>}
                 {/* The selection's own occupants are fresher than the map colouring. */}
                 {context?.apartment && <ApartmentSection apartment={context.apartment} state={context.occupants.length ? "occupied" : "vacant"} />}
                 {(!!context?.occupants.length || !!clubs.length) && <Section title="Occupants et associations">

@@ -125,6 +125,6 @@ Une interface principalement visuelle reste utilisable sans deviner ses icônes.
 
 Pour une modification visuelle, contrôler la cohérence avec la navbar et une page du même module, la palette sémantique, les états de survol/focus/sélection, ainsi que l’usage sur petit écran. Pour les cartes, vérifier la recherche, le panneau latéral et la sortie de sélection, le rail d’étages, les trois vues et la présence de la photogrammétrie en 3D.
 
-Une modification de la carte n’est terminée qu’une fois vue dans un navigateur : Plan, Satellite et 3D ; un bâtiment avec plusieurs étages, dont un sous-sol ; la fiche d’un logement et d’une salle, avec une action qui affiche un résultat ; la feuille mobile réduite et agrandie ; aucune erreur dans la console. Les tests et le typage ne suffisent pas.
+Une modification de la carte n’est terminée qu’une fois vue dans un navigateur par l’utilisateur (les agents ne pilotent pas de navigateur, Playwright compris) : Plan, Satellite et 3D ; un bâtiment avec plusieurs étages, dont un sous-sol ; la fiche d’un logement et d’une salle, avec une action qui affiche un résultat ; la feuille mobile réduite et agrandie ; aucune erreur dans la console. Les tests et le typage ne suffisent pas.
 
 Les choix explicites ci-dessus ne doivent pas être remplacés par les valeurs par défaut d’une bibliothèque de composants. Toute nouvelle convention approuvée par l’utilisateur doit être consignée ici pour les modifications suivantes.

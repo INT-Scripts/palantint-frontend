@@ -34,9 +34,9 @@ const VIEWS: { value: CampusView; label: string; title: string; icon: ComponentT
 const button = "flex h-10 w-10 items-center justify-center rounded-none text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-campus-400 disabled:opacity-40";
 
 /** One choice of rendering: each view brings its own base layers, so there is nothing else to toggle. */
-export function ViewSwitch({ view, onChange, available }: { view: CampusView; onChange: (view: CampusView) => void; available: Record<CampusView, boolean> }) {
+export function ViewSwitch({ view, onChange, onPrepare, available }: { view: CampusView; onChange: (view: CampusView) => void; onPrepare?: (view: CampusView) => void; available: Record<CampusView, boolean> }) {
     return <div role="radiogroup" aria-label="Vue du campus" className="flex rounded-none border border-zinc-800 bg-zinc-950/95 p-1 font-mono shadow-xl backdrop-blur-xl">
-        {VIEWS.filter(item => available[item.value]).map(({ value, label, title, icon: Icon }) => <button key={value} role="radio" aria-checked={view === value} title={title} onClick={() => onChange(value)} className={`flex h-9 items-center gap-2 rounded-none px-3 text-[11px] uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-campus-400 ${view === value ? "bg-campus-500/15 text-campus-300" : "text-zinc-500 hover:text-white"}`}><Icon className="h-4 w-4" />{label}</button>)}
+        {VIEWS.filter(item => available[item.value]).map(({ value, label, title, icon: Icon }) => <button key={value} role="radio" aria-checked={view === value} title={title} onClick={() => onChange(value)} onPointerEnter={() => onPrepare?.(value)} onFocus={() => onPrepare?.(value)} className={`flex h-9 items-center gap-2 rounded-none px-3 text-[11px] uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-campus-400 ${view === value ? "bg-campus-500/15 text-campus-300" : "text-zinc-500 hover:text-white"}`}><Icon className="h-4 w-4" />{label}</button>)}
     </div>;
 }
 

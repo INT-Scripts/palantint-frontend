@@ -47,15 +47,82 @@ function convexHull(points: [number, number][]) {
     return [...half(sorted), ...half([...sorted].reverse())];
 }
 
+// Relief cell (scripts: ``write_relief_tile``): magic, samples, reserved, cell size (EPSG:3857
+// metres), lowest height, height step (metres), texture length; then the heights as row
+// deltas modulo 2^16, then the JPEG texture.
+const RELIEF_MAGIC = 0x31485250; // "PRH1"
+const RELIEF_HEADER = 24;
+// Relief cells loaded at once; the view is filled first, then whatever the camera reaches next.
+const WORKERS = 6;
+
+type Grid = { uv: THREE.BufferAttribute; index: THREE.BufferAttribute };
+const grids = new Map<number, Grid>();
+
+/** Texture coordinates and triangles of a samples×samples grid: the same for every cell of that size. */
+function grid(samples: number): Grid {
+    const known = grids.get(samples);
+    if (known) return known;
+    const uv = new Float32Array(samples * samples * 2);
+    for (let j = 0; j < samples; j++) for (let i = 0; i < samples; i++) uv.set([i / (samples - 1), j / (samples - 1)], (j * samples + i) * 2);
+    const index = new (samples * samples <= 65536 ? Uint16Array : Uint32Array)((samples - 1) * (samples - 1) * 6);
+    let k = 0;
+    for (let j = 0; j < samples - 1; j++) for (let i = 0; i < samples - 1; i++) {
+        const node = j * samples + i;
+        // Counter-clockwise when seen from above (+y), with z pointing south.
+        index.set([node, node + samples, node + 1, node + 1, node + samples, node + samples + 1], k);
+        k += 6;
+    }
+    const created = { uv: new THREE.BufferAttribute(uv, 2), index: new THREE.BufferAttribute(index, 1) };
+    grids.set(samples, created);
+    return created;
+}
+
+/** Mesh of one relief cell, local to its north-west corner: x east, z south, y up, in metres. */
+async function reliefMesh(data: ArrayBuffer) {
+    const view = new DataView(data);
+    if (view.getUint32(0, true) !== RELIEF_MAGIC) throw new Error("Format de relief inconnu");
+    const samples = view.getUint16(4, true);
+    const spacing = view.getFloat32(8, true) / (samples - 1);
+    const low = view.getFloat32(12, true);
+    const step = view.getFloat32(16, true);
+    const deltas = new Uint16Array(data, RELIEF_HEADER, samples * samples);
+    const positions = new Float32Array(samples * samples * 3);
+    for (let j = 0; j < samples; j++) {
+        let height = 0;
+        for (let i = 0; i < samples; i++) {
+            const node = j * samples + i;
+            height = (height + deltas[node]) & 0xffff;
+            positions[node * 3] = i * spacing;
+            positions[node * 3 + 1] = low + height * step;
+            positions[node * 3 + 2] = j * spacing;
+        }
+    }
+    const jpeg = new Uint8Array(data, RELIEF_HEADER + samples * samples * 2, view.getUint32(20, true));
+    // Same decoding as GLTFLoader: image rows from north to south, no vertical flip.
+    const texture = new THREE.Texture(await createImageBitmap(new Blob([jpeg], { type: "image/jpeg" }), { premultiplyAlpha: "none" }));
+    texture.flipY = false;
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.needsUpdate = true;
+    const { uv, index } = grid(samples);
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("uv", uv);
+    geometry.setIndex(index);
+    geometry.computeBoundingSphere();
+    return new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ map: texture }));
+}
+
 /**
  * The campus photogrammetry and the IGN LiDAR relief, drawn inside the MapLibre
  * canvas. The calibrated scan is the reference where it exists; the relief
  * fills the surroundings and is discarded under the scan's footprint.
  *
- * Relief tiles store x east and z south in EPSG:3857 metres from their
- * north-west corner, y up in metres. The scene is expressed relative to one
- * origin so vertex values stay small; the mercator offset is folded into the
- * camera matrix in double precision.
+ * The scan loads first. Relief cells then load as the camera reaches them,
+ * closest to the centre of the view first; a cell entirely under the scan is
+ * never downloaded. The scene is expressed relative to one origin so vertex
+ * values stay small; the mercator offset is folded into the camera matrix in
+ * double precision.
  */
 export function createReliefLayer(relief: ReliefIndex | null, scan: CampusScan | null, origin: [number, number], headers: () => Record<string, string>) {
     const scene = new THREE.Scene();
@@ -73,13 +140,15 @@ export function createReliefLayer(relief: ReliefIndex | null, scan: CampusScan |
     let map: MapLibreMap | null = null;
     let dimmed = false;
     let disposed = false;
+    const aborted = new AbortController();
     // Most scan tiles are Draco-compressed. The decoder is the one shipped with three.js, served locally.
     const draco = new DRACOLoader().setDecoderPath("/draco/");
 
     // Coverage mask of the scan, in layer scene coordinates.
     const mask = document.createElement("canvas");
     mask.width = mask.height = MASK_PIXELS;
-    const maskContext = mask.getContext("2d")!;
+    // Read back for each relief cell, to skip the ones under the scan.
+    const maskContext = mask.getContext("2d", { willReadFrequently: true })!;
     maskContext.fillStyle = "#fff";
     const maskTexture = new THREE.CanvasTexture(mask);
     maskTexture.flipY = false;
@@ -175,40 +244,84 @@ bool scanCovered(vec2 uv) {
         });
     };
 
-    const load = () => {
+    // Whether the eroded scan footprint, as the relief shader tests it, covers a whole relief cell.
+    const hiddenByScan = (tile: ReliefTile) => {
+        if (!scan) return false;
+        const [west, south, east, north] = tile.bounds;
+        const corner = (lng: number, lat: number) => {
+            const point = MercatorCoordinate.fromLngLat([lng, lat], 0);
+            return [((point.x - anchor.x) * CIRCUMFERENCE - maskBox.x) / maskBox.z * MASK_PIXELS, ((point.y - anchor.y) * CIRCUMFERENCE - maskBox.y) / maskBox.w * MASK_PIXELS];
+        };
+        const margin = EDGE_OVERLAP / MASK_EXTENT * MASK_PIXELS + 1;
+        const [x0, y0] = corner(west, north).map(value => Math.floor(value - margin));
+        const [x1, y1] = corner(east, south).map(value => Math.ceil(value + margin));
+        if (x0 < 0 || y0 < 0 || x1 > MASK_PIXELS || y1 > MASK_PIXELS) return false;
+        const pixels = maskContext.getImageData(x0, y0, x1 - x0, y1 - y0).data;
+        for (let i = 0; i < pixels.length; i += 4) if (pixels[i] < 128) return false;
+        return true;
+    };
+
+    const pending = new Map((relief?.tiles || []).map(tile => [tile.path, tile]));
+    let scanLoaded = !scan;
+    let loading = 0;
+
+    const loadRelief = async (tile: ReliefTile) => {
+        const response = await fetch(`/api/private/maps/indoor/relief/${tile.path}`, { headers: headers(), signal: aborted.signal });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const mesh = await reliefMesh(await response.arrayBuffer());
+        if (disposed) { mesh.geometry.dispose(); mesh.material.map?.dispose(); mesh.material.dispose(); return; }
+        const corner = MercatorCoordinate.fromLngLat([tile.bounds[0], tile.bounds[3]], 0);
+        mesh.position.set((corner.x - anchor.x) * CIRCUMFERENCE, 0, (corner.y - anchor.y) * CIRCUMFERENCE);
+        prepare(mesh, true);
+        scene.add(mesh);
+        map?.triggerRepaint();
+    };
+
+    // Cells in view (with a quarter of a view around it), the closest to its centre first.
+    const schedule = () => {
+        if (!map || disposed || !scanLoaded || !pending.size) return;
+        const bounds = map.getBounds();
+        const center = map.getCenter();
+        const marginX = (bounds.getEast() - bounds.getWest()) / 4, marginY = (bounds.getNorth() - bounds.getSouth()) / 4;
+        const visible = [...pending.values()].filter(({ bounds: [west, south, east, north] }) =>
+            east >= bounds.getWest() - marginX && west <= bounds.getEast() + marginX && north >= bounds.getSouth() - marginY && south <= bounds.getNorth() + marginY);
+        const distance = ({ bounds: [west, south, east, north] }: ReliefTile) => Math.hypot((west + east) / 2 - center.lng, (south + north) / 2 - center.lat);
+        visible.sort((a, b) => distance(a) - distance(b));
+        for (const tile of visible) {
+            if (loading >= WORKERS) return;
+            pending.delete(tile.path);
+            if (hiddenByScan(tile)) continue;
+            loading++;
+            loadRelief(tile)
+                // A missing cell leaves a hole in the surface; the 2D layers stay usable underneath.
+                .catch(error => { if (!disposed) console.warn(`Tuile 3D non chargée : ${tile.path}`, error); })
+                .finally(() => { loading--; schedule(); });
+        }
+    };
+
+    const loadScan = async () => {
         const loader = new GLTFLoader().setDRACOLoader(draco);
-        const center = map!.getCenter();
-        // Campus scan first, then the closest relief tiles, so the visible area fills in before the surroundings.
-        const distance = (tile: ReliefTile) => Math.hypot((tile.bounds[0] + tile.bounds[2]) / 2 - center.lng, (tile.bounds[1] + tile.bounds[3]) / 2 - center.lat) + (tile.lod === "detail" ? 0 : 0.01);
-        const queue: { url: string; tile?: ReliefTile }[] = [
-            ...(scan?.urls || []).map(url => ({ url })),
-            ...[...(relief?.tiles || [])].sort((a, b) => distance(a) - distance(b)).map(tile => ({ url: `/api/private/maps/indoor/relief/${tile.path}`, tile })),
-        ];
+        const queue = [...(scan?.urls || [])];
         const next = async () => {
             while (queue.length && !disposed) {
-                const { url, tile } = queue.shift()!;
+                const url = queue.shift()!;
                 loader.setRequestHeader(headers());
                 try {
                     const gltf = await loader.loadAsync(url);
                     if (disposed) return;
-                    if (tile) {
-                        const corner = MercatorCoordinate.fromLngLat([tile.bounds[0], tile.bounds[3]], 0);
-                        gltf.scene.position.set((corner.x - anchor.x) * CIRCUMFERENCE, 0, (corner.y - anchor.y) * CIRCUMFERENCE);
-                        prepare(gltf.scene, true);
-                        scene.add(gltf.scene);
-                    } else {
-                        prepare(gltf.scene, false);
-                        scanTiles.add(gltf.scene);
-                        markCoverage(gltf.scene);
-                    }
+                    prepare(gltf.scene, false);
+                    scanTiles.add(gltf.scene);
+                    markCoverage(gltf.scene);
                     map?.triggerRepaint();
                 } catch (error) {
-                    // A missing tile leaves a hole in the surface; the 2D layers stay usable underneath.
                     console.warn(`Tuile 3D non chargée : ${url}`, error);
                 }
             }
         };
-        for (let worker = 0; worker < 6; worker++) void next();
+        await Promise.all(Array.from({ length: WORKERS }, next));
+        // The relief waits for the whole scan footprint, so that no cell under it is downloaded.
+        scanLoaded = true;
+        schedule();
     };
 
     const layer: CustomLayerInterface & { setDimmed: (value: boolean) => void } = {
@@ -219,7 +332,9 @@ bool scanCovered(vec2 uv) {
             map = target;
             renderer = new THREE.WebGLRenderer({ canvas: target.getCanvas(), context: gl, antialias: true });
             renderer.autoClear = false;
-            load();
+            target.on("moveend", schedule);
+            schedule();
+            void loadScan();
         },
         render(_gl, options: CustomRenderMethodInput) {
             if (!renderer) return;
@@ -230,6 +345,8 @@ bool scanCovered(vec2 uv) {
         },
         onRemove() {
             disposed = true;
+            aborted.abort();
+            map?.off("moveend", schedule);
             scene.traverse(object => {
                 if (object instanceof THREE.Mesh) {
                     object.geometry.dispose();

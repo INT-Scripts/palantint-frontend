@@ -192,13 +192,23 @@ export default function CampusMap() {
         return () => { active = false; controller.abort(); };
     }, [selectedLocationId]);
 
-    // Context sources often arrive after the campus plans, and a late source is added on top:
-    // keep their layers under the campus ones, in their declared order.
+    // Sources are created in any order (context data can arrive before or after the style and
+    // the campus plans), and a late layer is added on top: whenever the style changes, put the
+    // context layers back under the campus ones, in their declared order.
     useEffect(() => {
         const map = mapRef.current?.getMap();
-        if (!loaded || !map?.getLayer("grounds")) return;
-        for (const id of ["osm-landuse", "osm-water", "osm-waterway", "aerial", "osm-road-casing", "osm-roads", "osm-paths", "osm-rail", "osm-buildings"]) if (map.getLayer(id)) map.moveLayer(id, "grounds");
-    }, [loaded, basemap, aerialIndex]);
+        if (!loaded || !map) return;
+        const context = ["osm-landuse", "osm-water", "osm-waterway", "aerial", "osm-road-casing", "osm-roads", "osm-paths", "osm-rail", "osm-buildings"];
+        const order = () => {
+            const ids = map.getStyle().layers.map(layer => layer.id);
+            const grounds = ids.indexOf("grounds");
+            if (grounds < 0 || !context.some(id => ids.indexOf(id) > grounds)) return;
+            for (const id of context) if (map.getLayer(id)) map.moveLayer(id, "grounds");
+        };
+        order();
+        map.on("styledata", order);
+        return () => { map.off("styledata", order); };
+    }, [loaded]);
 
     // The campus scan and the surrounding relief load the first time the 3D view needs them, then stay in the map.
     const showRelief = is3D;
@@ -409,12 +419,13 @@ export default function CampusMap() {
             {aerialIndex && <Source id="aerial" type="raster" tiles={[`${typeof window === "undefined" ? "" : window.location.origin}/api/private/maps/indoor/aerial/{z}/{x}/{y}.jpg`]} tileSize={256} minzoom={aerialIndex.minzoom} maxzoom={aerialIndex.maxzoom} bounds={aerialIndex.bounds}>
                 <Layer id="aerial" type="raster" layout={{ visibility: aerial ? flat : "none" }} paint={{ "raster-opacity": 0.92, "raster-saturation": -0.25, "raster-brightness-max": 0.85 }} />
             </Source>}
-            {/* Lines of the same base map source, above the aerial photo: one source, parsed once. */}
-            {basemap && <Layer source="basemap" id="osm-road-casing" type="line" minzoom={14} filter={["all", ["==", ["get", "kind"], "road"], ["!=", ["get", "class"], "path"]]} layout={{ visibility: aerial ? "none" : flat, "line-cap": "round", "line-join": "round" }} paint={{ "line-color": "#09090b", "line-width": ["interpolate", ["exponential", 1.6], ["zoom"], 14, ["match", ["get", "class"], "major", 4, "secondary", 3, 1.5], 20, ["match", ["get", "class"], "major", 40, "secondary", 30, "minor", 20, 12]] }} />}
-            {basemap && <Layer source="basemap" id="osm-roads" type="line" filter={["all", ["==", ["get", "kind"], "road"], ["!=", ["get", "class"], "path"]]} layout={{ visibility: aerial ? "none" : flat, "line-cap": "round", "line-join": "round" }} paint={{ "line-color": ["match", ["get", "class"], "major", "#52525b", "secondary", "#3f3f46", "#2e2e33"], "line-width": ["interpolate", ["exponential", 1.6], ["zoom"], 14, ["match", ["get", "class"], "major", 2.5, "secondary", 1.8, 0.8], 20, ["match", ["get", "class"], "major", 36, "secondary", 26, "minor", 17, 10]] }} />}
-            {basemap && <Layer source="basemap" id="osm-paths" type="line" minzoom={15} filter={["all", ["==", ["get", "kind"], "road"], ["==", ["get", "class"], "path"]]} layout={{ visibility: flat }} paint={{ "line-color": aerial ? "#e4e4e7" : "#3f3f46", "line-opacity": aerial ? 0.35 : 1, "line-width": ["interpolate", ["linear"], ["zoom"], 15, 0.6, 20, 2.5], "line-dasharray": [2, 1.5] }} />}
-            {basemap && <Layer source="basemap" id="osm-rail" type="line" filter={["==", ["get", "kind"], "railway"]} layout={{ visibility: aerial ? "none" : flat }} paint={{ "line-color": "#52525b", "line-width": 1.5, "line-dasharray": [3, 2] }} />}
-            {basemap && <Layer source="basemap" id="osm-buildings" type="fill" filter={["==", ["get", "kind"], "building"]} layout={{ visibility: aerial || is3D ? "none" : "visible" }} paint={{ "fill-color": "#1c1c20", "fill-outline-color": "#3f3f46" }} />}
+            {basemap && <Source id="basemap-lines" type="geojson" data={basemap}>
+                <Layer id="osm-road-casing" type="line" minzoom={14} filter={["all", ["==", ["get", "kind"], "road"], ["!=", ["get", "class"], "path"]]} layout={{ visibility: aerial ? "none" : flat, "line-cap": "round", "line-join": "round" }} paint={{ "line-color": "#09090b", "line-width": ["interpolate", ["exponential", 1.6], ["zoom"], 14, ["match", ["get", "class"], "major", 4, "secondary", 3, 1.5], 20, ["match", ["get", "class"], "major", 40, "secondary", 30, "minor", 20, 12]] }} />
+                <Layer id="osm-roads" type="line" filter={["all", ["==", ["get", "kind"], "road"], ["!=", ["get", "class"], "path"]]} layout={{ visibility: aerial ? "none" : flat, "line-cap": "round", "line-join": "round" }} paint={{ "line-color": ["match", ["get", "class"], "major", "#52525b", "secondary", "#3f3f46", "#2e2e33"], "line-width": ["interpolate", ["exponential", 1.6], ["zoom"], 14, ["match", ["get", "class"], "major", 2.5, "secondary", 1.8, 0.8], 20, ["match", ["get", "class"], "major", 36, "secondary", 26, "minor", 17, 10]] }} />
+                <Layer id="osm-paths" type="line" minzoom={15} filter={["all", ["==", ["get", "kind"], "road"], ["==", ["get", "class"], "path"]]} layout={{ visibility: flat }} paint={{ "line-color": aerial ? "#e4e4e7" : "#3f3f46", "line-opacity": aerial ? 0.35 : 1, "line-width": ["interpolate", ["linear"], ["zoom"], 15, 0.6, 20, 2.5], "line-dasharray": [2, 1.5] }} />
+                <Layer id="osm-rail" type="line" filter={["==", ["get", "kind"], "railway"]} layout={{ visibility: aerial ? "none" : flat }} paint={{ "line-color": "#52525b", "line-width": 1.5, "line-dasharray": [3, 2] }} />
+                <Layer id="osm-buildings" type="fill" filter={["==", ["get", "kind"], "building"]} layout={{ visibility: aerial || is3D ? "none" : "visible" }} paint={{ "fill-color": "#1c1c20", "fill-outline-color": "#3f3f46" }} />
+            </Source>}
             {context3D && <Source id="city-3d" type="geojson" data={context3D}>
                 <Layer id="osm-buildings-3d" type="fill-extrusion" layout={{ visibility: is3D && !(showRelief && reliefState === "ready") ? "visible" : "none" }} paint={{ "fill-extrusion-color": "#27272a", "fill-extrusion-height": ["case", ["has", "height"], ["to-number", ["get", "height"], 8], ["has", "building_levels"], ["*", ["to-number", ["get", "building_levels"], 2], STOREY_M], 8], "fill-extrusion-opacity": 0.85 }} />
             </Source>}

@@ -277,17 +277,21 @@ bool scanCovered(vec2 uv) {
         map?.triggerRepaint();
     };
 
-    // Cells in view (with a quarter of a view around it), the closest to its centre first.
+    // Cells in view (with a quarter of a view around it) first, then all the others, each
+    // group from the centre of the view outwards: the whole relief ends up loaded.
     const schedule = () => {
         if (!map || disposed || !scanLoaded || !pending.size) return;
         const bounds = map.getBounds();
         const center = map.getCenter();
         const marginX = (bounds.getEast() - bounds.getWest()) / 4, marginY = (bounds.getNorth() - bounds.getSouth()) / 4;
-        const visible = [...pending.values()].filter(({ bounds: [west, south, east, north] }) =>
-            east >= bounds.getWest() - marginX && west <= bounds.getEast() + marginX && north >= bounds.getSouth() - marginY && south <= bounds.getNorth() + marginY);
-        const distance = ({ bounds: [west, south, east, north] }: ReliefTile) => Math.hypot((west + east) / 2 - center.lng, (south + north) / 2 - center.lat);
-        visible.sort((a, b) => distance(a) - distance(b));
-        for (const tile of visible) {
+        const inView = ({ bounds: [west, south, east, north] }: ReliefTile) =>
+            east >= bounds.getWest() - marginX && west <= bounds.getEast() + marginX && north >= bounds.getSouth() - marginY && south <= bounds.getNorth() + marginY;
+        const priority = (tile: ReliefTile) => {
+            const [west, south, east, north] = tile.bounds;
+            return (inView(tile) ? 0 : 1) + Math.hypot((west + east) / 2 - center.lng, (south + north) / 2 - center.lat);
+        };
+        const ordered = [...pending.values()].map(tile => ({ tile, rank: priority(tile) })).sort((a, b) => a.rank - b.rank).map(({ tile }) => tile);
+        for (const tile of ordered) {
             if (loading >= WORKERS) return;
             pending.delete(tile.path);
             if (hiddenByScan(tile)) continue;

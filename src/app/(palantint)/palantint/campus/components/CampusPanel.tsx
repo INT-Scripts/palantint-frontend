@@ -7,11 +7,13 @@ import BuildingOutline from "@/components/palantint/BuildingOutline";
 import { floorName, type CampusBuilding as Building, type Place } from "@/lib/campus";
 import type { RentRange, ResidenceSummary } from "@/lib/campusData";
 import { timetableHref } from "@/lib/timetableContext";
+import PlaceAgenda from "./PlaceAgenda";
 
 type ClubLink = { id: string | null; name: string; logo_url?: string | null };
 type Allowances = { scholarship: number | null; non_scholarship: number | null };
 export type ApartmentDetails = { type: string | null; floor: string | null; surface_m2: number | null; rent: number | null; allowances: Allowances; net_rent: Allowances };
 export type PlaceContext = {
+    id: string;
     code: string;
     kind: string;
     occupants: { id: string; first_name: string; last_name: string }[];
@@ -24,8 +26,6 @@ export type DrawnRoom = { plan?: { building: string; floor: string; room: string
 
 const levelLabel = (value: number) => value === 0 ? "RDC" : String(value);
 const naturalOrder = new Intl.Collator("fr", { numeric: true, sensitivity: "base" });
-const eventDay = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short" });
-const eventTime = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
 const euros = (value: number | null) => value === null ? "—" : `${value} €`;
 const rentRange = (range: RentRange) => !range ? "—" : range.min === range.max ? euros(range.min) : `${range.min}–${range.max} €`;
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
@@ -126,9 +126,7 @@ export default function CampusPanel({ building, buildingFeature, level, levelCou
             <button onClick={onCloseBuilding} title="Quitter le bâtiment" aria-label="Quitter le bâtiment" className="p-1 text-zinc-500 hover:text-white"><X className="h-4 w-4" /></button>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto">
-            {building && !!residences.length && <div className="px-5 pb-4">{place
-                ? <div className="flex flex-wrap gap-2">{residences.map(residence => <div key={residence.code} className="flex border border-zinc-800"><span className="flex items-center gap-2 px-3 py-2 font-mono text-xs text-housing-400"><Building2 className="h-4 w-4" />{residence.code}</span>{residence.laundry && <LaundryLink code={residence.code} />}</div>)}</div>
-                : <ResidenceSummaries building={building} housing={housing} />}</div>}
+            {building && !place && !!residences.length && <div className="px-5 pb-4"><ResidenceSummaries building={building} housing={housing} /></div>}
             {place ? <>
                 <div className="flex flex-wrap gap-4 border-t border-zinc-800/80 px-5 py-4">
                     {context?.agenda_room && <Action href={timetableHref({ room: context.agenda_room, week: new Date() })} icon={CalendarDays} label="Agenda" tone="text-timetable-400" />}
@@ -143,12 +141,6 @@ export default function CampusPanel({ building, buildingFeature, level, levelCou
                         {clubs.map(club => <ClubRow key={club.id || club.name} club={club} />)}
                     </div>
                 </Section>}
-                {!!context?.events.length && <Section title="Prochains événements">
-                    <ul className="space-y-1">{context.events.slice(0, 8).map(event => <li key={event.id}><Link href={timetableHref({ room: context.agenda_room, week: new Date(event.start_time) })} className="flex items-baseline gap-3 p-2 text-sm hover:bg-zinc-900">
-                        <span className="w-24 shrink-0 font-mono text-[11px] text-zinc-500">{eventDay.format(new Date(event.start_time))}<br />{eventTime.format(new Date(event.start_time))}–{eventTime.format(new Date(event.end_time))}</span>
-                        <span className="text-zinc-200">{event.name}</span>
-                    </Link></li>)}</ul>
-                </Section>}
                 <Section title="Informations">
                     <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
                         {building && <><dt className="text-zinc-500">Bâtiment</dt><dd className="text-zinc-200">{building.name}</dd></>}
@@ -162,6 +154,8 @@ export default function CampusPanel({ building, buildingFeature, level, levelCou
                     </dl>
                     {p!.description && <p className="mt-3 text-sm leading-relaxed text-zinc-400">{p!.description}</p>}
                 </Section>
+                {/* Below the place information, at a limited height, so both stay in view. */}
+                {context?.agenda_room && <Section title="Agenda"><PlaceAgenda locationId={context.id} agendaRoom={context.agenda_room} upcoming={context.events} /></Section>}
             </> : building && <Section title={`Lieux · ${floorName(level)}`}>
                 {rooms.length ? <ul className="space-y-0.5">{[...rooms].sort((a, b) => naturalOrder.compare(a.properties.name || "", b.properties.name || "")).map(room => <li key={String(room.id)}>
                     <button onClick={() => onSelect(room)} className="flex w-full items-center gap-3 p-2 text-left text-sm text-zinc-300 hover:bg-zinc-900 hover:text-white"><MapPin className="h-3.5 w-3.5 shrink-0 text-campus-400" /><span className="truncate">{room.properties.name}</span>{room.properties.source === "plan" && <span className="ml-auto shrink-0 font-mono text-[9px] uppercase text-zinc-600">plan</span>}</button>

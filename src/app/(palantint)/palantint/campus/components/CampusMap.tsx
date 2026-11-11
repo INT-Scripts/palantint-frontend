@@ -14,7 +14,7 @@ import { fetchPrivate } from "@/lib/api";
 import { floorName, normalizePlace as text, isCampusDestination, campusDestinations, type Place as PlanFeature, type CampusPlans as Plans, type CampusBuilding as Building, type PlaceProperties as Properties } from "@/lib/campus";
 import { createReliefLayer } from "./reliefLayer";
 import CampusPanel, { type DrawnRoom, type PlaceContext as Context } from "./CampusPanel";
-import { NavigationControls, ViewSwitch, type CampusView } from "./MapControls";
+import { NavigationControls, PanelSheet, ViewSwitch, type CampusView } from "./MapControls";
 
 type Viewport = { west: number; east: number; north: number; south: number; zoom: number; width: number; height: number };
 
@@ -186,6 +186,14 @@ export default function CampusMap() {
             .catch(() => { if (active) setContextResponse({ locationId: selectedLocationId, data: null }); });
         return () => { active = false; controller.abort(); };
     }, [selectedLocationId]);
+
+    // Context sources often arrive after the campus plans, and a late source is added on top:
+    // keep their layers under the campus ones, in their declared order.
+    useEffect(() => {
+        const map = mapRef.current?.getMap();
+        if (!loaded || !map?.getLayer("grounds")) return;
+        for (const id of ["osm-landuse", "osm-water", "osm-waterway", "aerial", "osm-road-casing", "osm-roads", "osm-paths", "osm-rail", "osm-buildings"]) if (map.getLayer(id)) map.moveLayer(id, "grounds");
+    }, [loaded, basemap, aerialIndex]);
 
     // The campus scan and the surrounding relief load the first time the 3D view needs them, then stay in the map.
     const showRelief = is3D;
@@ -363,23 +371,8 @@ export default function CampusMap() {
             onLoad={() => { setLoaded(true); updateViewport(); }} onMoveEnd={updateViewport} onRotate={event => setBearing(event.viewState.bearing)}
             interactiveLayerIds={is3D ? ["rooms-3d", "campus-buildings-3d", "destination-points"] : ["destinations", "destination-points", "buildings"]}
             onMouseMove={hover} onMouseLeave={() => hover()} onClick={onClick}
-            onError={() => setError("Le rendu de la carte a échoué. Vérifiez que WebGL est disponible dans votre navigateur.")}
+            onError={event => { console.error("Carte du campus :", event.error); setError("Le rendu de la carte a échoué. Vérifiez que WebGL est disponible dans votre navigateur."); }}
             transformRequest={transformRequest} maxZoom={23} minZoom={13} maxPitch={75} dragRotate={is3D} touchPitch={is3D} pitchWithRotate={is3D} attributionControl={false}>
-            {basemap && <Source id="basemap" type="geojson" data={basemap}>
-                <Layer id="osm-landuse" type="fill" filter={["in", ["get", "kind"], ["literal", ["landuse", "vegetation", "leisure", "parking", "pedestrian_area"]]]} layout={{ visibility: aerial ? "none" : flat }} paint={{ "fill-color": ["match", ["get", "kind"], "vegetation", "#0f1f17", "leisure", "#112419", "parking", "#16161a", "pedestrian_area", "#1a1a1e", "#121214"], "fill-opacity": 0.9 }} />
-                <Layer id="osm-water" type="fill" filter={["==", ["get", "kind"], "water"]} layout={{ visibility: aerial ? "none" : flat }} paint={{ "fill-color": "#0c1b2c" }} />
-                <Layer id="osm-waterway" type="line" filter={["==", ["get", "kind"], "waterway"]} layout={{ visibility: aerial ? "none" : flat }} paint={{ "line-color": "#13314f", "line-width": 2 }} />
-            </Source>}
-            {aerialIndex && <Source id="aerial" type="raster" tiles={[`${typeof window === "undefined" ? "" : window.location.origin}/api/private/maps/indoor/aerial/{z}/{x}/{y}.jpg`]} tileSize={256} minzoom={aerialIndex.minzoom} maxzoom={aerialIndex.maxzoom} bounds={aerialIndex.bounds}>
-                <Layer id="aerial" type="raster" layout={{ visibility: aerial ? flat : "none" }} paint={{ "raster-opacity": 0.92, "raster-saturation": -0.25, "raster-brightness-max": 0.85 }} />
-            </Source>}
-            {basemap && <Source id="basemap-lines" type="geojson" data={basemap}>
-                <Layer id="osm-road-casing" type="line" minzoom={14} filter={["all", ["==", ["get", "kind"], "road"], ["!=", ["get", "class"], "path"]]} layout={{ visibility: aerial ? "none" : flat, "line-cap": "round", "line-join": "round" }} paint={{ "line-color": "#09090b", "line-width": ["interpolate", ["exponential", 1.6], ["zoom"], 14, ["match", ["get", "class"], "major", 4, "secondary", 3, 1.5], 20, ["match", ["get", "class"], "major", 40, "secondary", 30, "minor", 20, 12]] }} />
-                <Layer id="osm-roads" type="line" filter={["all", ["==", ["get", "kind"], "road"], ["!=", ["get", "class"], "path"]]} layout={{ visibility: aerial ? "none" : flat, "line-cap": "round", "line-join": "round" }} paint={{ "line-color": ["match", ["get", "class"], "major", "#52525b", "secondary", "#3f3f46", "#2e2e33"], "line-width": ["interpolate", ["exponential", 1.6], ["zoom"], 14, ["match", ["get", "class"], "major", 2.5, "secondary", 1.8, 0.8], 20, ["match", ["get", "class"], "major", 36, "secondary", 26, "minor", 17, 10]] }} />
-                <Layer id="osm-paths" type="line" minzoom={15} filter={["all", ["==", ["get", "kind"], "road"], ["==", ["get", "class"], "path"]]} layout={{ visibility: flat }} paint={{ "line-color": aerial ? "#e4e4e7" : "#3f3f46", "line-opacity": aerial ? 0.35 : 1, "line-width": ["interpolate", ["linear"], ["zoom"], 15, 0.6, 20, 2.5], "line-dasharray": [2, 1.5] }} />
-                <Layer id="osm-rail" type="line" filter={["==", ["get", "kind"], "railway"]} layout={{ visibility: aerial ? "none" : flat }} paint={{ "line-color": "#52525b", "line-width": 1.5, "line-dasharray": [3, 2] }} />
-                <Layer id="osm-buildings" type="fill" filter={["==", ["get", "kind"], "building"]} layout={{ visibility: aerial || is3D ? "none" : "visible" }} paint={{ "fill-color": "#1c1c20", "fill-outline-color": "#3f3f46" }} />
-            </Source>}
             <Source id="campus" type="geojson" data={renderData} promoteId="source_feature_id">
                 <Layer id="grounds" type="fill" filter={["all", isPolygon, ["==", ["get", "kind"], "structure"]]} layout={{ visibility: aerial ? "none" : flat }} paint={{ "fill-color": ["case", ["has", "landuse"], "#12281d", ["has", "leisure"], "#1b263b", "#17202a"], "fill-opacity": 0.65, "fill-outline-color": "#334155" }} />
                 <Layer id="buildings" type="fill" filter={["==", ["get", "kind"], "building"]} layout={{ visibility: flat }} paint={{ "fill-color": "#27272a", "fill-opacity": aerial ? 0.25 : 0.8, "fill-outline-color": aerial ? "#e4e4e7" : "#71717a" }} />
@@ -398,21 +391,36 @@ export default function CampusMap() {
                 <Layer id="building-shell-3d" type="fill-extrusion" filter={["all", isPolygon, ["==", ["get", "kind"], "building"], ["==", ["to-string", ["get", "building_id"]], buildingId || ""]]} layout={{ visibility: is3D && building ? "visible" : "none" }} paint={{ "fill-extrusion-color": "#a78bfa", "fill-extrusion-height": ["get", "base_m"], "fill-extrusion-opacity": 0.25 }} />
                 <Layer id="rooms-3d" type="fill-extrusion" filter={roomFilter} layout={{ visibility: is3D && building ? "visible" : "none" }} paint={{ "fill-extrusion-color": ["case", ["==", ["get", "source_feature_id"], selectedId], "#fbbf24", ["boolean", ["feature-state", "hover"], false], "#67e8f9", ["==", ["get", "kind"], "room"], ["case", ["==", ["get", "actionable"], true], "#0e7490", "#3f3f46"], "#52525b"], "fill-extrusion-base": ["get", "base_m"], "fill-extrusion-height": ["+", ["get", "base_m"], ["case", ["==", ["get", "kind"], "room"], 2.6, 0.4]], "fill-extrusion-opacity": 0.88 }} />
             </Source>
+            {basemap && <Source id="basemap" type="geojson" data={basemap}>
+                <Layer id="osm-landuse" type="fill" filter={["in", ["get", "kind"], ["literal", ["landuse", "vegetation", "leisure", "parking", "pedestrian_area"]]]} layout={{ visibility: aerial ? "none" : flat }} paint={{ "fill-color": ["match", ["get", "kind"], "vegetation", "#0f1f17", "leisure", "#112419", "parking", "#16161a", "pedestrian_area", "#1a1a1e", "#121214"], "fill-opacity": 0.9 }} />
+                <Layer id="osm-water" type="fill" filter={["==", ["get", "kind"], "water"]} layout={{ visibility: aerial ? "none" : flat }} paint={{ "fill-color": "#0c1b2c" }} />
+                <Layer id="osm-waterway" type="line" filter={["==", ["get", "kind"], "waterway"]} layout={{ visibility: aerial ? "none" : flat }} paint={{ "line-color": "#13314f", "line-width": 2 }} />
+            </Source>}
+            {aerialIndex && <Source id="aerial" type="raster" tiles={[`${typeof window === "undefined" ? "" : window.location.origin}/api/private/maps/indoor/aerial/{z}/{x}/{y}.jpg`]} tileSize={256} minzoom={aerialIndex.minzoom} maxzoom={aerialIndex.maxzoom} bounds={aerialIndex.bounds}>
+                <Layer id="aerial" type="raster" layout={{ visibility: aerial ? flat : "none" }} paint={{ "raster-opacity": 0.92, "raster-saturation": -0.25, "raster-brightness-max": 0.85 }} />
+            </Source>}
+            {basemap && <Source id="basemap-lines" type="geojson" data={basemap}>
+                <Layer id="osm-road-casing" type="line" minzoom={14} filter={["all", ["==", ["get", "kind"], "road"], ["!=", ["get", "class"], "path"]]} layout={{ visibility: aerial ? "none" : flat, "line-cap": "round", "line-join": "round" }} paint={{ "line-color": "#09090b", "line-width": ["interpolate", ["exponential", 1.6], ["zoom"], 14, ["match", ["get", "class"], "major", 4, "secondary", 3, 1.5], 20, ["match", ["get", "class"], "major", 40, "secondary", 30, "minor", 20, 12]] }} />
+                <Layer id="osm-roads" type="line" filter={["all", ["==", ["get", "kind"], "road"], ["!=", ["get", "class"], "path"]]} layout={{ visibility: aerial ? "none" : flat, "line-cap": "round", "line-join": "round" }} paint={{ "line-color": ["match", ["get", "class"], "major", "#52525b", "secondary", "#3f3f46", "#2e2e33"], "line-width": ["interpolate", ["exponential", 1.6], ["zoom"], 14, ["match", ["get", "class"], "major", 2.5, "secondary", 1.8, 0.8], 20, ["match", ["get", "class"], "major", 36, "secondary", 26, "minor", 17, 10]] }} />
+                <Layer id="osm-paths" type="line" minzoom={15} filter={["all", ["==", ["get", "kind"], "road"], ["==", ["get", "class"], "path"]]} layout={{ visibility: flat }} paint={{ "line-color": aerial ? "#e4e4e7" : "#3f3f46", "line-opacity": aerial ? 0.35 : 1, "line-width": ["interpolate", ["linear"], ["zoom"], 15, 0.6, 20, 2.5], "line-dasharray": [2, 1.5] }} />
+                <Layer id="osm-rail" type="line" filter={["==", ["get", "kind"], "railway"]} layout={{ visibility: aerial ? "none" : flat }} paint={{ "line-color": "#52525b", "line-width": 1.5, "line-dasharray": [3, 2] }} />
+                <Layer id="osm-buildings" type="fill" filter={["==", ["get", "kind"], "building"]} layout={{ visibility: aerial || is3D ? "none" : "visible" }} paint={{ "fill-color": "#1c1c20", "fill-outline-color": "#3f3f46" }} />
+            </Source>}
             {context3D && <Source id="city-3d" type="geojson" data={context3D}>
                 <Layer id="osm-buildings-3d" type="fill-extrusion" layout={{ visibility: is3D && !(showRelief && reliefState === "ready") ? "visible" : "none" }} paint={{ "fill-extrusion-color": "#27272a", "fill-extrusion-height": ["case", ["has", "height"], ["to-number", ["get", "height"], 8], ["has", "building_levels"], ["*", ["to-number", ["get", "building_levels"], 2], STOREY_M], 8], "fill-extrusion-opacity": 0.85 }} />
             </Source>}
             {visibleLabels.map(label => <Marker key={label.id} ref={marker => { if (marker) { const element = marker.getElement(); element.setAttribute("aria-hidden", "true"); element.setAttribute("role", "presentation"); element.tabIndex = -1; } }} style={{ pointerEvents: "none" }} longitude={label.xy[0]} latitude={label.xy[1]}><span className={`pointer-events-none block max-w-32 text-center text-[10px] leading-tight ${label.kind === "building" ? "bg-zinc-950/90 p-1 font-bold text-white" : label.kind === "road" ? "bg-zinc-950/70 px-1 italic text-zinc-400" : "bg-zinc-950/80 px-1 text-sky-100"}`}>{label.name}</span></Marker>)}
         </Map>
-        {offMap && <div className="absolute inset-0 z-[5] bg-zinc-950 max-sm:bottom-[58%] sm:left-[380px]">
+        {offMap && <div className="absolute inset-0 z-[5] bg-zinc-950 max-sm:bottom-[38%] sm:left-[380px]">
             <FloorPlanCanvas plan={offMapPlan} selectedRoom={selected?.properties.room_id as string | undefined} className="h-full" controlsClassName="left-3 top-3 max-sm:top-[68px]"
                 onSelectRoom={id => { const room = localFeatures.find(feature => feature.properties.building_id === offMap.code && feature.properties.room_id === id && feature.properties.levels.includes(level)); if (room) select(room); }} />
             <p className="pointer-events-none absolute bottom-3 right-3 bg-zinc-950/90 px-2 py-1 text-[10px] text-zinc-500 max-sm:hidden">Résidence hors campus · plan non géolocalisé</p>
         </div>}
         <div ref={hoverLabel} hidden className="pointer-events-none absolute left-0 top-0 z-30 max-w-40 rounded-none border border-zinc-800 bg-zinc-950/95 px-2.5 py-1.5 text-xs text-white shadow-xl" />
-        {panelOpen && <div className="absolute inset-x-0 bottom-0 z-20 max-h-[58%] sm:inset-x-auto sm:left-0 sm:top-0 sm:max-h-none sm:w-[380px] sm:pt-[76px] sm:bg-zinc-950/95">
+        {panelOpen && <PanelSheet>
             <CampusPanel building={building} buildingFeature={buildingFeature} level={level} levelCount={levels.length} rooms={floorRooms} selected={selected} context={context ?? null} loadingContext={loadingContext} drawnRoom={drawnRoom} housing={housing} copied={copied}
                 onSelect={select} onCloseBuilding={() => focusBuilding(null)} onClosePlace={closePlace} onCopy={copyLink} />
-        </div>}
+        </PanelSheet>}
         <div className="absolute left-3 top-3 z-30 w-[min(352px,calc(100%-24px))] sm:left-3.5 sm:top-4">
             <div className="relative rounded-none border border-zinc-800 bg-zinc-950/95 shadow-xl backdrop-blur-xl">
                 <Search className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-zinc-500" />

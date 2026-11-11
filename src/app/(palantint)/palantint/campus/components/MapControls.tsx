@@ -1,9 +1,30 @@
 "use client";
 
-import type { ComponentType } from "react";
+import { useRef, useState, type ComponentType, type ReactNode } from "react";
 import { Box, LocateFixed, Map as MapIcon, Minus, Navigation2, Plus, Satellite, Tags } from "lucide-react";
 
 export type CampusView = "plan" | "satellite" | "3d";
+
+/**
+ * Side panel on desktop; on phones a bottom sheet with two sizes: a short one that
+ * leaves the map usable, and a tall one for reading. Tap or drag the handle to switch.
+ * It mounts with the selection, so it always opens short and is absent without focus.
+ */
+export function PanelSheet({ children }: { children: ReactNode }) {
+    const [tall, setTall] = useState(false);
+    const drag = useRef<{ y: number; moved: boolean } | null>(null);
+    return <div className={`absolute inset-x-0 bottom-0 z-20 flex flex-col transition-[height] duration-200 ${tall ? "h-[88%]" : "h-[38%]"} sm:inset-x-auto sm:left-0 sm:top-0 sm:h-auto sm:w-[380px] sm:pt-[76px] sm:bg-zinc-950/95 sm:transition-none`}>
+        <button aria-label={tall ? "Réduire le panneau" : "Agrandir le panneau"} aria-expanded={tall} title={tall ? "Réduire" : "Agrandir"}
+            onPointerDown={event => { drag.current = { y: event.clientY, moved: false }; event.currentTarget.setPointerCapture(event.pointerId); }}
+            onPointerMove={event => { const start = drag.current; if (start && Math.abs(event.clientY - start.y) > 24) { start.moved = true; setTall(event.clientY < start.y); } }}
+            onPointerUp={() => { if (drag.current && !drag.current.moved) setTall(!tall); drag.current = null; }}
+            onPointerCancel={() => { drag.current = null; }}
+            className="flex h-7 w-full shrink-0 touch-none items-center justify-center border-t border-zinc-800 bg-zinc-950/95 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-campus-400 sm:hidden">
+            <span className="h-1 w-10 bg-zinc-600" />
+        </button>
+        <div className="min-h-0 flex-1">{children}</div>
+    </div>;
+}
 
 const VIEWS: { value: CampusView; label: string; title: string; icon: ComponentType<{ className?: string }> }[] = [
     { value: "plan", label: "Plan", title: "Plan du campus", icon: MapIcon },

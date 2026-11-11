@@ -1,5 +1,5 @@
 import { fetchPrivate } from "./api";
-import type { FeatureCollection, Geometry } from "geojson";
+import type { Feature, FeatureCollection, Geometry } from "geojson";
 import type { CampusPlans, CampusBuilding, PlaceProperties } from "./campus";
 
 type Match = { feature_id: string; building_id: number | null; levels: number[] };
@@ -32,6 +32,9 @@ export const resolveCampusRoom = (room: string) => referenceRequest<{ building: 
 export type DrawnPlans = FeatureCollection<Geometry, PlaceProperties> & { metadata: { superseded: string[]; plans: { plan: string; building: string; floor: string; level: number | null; building_id: number | null; method: string; rms_m?: number }[] } };
 export type AerialIndex = { attribution: string; minzoom: number; maxzoom: number; bounds: [number, number, number, number] };
 export type BasemapData = FeatureCollection<Geometry, Record<string, string | number>> & { metadata: { attribution: string } };
+// Residences without any placed floor (U6 is off campus): drawings in plan coordinates,
+// features carry `plan_geometry` and no geographic geometry.
+export type LocalPlans = { buildings: { code: string; laundry: boolean; floors: { plan: string; floor: string; level: number; view_box: number[] }[] }[]; features: (Omit<Feature<Geometry, PlaceProperties>, "geometry"> & { geometry: null })[] };
 export type RentRange = { min: number; max: number } | null;
 export type ResidenceSummary = { apartments: number; occupied: number; rent: RentRange; types: { type: string; count: number; rent: RentRange }[] };
 
@@ -42,6 +45,7 @@ export const loadCampusContext = () => Promise.all([
     optional<BasemapData>("/maps/indoor/basemap"),
     optional<AerialIndex>("/maps/indoor/aerial"),
     optional<Record<string, ResidenceSummary>>("/maps/indoor/housing"),
+    optional<LocalPlans>("/maps/indoor/local-plans"),
 ]);
 export type ReliefTile = { z: number; x: number; y: number; lod: "detail" | "context"; path: string; bounds: [number, number, number, number] };
 export type ReliefIndex = { attribution: string; tiles: ReliefTile[] };

@@ -7,7 +7,9 @@ import type { Feature, FeatureCollection, Geometry, Position } from "geojson";
 import type { ExpressionSpecification, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Search, X, MapPin, Layers, Loader2, ArrowRight, Building2 } from "lucide-react";
-import { loadCampus, loadCampusContext, loadSurfaces, resolveCampusRoom, type AerialIndex, type BasemapData, type DrawnPlans, type ResidenceSummary } from "@/lib/campusData";
+import { loadCampus, loadCampusContext, loadSurfaces, resolveCampusRoom, type AerialIndex, type BasemapData, type DrawnPlans, type LocalPlans, type ResidenceSummary } from "@/lib/campusData";
+import FloorPlanCanvas from "@/components/FloorPlanCanvas";
+import type { FloorPlan } from "@/lib/planGeometry";
 import { fetchPrivate } from "@/lib/api";
 import { floorName, normalizePlace as text, isCampusDestination, campusDestinations, type Place as PlanFeature, type CampusPlans as Plans, type CampusBuilding as Building, type PlaceProperties as Properties } from "@/lib/campus";
 import { createReliefLayer } from "./reliefLayer";
@@ -52,6 +54,7 @@ export default function CampusMap() {
     const [basemap, setBasemap] = useState<BasemapData | null>(null);
     const [aerialIndex, setAerialIndex] = useState<AerialIndex | null>(null);
     const [housing, setHousing] = useState<Record<string, ResidenceSummary> | null>(null);
+    const [localPlans, setLocalPlans] = useState<LocalPlans | null>(null);
     const [error, setError] = useState("");
     const [search, setSearch] = useState("");
     const [contextResponse, setContextResponse] = useState<{ locationId: string; data: Context | null } | null>(null);
@@ -79,14 +82,20 @@ export default function CampusMap() {
         loadCampus()
             .then(([data, manifest]) => { if (active) { setPlans(data); setBuildings(manifest.buildings); } })
             .catch(() => { if (active) setError("Les plans du campus ne sont pas disponibles pour le moment."); });
-        loadCampusContext().then(([drawnPlans, osm, aerialTiles, residences]) => { if (active) { setDrawn(drawnPlans); setBasemap(osm); setAerialIndex(aerialTiles); setHousing(residences); } });
+        loadCampusContext().then(([drawnPlans, osm, aerialTiles, residences, offMap]) => { if (active) { setDrawn(drawnPlans); setBasemap(osm); setAerialIndex(aerialTiles); setHousing(residences); setLocalPlans(offMap); } });
         return () => { active = false; };
     }, [retry]);
 
     // Historical drawings replace the Wemap rooms they cover; their room numbers are authoritative.
     const superseded = useMemo(() => new Set(drawn?.metadata.superseded || []), [drawn]);
     const drawnFeatures = useMemo(() => (drawn?.features || []).map(feature => ({ ...feature, properties: { ...feature.properties, source_feature_id: String(feature.id), selectable: feature.properties.kind === "room" } })) as PlanFeature[], [drawn]);
-    const featureIndex = useMemo(() => new globalThis.Map([...(plans?.features || []), ...drawnFeatures].map(feature => [String(feature.id), feature])), [plans, drawnFeatures]);
+    // Residences without any placed floor (U6 is off campus) keep their drawings in plan
+    // coordinates: same identifiers, panel and search, but drawn on a canvas instead of the map.
+    const localFeatures = useMemo(() => [
+        ...(localPlans?.buildings || []).map(item => ({ type: "Feature", id: `local:${item.code}`, geometry: { type: "Point", coordinates: [0, 0] }, properties: { source_feature_id: `local:${item.code}`, kind: "building", name: item.code, building_id: item.code, levels: [], selectable: true } })),
+        ...(localPlans?.features || []).map(feature => ({ ...feature, geometry: feature.properties.plan_geometry, properties: { ...feature.properties, source_feature_id: String(feature.id), selectable: feature.properties.kind === "room" } })),
+    ] as PlanFeature[], [localPlans]);
+    const featureIndex = useMemo(() => new globalThis.Map([...(plans?.features || []), ...drawnFeatures, ...localFeatures].map(feature => [String(feature.id), feature])), [plans, drawnFeatures, localFeatures]);
     const drawnLevels = useMemo(() => {
         const levels = new globalThis.Map<string, number[]>();
         for (const plan of drawn?.metadata.plans || []) if (plan.building_id !== null && plan.level !== null) levels.set(String(plan.building_id), [...(levels.get(String(plan.building_id)) || []), plan.level]);
@@ -108,16 +117,18 @@ export default function CampusMap() {
             if (levels.length) next.set("level", String(levels[0]));
             window.history.replaceState(null, "", `${pathname}?${next}`);
         };
-        const local = drawnFeatures.filter(feature => feature.properties.kind === "room" && text(feature.properties.name || "") === text(roomQuery));
+        const local = [...drawnFeatures, ...localFeatures].filter(feature => feature.properties.kind === "room" && text(feature.properties.name || "") === text(roomQuery));
         if (local.length === 1) { select(String(local[0].id), local[0].properties.building_id, local[0].properties.levels); return; }
         resolveCampusRoom(roomQuery).then(target => {
             if (active && (target.feature || target.building)) select(target.feature, target.building, target.level === null ? [] : [target.level]);
         }).catch(() => {});
         return () => { active = false; };
-    }, [roomQuery, featureQuery, pathname, drawnFeatures]);
+    }, [roomQuery, featureQuery, pathname, drawnFeatures, localFeatures]);
 
     const buildingQuery = params.get("building") || (selected?.properties.building_id ? String(selected.properties.building_id) : null);
-    const building = useMemo(() => buildings.find(item => item.id === buildingQuery || item.name.toLowerCase() === buildingQuery?.toLowerCase() || (buildingQuery && item.residences?.some(residence => residence.code === buildingQuery.toUpperCase()))), [buildings, buildingQuery]);
+    const offMap = localPlans?.buildings.find(item => item.code === buildingQuery?.toUpperCase());
+    const building = useMemo(() => buildings.find(item => item.id === buildingQuery || item.name.toLowerCase() === buildingQuery?.toLowerCase() || (buildingQuery && item.residences?.some(residence => residence.code === buildingQuery.toUpperCase())))
+        ?? (offMap ? { id: offMap.code, name: offMap.code, levels: offMap.floors.map(floor => floor.level), rooms: 0, residences: [{ code: offMap.code, laundry: offMap.laundry }] } : undefined), [buildings, buildingQuery, offMap]);
     const levels = useMemo(() => [...new Set([...(building?.levels || []), ...(building ? drawnLevels.get(building.id) || [] : [])])].sort((a, b) => a - b), [building, drawnLevels]);
     const requestedLevel = Number(params.get("level") ?? selected?.properties.levels[0] ?? 0);
     const level = levels.includes(requestedLevel) ? requestedLevel : levels.includes(0) ? 0 : levels[0] ?? 0;
@@ -197,7 +208,7 @@ export default function CampusMap() {
     }, [showRelief, building, reliefState]);
     useEffect(() => () => { reliefLayer.current = null; }, []);
 
-    const destinations = useMemo(() => campusDestinations([...(plans?.features.filter(feature => !superseded.has(String(feature.id))) || []), ...drawnFeatures]), [plans, drawnFeatures, superseded]);
+    const destinations = useMemo(() => campusDestinations([...(plans?.features.filter(feature => !superseded.has(String(feature.id))) || []), ...drawnFeatures, ...localFeatures]), [plans, drawnFeatures, localFeatures, superseded]);
     const destinationIds = useMemo(() => new Set(destinations.map(feature => String(feature.id))), [destinations]);
     const searchIndex = useMemo(() => destinations.map(feature => ({ feature, query: text(`${feature.properties.name} ${(feature.properties.tag_names || []).join(" ")}`) })), [destinations]);
     const searchResults = useMemo(() => {
@@ -336,6 +347,13 @@ export default function CampusMap() {
     const buildingFeature = building?.feature_id ? featureIndex.get(building.feature_id) : undefined;
     const floorRooms = useMemo(() => buildingId ? destinations.filter(feature => String(feature.properties.building_id) === buildingId && feature.properties.kind !== "building" && feature.properties.levels.includes(level)) : [], [destinations, buildingId, level]);
     const showResults = searchOpen && (!!search.trim() || !buildingId);
+    const offMapFloor = offMap?.floors.find(floor => floor.level === level);
+    const offMapPlan = useMemo<FloorPlan | null>(() => offMapFloor ? {
+        type: "FeatureCollection",
+        metadata: { schema_version: 1, building: offMap!.code, floor: offMapFloor.floor, plan_coordinate_space: "local_plan", view_box: offMapFloor.view_box, georeferenced: false, room_count: 0, unresolved_rooms: [] },
+        features: (localPlans?.features || []).filter(feature => feature.properties.building_id === offMap!.code && feature.properties.levels.includes(level))
+            .map(feature => ({ type: "Feature", id: String(feature.id), geometry: null, properties: { kind: feature.properties.kind as "room" | "wall", building: offMap!.code, floor: offMapFloor.floor, plan_geometry: feature.properties.plan_geometry as Geometry, room_id: feature.properties.room_id as string | undefined, name: feature.properties.name, label_coordinates: feature.properties.label_coordinates } })),
+    } : null, [offMap, offMapFloor, localPlans, level]);
 
     if (error) return <div role="alert" className="border border-zinc-800 p-10 text-zinc-400"><p>{error}</p><button onClick={() => { setError(""); setLoaded(false); setRetry(value => value + 1); }} className="mt-4 border border-zinc-700 p-2 text-white">Réessayer</button></div>;
     if (!plans) return <div className="flex h-full items-center justify-center gap-3 text-zinc-400"><Loader2 className="h-5 w-5 animate-spin" /> Chargement des plans…</div>;
@@ -385,6 +403,11 @@ export default function CampusMap() {
             </Source>}
             {visibleLabels.map(label => <Marker key={label.id} ref={marker => { if (marker) { const element = marker.getElement(); element.setAttribute("aria-hidden", "true"); element.setAttribute("role", "presentation"); element.tabIndex = -1; } }} style={{ pointerEvents: "none" }} longitude={label.xy[0]} latitude={label.xy[1]}><span className={`pointer-events-none block max-w-32 text-center text-[10px] leading-tight ${label.kind === "building" ? "bg-zinc-950/90 p-1 font-bold text-white" : label.kind === "road" ? "bg-zinc-950/70 px-1 italic text-zinc-400" : "bg-zinc-950/80 px-1 text-sky-100"}`}>{label.name}</span></Marker>)}
         </Map>
+        {offMap && <div className="absolute inset-0 z-[5] bg-zinc-950 max-sm:bottom-[58%] sm:left-[380px]">
+            <FloorPlanCanvas plan={offMapPlan} selectedRoom={selected?.properties.room_id as string | undefined} className="h-full" controlsClassName="left-3 top-3 max-sm:top-[68px]"
+                onSelectRoom={id => { const room = localFeatures.find(feature => feature.properties.building_id === offMap.code && feature.properties.room_id === id && feature.properties.levels.includes(level)); if (room) select(room); }} />
+            <p className="pointer-events-none absolute bottom-3 right-3 bg-zinc-950/90 px-2 py-1 text-[10px] text-zinc-500 max-sm:hidden">Résidence hors campus · plan non géolocalisé</p>
+        </div>}
         <div ref={hoverLabel} hidden className="pointer-events-none absolute left-0 top-0 z-30 max-w-40 rounded-none border border-zinc-800 bg-zinc-950/95 px-2.5 py-1.5 text-xs text-white shadow-xl" />
         {panelOpen && <div className="absolute inset-x-0 bottom-0 z-20 max-h-[58%] sm:inset-x-auto sm:left-0 sm:top-0 sm:max-h-none sm:w-[380px] sm:pt-[76px] sm:bg-zinc-950/95">
             <CampusPanel building={building} buildingFeature={buildingFeature} level={level} levelCount={levels.length} rooms={floorRooms} selected={selected} context={context ?? null} loadingContext={loadingContext} drawnRoom={drawnRoom} housing={housing} copied={copied}
@@ -414,15 +437,15 @@ export default function CampusMap() {
             <Layers className="mx-auto my-1 h-3.5 w-3.5 shrink-0 text-zinc-600" />
             {[...levels].reverse().map(value => <button key={value} title={floorName(value)} aria-label={floorName(value)} aria-pressed={level === value} onClick={() => setQuery({ level: String(value), feature: null, room: null })} className={`flex h-10 min-w-10 shrink-0 items-center justify-center rounded-none px-2 text-xs font-semibold transition-colors ${level === value ? "border border-campus-500/60 bg-campus-500/15 text-campus-300" : "text-zinc-500 hover:bg-zinc-900 hover:text-white"}`}>{levelLabel(value)}</button>)}
         </nav>}
-        <div className="absolute bottom-8 right-3 z-10 sm:right-5">
+        {!offMap && <><div className="absolute bottom-8 right-3 z-10 sm:right-5">
             <NavigationControls bearing={bearing} pitched={is3D} labels={labels} onLabels={() => setLabels(!labels)} onOverview={resetView}
                 onZoomIn={() => mapRef.current?.zoomIn()} onZoomOut={() => mapRef.current?.zoomOut()} onNorth={() => mapRef.current?.resetNorth()} />
         </div>
         <div className={`absolute bottom-4 z-20 -translate-x-1/2 ${panelOpen ? "left-1/2 max-sm:hidden sm:left-[calc(50%+190px)]" : "left-1/2"}`}>
             <ViewSwitch view={view} onChange={changeView} available={{ plan: true, satellite: !!aerialIndex, "3d": true }} />
-        </div>
+        </div></>}
         {is3D && reliefState === "loading" && <span className="absolute bottom-16 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 bg-zinc-950/90 px-3 py-1.5 text-[11px] text-zinc-400"><Loader2 className="h-3.5 w-3.5 animate-spin" />Chargement de la 3D…</span>}
         {is3D && reliefState === "missing" && <span className="absolute bottom-16 left-1/2 z-10 -translate-x-1/2 bg-zinc-950/90 px-3 py-1.5 text-[11px] text-zinc-400">Photogrammétrie et relief indisponibles : bâtiments extrudés à partir des plans.</span>}
-        <span title={`Wemap · ${new Date(plans.metadata.extracted_at).toLocaleDateString("fr-FR")}`} className="pointer-events-none absolute bottom-1 right-3 z-10 text-[9px] text-zinc-600 sm:right-5">{attribution}</span>
+        {!offMap && <span title={`Wemap · ${new Date(plans.metadata.extracted_at).toLocaleDateString("fr-FR")}`} className="pointer-events-none absolute bottom-1 right-3 z-10 text-[9px] text-zinc-600 sm:right-5">{attribution}</span>}
     </div>;
 }

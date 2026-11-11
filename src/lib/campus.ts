@@ -6,7 +6,8 @@ export type PlaceProperties = {
     kind: string;
     selectable?: boolean;
     levels: number[];
-    building_id?: number;
+    // Wemap building id; the residence code for a residence drawn apart from the map (U6).
+    building_id?: number | string;
     location_id?: string;
     label_coordinates?: [number, number];
     geometry_area_m2?: number;

@@ -22,6 +22,7 @@ type Props = {
     }[];
     privateView?: boolean;
     className?: string;
+    controlsClassName?: string;
 };
 function pathFor(feature: PlanFeature) {
     const path = new Path2D();
@@ -32,7 +33,7 @@ function pathFor(feature: PlanFeature) {
     }
     return path;
 }
-export default function FloorPlanCanvas({ plan, reference, selectedRoom, filteredRooms, occupied = {}, details = {}, onSelectRoom, onPick, pillars = [], privateView = true, className = '' }: Props) {
+export default function FloorPlanCanvas({ plan, reference, selectedRoom, filteredRooms, occupied = {}, details = {}, onSelectRoom, onPick, pillars = [], privateView = true, className = 'min-h-[420px]', controlsClassName = 'right-3 top-3' }: Props) {
     const { resolvedTheme } = useTheme();
     const dark = privateView || resolvedTheme === 'dark';
     const canvas = useRef<HTMLCanvasElement>(null), host = useRef<HTMLDivElement>(null);
@@ -113,7 +114,7 @@ export default function FloorPlanCanvas({ plan, reference, selectedRoom, filtere
         y: number;
     }) => { const ctx = canvas.current?.getContext('2d'); if (!ctx)
         return null; ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); const found = [...paths].reverse().find(({ feature, path }) => feature.properties.kind === 'room' && (planGeometry(feature).type === 'Point' ? Math.hypot((feature.properties.label_coordinates?.[0] || 0) - point.x, (feature.properties.label_coordinates?.[1] || 0) - point.y) < 15 / scale : ctx.isPointInPath(path, point.x, point.y, 'evenodd'))); ctx.restore(); return found?.feature.properties.room_id || null; };
-    return <div ref={host} className={`relative min-h-[420px] w-full overflow-hidden ${privateView ? 'bg-zinc-950 text-zinc-300' : 'bg-stone-50 text-stone-800 dark:bg-stone-950 dark:text-stone-200'} ${className}`}>
+    return <div ref={host} className={`relative w-full overflow-hidden ${privateView ? 'bg-zinc-950 text-zinc-300' : 'bg-stone-50 text-stone-800 dark:bg-stone-950 dark:text-stone-200'} ${className}`}>
   {!plan ? <p role="status" className="p-6 text-sm">Plan GeoJSON indisponible.</p> : <>
    <canvas ref={canvas} aria-label={`Plan ${plan.metadata.building}, étage ${plan.metadata.floor}`} className="absolute inset-0 h-full w-full touch-none" onPointerDown={event => { drag.current = { x: event.clientX, y: event.clientY, moved: false }; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={event => { const g = drag.current; if (g) {
             const dx = event.clientX - g.x, dy = event.clientY - g.y;
@@ -133,7 +134,7 @@ export default function FloorPlanCanvas({ plan, reference, selectedRoom, filtere
             if (id)
                 onSelectRoom?.(id);
         } }}/>
-   <div className={`absolute right-3 top-3 flex flex-col gap-1 border p-1 ${privateView ? 'border-zinc-800 bg-zinc-950/95' : 'rounded-xl border-stone-300 bg-white/95 dark:bg-stone-900'}`}>
+   <div className={`absolute ${controlsClassName} flex flex-col gap-1 border p-1 ${privateView ? 'border-zinc-800 bg-zinc-950/95' : 'rounded-xl border-stone-300 bg-white/95 dark:bg-stone-900'}`}>
     <button aria-label="Zoom avant" title="Zoom avant" onClick={() => setCamera(c => ({ ...c, zoom: Math.min(12, c.zoom * 1.3) }))} className="p-2"><Plus size={16}/></button>
     <button aria-label="Zoom arrière" title="Zoom arrière" onClick={() => setCamera(c => ({ ...c, zoom: Math.max(.3, c.zoom / 1.3) }))} className="p-2"><Minus size={16}/></button>
     <button aria-label="Recentrer le plan" title="Recentrer le plan" onClick={() => setCamera({ zoom: 1, x: 0, y: 0 })} className="p-2"><Maximize2 size={16}/></button>

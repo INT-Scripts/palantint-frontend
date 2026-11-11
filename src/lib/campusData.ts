@@ -47,6 +47,9 @@ export const loadCampusContext = () => Promise.all([
     optional<Record<string, ResidenceSummary>>("/maps/indoor/housing"),
     optional<LocalPlans>("/maps/indoor/local-plans"),
 ]);
+// Flats by location: occupied ones have a current resident. Fetched fresh, like occupants.
+export type Occupancy = { occupied: string[]; vacant: string[] };
+export const loadOccupancy = () => fetchPrivate("/maps/indoor/occupancy") as Promise<Occupancy>;
 export type ReliefTile = { z: number; x: number; y: number; lod: "detail" | "context"; path: string; bounds: [number, number, number, number] };
 export type ReliefIndex = { attribution: string; tiles: ReliefTile[] };
 export type ScanRegistration = { origin: [number, number]; a: number; b: number; tx: number; tz: number; scale: number; altitude: number; anchors: number; error: number };

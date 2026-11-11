@@ -75,6 +75,7 @@ La carte est le contenu principal. Son interface reprend le langage visuel de la
 - **La carte remplace les pages Logements et Foyer.** `/palantint/apartments` et `/palantint/foyer` redirigent vers la sélection correspondante de la carte ; ne pas recréer de visionneuse de plan séparée. Les liens internes vers un logement ou un local utilisent `campusHref({ room })`. Hors connexion, le portail public garde ses propres pages.
 - **Quitter une sélection** pas à pas : la croix du panneau quitte le bâtiment, la flèche revient du lieu au bâtiment ; Échap et un clic sur une zone vide de la carte remontent d’un niveau.
 - En 3D, la sélection d’un bâtiment estompe les surfaces et extrude l’étage actif à sa hauteur.
+- **Occupation des logements** : les logements occupés sont orange (accent `housing`, fond `#9a3412`, contour `#fb923c`), les libres verts (fond `#065f46`, contour `#34d399`), sur le plan, l’étage 3D et le plan hors carte. Le panneau bâtiment affiche la légende avec les nombres de l’étage et marque chaque logement de sa liste ; la fiche d’un logement commence par son statut. Les lieux ne portent pas de mention de source (« plan », Wemap).
 - **Commandes de navigation thémées** en bas à droite (vue d’ensemble, noms des lieux, zoom, boussole en 3D), sans les contrôles MapLibre par défaut.
 
 - Donner la priorité à l’espace de carte, avec des commandes compactes superposées. Éviter les grands panneaux explicatifs permanents ; le panneau latéral n’apparaît qu’avec une sélection.

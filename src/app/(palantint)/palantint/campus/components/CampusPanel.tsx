@@ -23,6 +23,17 @@ export type PlaceContext = {
     apartment: ApartmentDetails | null;
 };
 export type DrawnRoom = { clubs?: ClubLink[] };
+// Flats coloured by occupancy, in the housing accent (orange) and a free green.
+export const OCCUPANCY_TONES = {
+    occupied: { fill: "#9a3412", stroke: "#fb923c", label: "Occupé" },
+    vacant: { fill: "#065f46", stroke: "#34d399", label: "Libre" },
+} as const;
+export type OccupancyState = keyof typeof OCCUPANCY_TONES;
+
+function OccupancyMark({ state }: { state: OccupancyState }) {
+    const tone = OCCUPANCY_TONES[state];
+    return <span aria-hidden className="h-2.5 w-2.5 shrink-0 border" style={{ backgroundColor: tone.fill, borderColor: tone.stroke }} />;
+}
 
 const naturalOrder = new Intl.Collator("fr", { numeric: true, sensitivity: "base" });
 const euros = (value: number | null) => value === null ? "—" : `${value} €`;
@@ -67,10 +78,11 @@ function ResidenceSummaries({ building, housing }: { building: Building; housing
     })}</div>;
 }
 
-function ApartmentSection({ apartment }: { apartment: ApartmentDetails }) {
+function ApartmentSection({ apartment, state }: { apartment: ApartmentDetails; state: OccupancyState }) {
     const net = (key: keyof Allowances) => apartment.allowances[key] === null ? euros(apartment.net_rent[key]) : `${euros(apartment.net_rent[key])} (−${apartment.allowances[key]} €)`;
     return <Section title="Logement">
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+            <dt className="text-zinc-500">Statut</dt><dd className="flex items-center gap-2 text-zinc-200"><OccupancyMark state={state} />{OCCUPANCY_TONES[state].label}</dd>
             {apartment.type && <><dt className="text-zinc-500">Type</dt><dd className="text-zinc-200">{capitalize(apartment.type)}</dd></>}
             {apartment.surface_m2 !== null && <><dt className="text-zinc-500">Surface</dt><dd className="text-zinc-200">{apartment.surface_m2} m²</dd></>}
             <dt className="text-zinc-500">Loyer</dt><dd className="font-semibold text-housing-400">{euros(apartment.rent)} / mois</dd>
@@ -88,13 +100,15 @@ function ClubRow({ club }: { club: ClubLink }) {
         : <div className="flex items-center gap-2 p-2 text-sm text-zinc-400">{body}</div>;
 }
 
-export default function CampusPanel({ building, buildingFeature, level, levelCount, rooms, selected, context, loadingContext, drawnRoom, housing, copied, onSelect, onCloseBuilding, onClosePlace, onCopy }: {
+export default function CampusPanel({ building, buildingFeature, level, levelCount, rooms, occupancy, selected, context, loadingContext, drawnRoom, housing, copied, onSelect, onCloseBuilding, onClosePlace, onCopy }: {
     building?: Building;
     buildingFeature?: Place;
     level: number;
     // Wemap levels and the levels of the drawn plans placed in the building.
     levelCount: number;
     rooms: Place[];
+    // Flats by location; absent while loading or when unavailable.
+    occupancy: Map<string, OccupancyState> | null;
     selected?: Place;
     context: PlaceContext | null;
     loadingContext: boolean;
@@ -111,6 +125,8 @@ export default function CampusPanel({ building, buildingFeature, level, levelCou
     const clubs = context?.clubs.length ? context.clubs : drawnRoom?.clubs || [];
     const residences = building?.residences || [];
     const area = !context?.apartment && p?.geometry_area_m2 ? Math.round(p.geometry_area_m2) : null;
+    const roomState = (room: Place) => occupancy?.get(room.properties.location_id || "");
+    const floorCounts = rooms.reduce((counts, room) => { const state = roomState(room); if (state) counts[state]++; return counts; }, { occupied: 0, vacant: 0 });
     const hasInformation = !!p && !!(area || p.tag_names?.length || p.opening_hours || p.access || p.wheelchair || p.description);
 
     return <aside aria-label={place ? "Lieu sélectionné" : "Bâtiment sélectionné"} className="flex h-full flex-col overflow-hidden border-zinc-800 bg-zinc-950/95 shadow-2xl backdrop-blur-xl sm:border-r">
@@ -135,7 +151,8 @@ export default function CampusPanel({ building, buildingFeature, level, levelCou
                     <Action onClick={onCopy} icon={copied ? Check : Copy} label={copied ? "Lien copié" : "Copier le lien"} tone={copied ? "text-emerald-400" : "text-zinc-300"} />
                     {loadingContext && <Loader2 className="m-3 h-4 w-4 animate-spin text-zinc-500" />}
                 </div>
-                {context?.apartment && <ApartmentSection apartment={context.apartment} />}
+                {/* The selection's own occupants are fresher than the map colouring. */}
+                {context?.apartment && <ApartmentSection apartment={context.apartment} state={context.occupants.length ? "occupied" : "vacant"} />}
                 {(!!context?.occupants.length || !!clubs.length) && <Section title="Occupants et associations">
                     <div className="space-y-1">
                         {context?.occupants.map(person => <Link key={person.id} href={`/palantint/students/${person.id}`} className="flex items-center gap-2 p-2 text-sm text-student-400 hover:bg-zinc-900"><Users className="h-3.5 w-3.5" />{person.first_name} {person.last_name}</Link>)}
@@ -156,9 +173,16 @@ export default function CampusPanel({ building, buildingFeature, level, levelCou
                 {/* Below the place information, at a limited height, so both stay in view. */}
                 {context?.agenda_room && <Section title="Agenda"><PlaceAgenda locationId={context.id} agendaRoom={context.agenda_room} upcoming={context.events} /></Section>}
             </> : building && <Section title={`Lieux · ${floorName(level)}`}>
-                {rooms.length ? <ul className="space-y-0.5">{[...rooms].sort((a, b) => naturalOrder.compare(a.properties.name || "", b.properties.name || "")).map(room => <li key={String(room.id)}>
-                    <button onClick={() => onSelect(room)} className="flex w-full items-center gap-3 p-2 text-left text-sm text-zinc-300 hover:bg-zinc-900 hover:text-white"><MapPin className="h-3.5 w-3.5 shrink-0 text-campus-400" /><span className="truncate">{room.properties.name}</span>{room.properties.source === "plan" && <span className="ml-auto shrink-0 font-mono text-[9px] uppercase text-zinc-600">plan</span>}</button>
-                </li>)}</ul> : <p className="text-sm text-zinc-500">Aucun lieu référencé à ce niveau.</p>}
+                {/* Legend of the flat colours on the map, with this floor's counts. */}
+                {!!(floorCounts.occupied + floorCounts.vacant) && <p className="mb-2 flex gap-4 font-mono text-[11px] text-zinc-400">
+                    {(["occupied", "vacant"] as const).map(state => <span key={state} className="flex items-center gap-1.5"><OccupancyMark state={state} />{OCCUPANCY_TONES[state].label} · {floorCounts[state]}</span>)}
+                </p>}
+                {rooms.length ? <ul className="space-y-0.5">{[...rooms].sort((a, b) => naturalOrder.compare(a.properties.name || "", b.properties.name || "")).map(room => {
+                    const state = roomState(room);
+                    return <li key={String(room.id)}>
+                        <button onClick={() => onSelect(room)} className="flex w-full items-center gap-3 p-2 text-left text-sm text-zinc-300 hover:bg-zinc-900 hover:text-white"><MapPin className="h-3.5 w-3.5 shrink-0 text-campus-400" /><span className="truncate">{room.properties.name}</span>{state && <span className="ml-auto flex shrink-0 items-center gap-1.5 font-mono text-[10px] text-zinc-500"><OccupancyMark state={state} />{OCCUPANCY_TONES[state].label}</span>}</button>
+                    </li>;
+                })}</ul> : <p className="text-sm text-zinc-500">Aucun lieu référencé à ce niveau.</p>}
             </Section>}
         </div>
     </aside>;

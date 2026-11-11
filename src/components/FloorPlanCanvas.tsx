@@ -9,6 +9,8 @@ type Props = {
     reference?: FloorPlan | null;
     selectedRoom?: string | null;
     filteredRooms?: Set<string>;
+    // Fill and outline per room, under the selection and hover colours.
+    tones?: Record<string, { fill: string; stroke: string }>;
     occupied?: Record<string, unknown[]>;
     details?: Record<string, unknown>;
     onSelectRoom?: (id: string) => void;
@@ -33,7 +35,7 @@ function pathFor(feature: PlanFeature) {
     }
     return path;
 }
-export default function FloorPlanCanvas({ plan, reference, selectedRoom, filteredRooms, occupied = {}, details = {}, onSelectRoom, onPick, pillars = [], privateView = true, className = 'min-h-[420px]', controlsClassName = 'right-3 top-3' }: Props) {
+export default function FloorPlanCanvas({ plan, reference, selectedRoom, filteredRooms, tones = {}, occupied = {}, details = {}, onSelectRoom, onPick, pillars = [], privateView = true, className = 'min-h-[420px]', controlsClassName = 'right-3 top-3' }: Props) {
     const { resolvedTheme } = useTheme();
     const dark = privateView || resolvedTheme === 'dark';
     const canvas = useRef<HTMLCanvasElement>(null), host = useRef<HTMLDivElement>(null);
@@ -83,8 +85,9 @@ export default function FloorPlanCanvas({ plan, reference, selectedRoom, filtere
                 continue;
             }
             const active = id === selectedRoom, hot = id === hover, marked = !!id && (!!occupied[id]?.length || filteredRooms?.has(id));
-            ctx.fillStyle = active ? '#2563eb' : hot ? '#3b82f6' : marked ? '#f9731655' : privateView ? '#a1a1aa18' : '#a8a29e25';
-            ctx.strokeStyle = active || hot ? '#60a5fa' : marked ? '#f97316' : privateView ? '#71717a' : '#a8a29e';
+            const tone = id ? tones[id] : undefined;
+            ctx.fillStyle = active ? '#2563eb' : hot ? '#3b82f6' : tone ? `${tone.fill}cc` : marked ? '#f9731655' : privateView ? '#a1a1aa18' : '#a8a29e25';
+            ctx.strokeStyle = active || hot ? '#60a5fa' : tone ? tone.stroke : marked ? '#f97316' : privateView ? '#71717a' : '#a8a29e';
             if (planGeometry(feature).type === 'Point') {
                 const xy = p.label_coordinates || [0, 0];
                 ctx.beginPath();
@@ -107,7 +110,7 @@ export default function FloorPlanCanvas({ plan, reference, selectedRoom, filtere
             ctx.fillText(p.name || p.room_id || '', p.label_coordinates[0], p.label_coordinates[1]);
         }
         pillars.forEach((p, i) => { const x = view[0] + p.x / 100 * view[2], y = view[1] + p.y / 100 * view[3]; ctx.fillStyle = i ? '#22d3ee' : '#eab308'; ctx.beginPath(); ctx.arc(x, y, 6 / scale, 0, Math.PI * 2); ctx.fill(); });
-    }, [plan, paths, reference, size, scale, offset.x, offset.y, hover, selectedRoom, filteredRooms, occupied, privateView, dark, pillars, view]);
+    }, [plan, paths, reference, size, scale, offset.x, offset.y, hover, selectedRoom, filteredRooms, tones, occupied, privateView, dark, pillars, view]);
     const locate = (event: React.PointerEvent<HTMLCanvasElement>) => { const rect = event.currentTarget.getBoundingClientRect(); return { x: (event.clientX - rect.left - offset.x) / scale, y: (event.clientY - rect.top - offset.y) / scale }; };
     const hit = (point: {
         x: number;

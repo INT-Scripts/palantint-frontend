@@ -321,7 +321,6 @@ export default function CampusMap() {
         try { localStorage.removeItem(LEGACY_PINS_KEY); } catch { /* moved again next visit */ }
         Promise.all(legacy.flatMap(id => { const feature = featureIndex.get(id); return feature ? [saveBookmark(bookmarkOf(feature))] : []; }))
             .then(() => loadBookmarks()).then(setBookmarks).catch(() => {});
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [featureIndex]);
     // The same people and bookmarks for the 3D layer: a room at mid-height of its floor, a building on its roof.
     useEffect(() => {
@@ -585,7 +584,7 @@ export default function CampusMap() {
             </Source>}
             {visibleLabels.map(label => <Marker key={label.id} ref={marker => { if (marker) { const element = marker.getElement(); element.setAttribute("aria-hidden", "true"); element.setAttribute("role", "presentation"); element.tabIndex = -1; } }} style={{ pointerEvents: "none" }} longitude={label.xy[0]} latitude={label.xy[1]} offset={labelOffset(label)}><span className={`pointer-events-none block max-w-32 text-center text-[10px] leading-tight ${label.kind === "building" ? "bg-zinc-950/90 p-1 font-bold text-white" : label.kind === "road" ? "bg-zinc-950/70 px-1 italic text-zinc-400" : "bg-zinc-950/80 px-1 text-sky-100"}`}>{label.name}</span></Marker>)}
         </Map>
-        {offMap && <div className="absolute inset-0 z-[5] bg-zinc-950 max-sm:bottom-[38%] sm:left-[380px]">
+        {offMap && <div className="absolute inset-0 z-[5] bg-zinc-950 max-sm:bottom-[max(10%,88px)] sm:left-[380px]">
             <FloorPlanCanvas plan={offMapPlan} tones={offMapTones} selectedRoom={selected?.properties.room_id as string | undefined} className="h-full" controlsClassName="left-3 top-3 max-sm:top-[68px]"
                 onSelectRoom={id => { const room = localFeatures.find(feature => feature.properties.building_id === offMap.code && feature.properties.room_id === id && feature.properties.levels.includes(level)); if (room) select(room); }} />
             <p className="pointer-events-none absolute bottom-3 right-3 bg-zinc-950/90 px-2 py-1 text-[10px] text-zinc-500 max-sm:hidden">Résidence hors campus · plan non géolocalisé</p>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Building2, Layers, Loader2, MapPin, Users, WashingMachine, X } from "lucide-react";
+import { ArrowLeft, Building2, Loader2, MapPin, Users, WashingMachine, X } from "lucide-react";
 import BuildingOutline from "@/components/palantint/BuildingOutline";
 import { floorName, type CampusBuilding as Building, type Place } from "@/lib/campus";
 import type { RentRange, ResidenceSummary } from "@/lib/campusData";
@@ -130,27 +130,24 @@ export default function CampusPanel({ building, buildingFeature, level, levelCou
     const floorCounts = rooms.reduce((counts, room) => { const state = roomState(room); if (state) counts[state]++; return counts; }, { occupied: 0, vacant: 0 });
     const hasInformation = !!p && !!(area || p.tag_names?.length || p.opening_hours || p.access || p.wheelchair || p.description);
 
+    const meta = place ? [p!.levels.map(value => floorName(value)).join(" · ") || "Tous niveaux", building?.name].filter(Boolean).join(" · ")
+        : building ? `${levelCount} niveau${levelCount > 1 ? "x" : ""} · ${floorName(level)}` : "";
+
+    // Order (DESIGN.md, « Stabilité du panneau »): what describes the selection first, then the
+    // action row, then everything an action brings. Nothing above the row moves when it is used.
     return <aside aria-label={place ? "Lieu sélectionné" : "Bâtiment sélectionné"} className="flex h-full flex-col overflow-hidden border-zinc-800 bg-zinc-950/95 shadow-2xl backdrop-blur-xl sm:border-r">
-        <header className="flex items-start gap-3 px-5 pb-4 pt-5">
-            {place ? <button onClick={onClosePlace} title={building ? `Retour à ${building.name}` : "Fermer"} aria-label={building ? `Retour à ${building.name}` : "Fermer le lieu"} className="mt-0.5 p-1 text-zinc-500 hover:text-white"><ArrowLeft className="h-4 w-4" /></button>
-                : <span className="text-campus-400"><BuildingOutline feature={buildingFeature} className="h-12 w-12" /></span>}
+        <header className="flex shrink-0 items-center gap-2 px-4 py-2.5">
+            {place ? <button onClick={onClosePlace} title={building ? `Retour à ${building.name}` : "Fermer"} aria-label={building ? `Retour à ${building.name}` : "Fermer le lieu"} className="p-1 text-zinc-500 hover:text-white"><ArrowLeft className="h-4 w-4" /></button>
+                : <span className="text-campus-400"><BuildingOutline feature={buildingFeature} className="h-8 w-8" /></span>}
             <div className="min-w-0 flex-1">
-                <h2 className="truncate text-lg font-semibold text-white">{place ? p!.name : building?.name}</h2>
-                <p className="mt-1 flex flex-wrap items-center gap-x-2 font-mono text-[11px] text-zinc-500">
-                    {place ? <><Layers className="h-3 w-3" />{p!.levels.map(value => floorName(value)).join(" · ") || "Tous niveaux"}{building && <span>· {building.name}</span>}</>
-                        : building && <>{levelCount} niveau{levelCount > 1 ? "x" : ""} · {floorName(level)}</>}
-                </p>
+                <h2 className="truncate text-base font-semibold leading-tight text-white">{place ? p!.name : building?.name}</h2>
+                <p className="flex items-center gap-1.5 truncate font-mono text-[10px] text-zinc-500">{meta}{place && loadingContext && <Loader2 aria-label="Chargement du lieu" className="h-3 w-3 shrink-0 animate-spin" />}</p>
             </div>
             <button onClick={onCloseBuilding} title="Quitter le bâtiment" aria-label="Quitter le bâtiment" className="p-1 text-zinc-500 hover:text-white"><X className="h-4 w-4" /></button>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto">
-            {tools.overlay && <OverlaySection overlay={tools.overlay} describe={tools.describe} onSelect={tools.onSelectLocation} onClear={() => tools.onOverlay(null)} />}
             {building && !place && !!residences.length && <div className="px-5 pb-4"><ResidenceSummaries building={building} housing={housing} /></div>}
             {place ? <>
-                {/* Reset with each place: a result belongs to the place it was asked for. */}
-                <PlaceActions key={String(place.id)} locationId={p!.location_id || null} context={context} clubs={clubs} copied={copied} onCopy={onCopy} isAdmin={tools.isAdmin} pinned={tools.pinned}
-                    onTogglePin={tools.onTogglePin} onImmersive={tools.onImmersive} onGoToRoom={tools.onGoToRoom} overlay={tools.overlay} onOverlay={tools.onOverlay} />
-                {loadingContext && <p className="flex items-center gap-2 px-5 pb-3 text-xs text-zinc-500"><Loader2 className="h-3.5 w-3.5 animate-spin" />Chargement du lieu…</p>}
                 {/* The selection's own occupants are fresher than the map colouring. */}
                 {context?.apartment && <ApartmentSection apartment={context.apartment} state={context.occupants.length ? "occupied" : "vacant"} />}
                 {(!!context?.occupants.length || !!clubs.length) && <Section title="Occupants et associations">
@@ -170,8 +167,12 @@ export default function CampusPanel({ building, buildingFeature, level, levelCou
                     </dl>
                     {p!.description && <p className="mt-3 text-sm leading-relaxed text-zinc-400">{p!.description}</p>}
                 </Section>}
-                {/* Below the place information, at a limited height, so both stay in view. */}
+                {/* At a limited height: it scrolls by itself and keeps the action row close. */}
                 {context?.agenda_room && <Section title="Agenda"><PlaceAgenda locationId={context.id} agendaRoom={context.agenda_room} upcoming={context.events} /></Section>}
+                {/* Reset with each place: a result belongs to the place it was asked for. */}
+                <PlaceActions key={String(place.id)} locationId={p!.location_id || null} context={context} clubs={clubs} copied={copied} onCopy={onCopy} isAdmin={tools.isAdmin} pinned={tools.pinned}
+                    onTogglePin={tools.onTogglePin} onImmersive={tools.onImmersive} onGoToRoom={tools.onGoToRoom} overlay={tools.overlay} onOverlay={tools.onOverlay} />
+                {tools.overlay && <OverlaySection overlay={tools.overlay} describe={tools.describe} onSelect={tools.onSelectLocation} onClear={() => tools.onOverlay(null)} />}
             </> : building && <Section title={`Lieux · ${floorName(level)}`}>
                 {/* Legend of the flat colours on the map, with this floor's counts. */}
                 {!!(floorCounts.occupied + floorCounts.vacant) && <p className="mb-2 flex gap-4 font-mono text-[11px] text-zinc-400">
@@ -185,5 +186,10 @@ export default function CampusPanel({ building, buildingFeature, level, levelCou
                 })}</ul> : <p className="text-sm text-zinc-500">Aucun lieu référencé à ce niveau.</p>}
             </Section>}
         </div>
+        {/* People still drawn on the map from a place left since: a fixed place to clear them. */}
+        {!place && tools.overlay && <footer className="flex shrink-0 items-center gap-2 border-t border-zinc-800 px-4 py-2">
+            <span className="min-w-0 flex-1 truncate font-mono text-[10px] uppercase tracking-wider text-campus-300">{tools.overlay.title}</span>
+            <button onClick={() => tools.onOverlay(null)} className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-zinc-500 hover:text-white">Effacer</button>
+        </footer>}
     </aside>;
 }

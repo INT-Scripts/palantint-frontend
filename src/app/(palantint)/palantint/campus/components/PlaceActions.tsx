@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Bookmark, BookmarkCheck, CalendarDays, Check, Copy, Crosshair, Eye, GraduationCap, History, Loader2, MapPinned, NotebookPen, UserSearch, Users, UsersRound, Waypoints } from "lucide-react";
+import { Bookmark, BookmarkCheck, CalendarDays, ChevronLeft, ChevronRight, Check, Copy, Crosshair, Eye, GraduationCap, History, Loader2, MapPinned, NotebookPen, UserSearch, Users, UsersRound, Waypoints } from "lucide-react";
 import { fetchPrivate } from "@/lib/api";
 import { timetableHref } from "@/lib/timetableContext";
 import { Action, Section } from "./panelParts";
@@ -86,6 +86,26 @@ export default function PlaceActions({ locationId, context, clubs, copied, onCop
 }) {
     const [result, setResult] = useState<Result | null>(null);
     const [busy, setBusy] = useState<string | null>(null);
+    // The row scrolls sideways (touch, trackpad, Maj + molette); edge buttons show there is more.
+    const row = useRef<HTMLDivElement>(null);
+    const [more, setMore] = useState({ before: false, after: false });
+    const measure = () => {
+        const element = row.current;
+        if (!element) return;
+        const next = { before: element.scrollLeft > 2, after: element.scrollLeft + element.clientWidth < element.scrollWidth - 2 };
+        setMore(current => current.before === next.before && current.after === next.after ? current : next);
+    };
+    // Actions appear as the place loads: measure after every render, and on scroll and resize.
+    useEffect(measure);
+    useEffect(() => {
+        const element = row.current;
+        if (!element) return;
+        element.addEventListener("scroll", measure, { passive: true });
+        const observer = new ResizeObserver(measure);
+        observer.observe(element);
+        return () => { element.removeEventListener("scroll", measure); observer.disconnect(); };
+    }, []);
+    const page = (direction: 1 | -1) => row.current?.scrollBy({ left: direction * row.current.clientWidth * 0.8, behavior: "smooth" });
     const occupants = context?.occupants || [];
     const clubIds = clubs.filter(club => club.id);
     // Overlays are tied to the place that drew them; another place shows its own actions as inactive.
@@ -147,8 +167,11 @@ export default function PlaceActions({ locationId, context, clubs, copied, onCop
     });
 
     const hasOccupants = !!occupants.length;
+
     return <>
-        <div className="flex flex-wrap gap-x-3 gap-y-4 border-t border-zinc-800/80 px-5 py-4">
+        {/* One row, never wrapped: it scrolls sideways. */}
+        <div className="relative border-y border-zinc-800/80">
+        <div ref={row} role="toolbar" aria-label="Actions" className="flex gap-3 overflow-x-auto overscroll-x-contain px-5 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {context?.agenda_room && <Action href={timetableHref({ room: context.agenda_room, week: new Date() })} icon={CalendarDays} label="Agenda" tone="text-timetable-400" />}
             {context?.agenda_room && locationId && <Action onClick={presence} icon={UserSearch} label="Présents" tone="text-student-400" active={overlayAction === "presence"} busy={busy === "presence"} />}
             {context?.agenda_room && locationId && <Action onClick={weekGroups} icon={UsersRound} label="Groupes" tone="text-timetable-400" active={shown === "groups"} busy={busy === "groups"} />}
@@ -157,11 +180,14 @@ export default function PlaceActions({ locationId, context, clubs, copied, onCop
             {hasOccupants && <Action onClick={circle} icon={Waypoints} label="Cercle" tone="text-student-400" active={overlayAction === "circle"} busy={busy === "circle"} />}
             {hasOccupants && <Action onClick={cohort} icon={GraduationCap} label="Même promo" tone="text-student-400" active={overlayAction === "cohort"} busy={busy === "cohort"} />}
             {!!context?.apartment && locationId && <Action onClick={history} icon={History} label="Historique" tone="text-housing-400" active={shown === "history"} busy={busy === "history"} />}
-            {!!clubIds.length && locationId && <Action onClick={members} icon={MapPinned} label="Membres" tone="text-orga-400" active={overlayAction === "members"} busy={busy === "members"} />}
             {hasOccupants && isAdmin && <Action onClick={note} icon={NotebookPen} label="Note" tone="text-zinc-300" active={shown === "note"} />}
+            {!!clubIds.length && locationId && <Action onClick={members} icon={MapPinned} label="Membres" tone="text-orga-400" active={overlayAction === "members"} busy={busy === "members"} />}
             <Action onClick={onImmersive} icon={Eye} label="Vue immersive" tone="text-campus-400" />
             <Action onClick={onTogglePin} icon={pinned ? BookmarkCheck : Bookmark} label={pinned ? "Retirer le signet" : "Ajouter un signet"} tone="text-timetable-400" active={pinned} />
             <Action onClick={onCopy} icon={copied ? Check : Copy} label={copied ? "Lien copié" : "Copier le lien"} tone={copied ? "text-emerald-400" : "text-zinc-300"} />
+        </div>
+        {more.before && <button onClick={() => page(-1)} title="Actions précédentes" aria-label="Actions précédentes" className="absolute inset-y-0 left-0 flex w-7 items-center justify-center bg-gradient-to-r from-zinc-950 via-zinc-950/90 to-transparent text-zinc-400 hover:text-white"><ChevronLeft className="h-4 w-4" /></button>}
+        {more.after && <button onClick={() => page(1)} title="Actions suivantes" aria-label="Actions suivantes" className="absolute inset-y-0 right-0 flex w-7 items-center justify-center bg-gradient-to-l from-zinc-950 via-zinc-950/90 to-transparent text-zinc-400 hover:text-white"><ChevronRight className="h-4 w-4" /></button>}
         </div>
         {busy && <p className="flex items-center gap-2 px-5 pb-3 text-xs text-zinc-500"><Loader2 className="h-3.5 w-3.5 animate-spin" />Chargement…</p>}
         {result?.kind === "error" && <p className="px-5 pb-3 text-xs text-red-400">Ces informations ne sont pas disponibles pour le moment.</p>}

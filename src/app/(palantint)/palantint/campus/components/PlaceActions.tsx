@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Bookmark, BookmarkCheck, CalendarDays, ChevronLeft, ChevronRight, Check, Copy, Crosshair, Eye, GraduationCap, History, Loader2, MapPinned, NotebookPen, UserSearch, Users, UsersRound, Waypoints } from "lucide-react";
+import { Bookmark, BookmarkCheck, CalendarDays, ChevronLeft, ChevronRight, Check, Copy, Crosshair, Eye, GraduationCap, History, Loader2, MapPinned, NotebookPen, Printer, UserSearch, Users, UsersRound, Waypoints } from "lucide-react";
 import { fetchPrivate } from "@/lib/api";
 import { timetableHref } from "@/lib/timetableContext";
 import { Action, Section } from "./panelParts";
@@ -72,7 +72,7 @@ function NoteForm({ occupants }: { occupants: Person[] }) {
  */
 export default function PlaceActions({ locationId, context, clubs, copied, onCopy, isAdmin, pinned, onTogglePin, onImmersive, onGoToRoom, overlay, onOverlay }: {
     locationId: string | null;
-    context: { occupants: Person[]; agenda_room: string | null; apartment: unknown } | null;
+    context: { occupants: Person[]; agenda_room: string | null; apartment: unknown; printers?: string[] } | null;
     clubs: ClubLink[];
     copied: boolean;
     onCopy: () => void;
@@ -182,6 +182,7 @@ export default function PlaceActions({ locationId, context, clubs, copied, onCop
             {!!context?.apartment && locationId && <Action onClick={history} icon={History} label="Historique" tone="text-housing-400" active={shown === "history"} busy={busy === "history"} />}
             {hasOccupants && isAdmin && <Action onClick={note} icon={NotebookPen} label="Note" tone="text-zinc-300" active={shown === "note"} />}
             {!!clubIds.length && locationId && <Action onClick={members} icon={MapPinned} label="Membres" tone="text-orga-400" active={overlayAction === "members"} busy={busy === "members"} />}
+            {!!context?.printers?.length && <Action href="/palantint/print" icon={Printer} label="Imprimer" tone="text-print-400" />}
             <Action onClick={onImmersive} icon={Eye} label="Vue immersive" tone="text-campus-400" />
             <Action onClick={onTogglePin} icon={pinned ? BookmarkCheck : Bookmark} label={pinned ? "Retirer le signet" : "Ajouter un signet"} tone="text-timetable-400" active={pinned} />
             <Action onClick={onCopy} icon={copied ? Check : Copy} label={copied ? "Lien copié" : "Copier le lien"} tone={copied ? "text-emerald-400" : "text-zinc-300"} />

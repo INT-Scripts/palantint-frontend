@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock, Send, X } from "lucide-react";
+import Link from "next/link";
+import { Clock, MapPin, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { fetchPrivate } from "@/lib/api";
+import { campusHref } from "@/lib/campus";
 import {
     PhysicalPrinter, PrintRequest, StatusBadge, costLabel, dangerButton, errorMessage, ghostButton, panel,
     parseUtc, primaryButton, printerLabel,
@@ -101,7 +103,10 @@ export default function RequestCard({ request, onChange }: { request: PrintReque
                                                 checked={printer === p.name} onChange={() => setPrinter(p.name)} className="accent-lime-500" />
                                             {printerLabel(p.name)}
                                         </span>
-                                        <span className="text-[10px] uppercase">{p.available ? "Disponible" : "Indisponible"}</span>
+                                        <span className="flex items-center gap-2">
+                                            {p.feature_id && <Link href={campusHref({ feature: p.feature_id })} title={`${p.place} sur le campus`} aria-label={`${p.place} sur le campus`} target="_blank" className="text-campus-400 hover:text-white"><MapPin className="h-3.5 w-3.5" /></Link>}
+                                            <span className="text-[10px] uppercase">{p.available ? "Disponible" : "Indisponible"}</span>
+                                        </span>
                                     </label>
                                 ))}
                             </div>

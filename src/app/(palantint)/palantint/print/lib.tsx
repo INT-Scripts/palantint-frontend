@@ -60,7 +60,8 @@ export type PrintRequest = {
     released_at: string | null;
 };
 
-export type PhysicalPrinter = { name: string; status: string; available: boolean };
+// `feature_id` and `place`: where the printer stands on the campus map, when a print point names it.
+export type PhysicalPrinter = { name: string; status: string; available: boolean; feature_id: string | null; place: string | null };
 
 export const OPEN_STATUSES = ["PENDING_APPROVAL", "APPROVED", "UPLOADING", "HELD"];
 export const MAX_UPLOAD_MB = 50;

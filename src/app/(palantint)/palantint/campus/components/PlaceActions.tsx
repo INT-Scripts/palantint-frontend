@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { CalendarDays, Check, Copy, Crosshair, Eye, GraduationCap, History, Loader2, MapPinned, NotebookPen, Pin, PinOff, UserSearch, Users, UsersRound, Waypoints } from "lucide-react";
+import { Bookmark, BookmarkCheck, CalendarDays, Check, Copy, Crosshair, Eye, GraduationCap, History, Loader2, MapPinned, NotebookPen, UserSearch, Users, UsersRound, Waypoints } from "lucide-react";
 import { fetchPrivate } from "@/lib/api";
 import { timetableHref } from "@/lib/timetableContext";
 import { Action, Section } from "./panelParts";
@@ -160,7 +160,7 @@ export default function PlaceActions({ locationId, context, clubs, copied, onCop
             {!!clubIds.length && locationId && <Action onClick={members} icon={MapPinned} label="Membres" tone="text-orga-400" active={overlayAction === "members"} busy={busy === "members"} />}
             {hasOccupants && isAdmin && <Action onClick={note} icon={NotebookPen} label="Note" tone="text-zinc-300" active={shown === "note"} />}
             <Action onClick={onImmersive} icon={Eye} label="Vue immersive" tone="text-campus-400" />
-            <Action onClick={onTogglePin} icon={pinned ? PinOff : Pin} label={pinned ? "Désépingler" : "Épingler"} tone="text-timetable-400" active={pinned} />
+            <Action onClick={onTogglePin} icon={pinned ? BookmarkCheck : Bookmark} label={pinned ? "Retirer le signet" : "Ajouter un signet"} tone="text-timetable-400" active={pinned} />
             <Action onClick={onCopy} icon={copied ? Check : Copy} label={copied ? "Lien copié" : "Copier le lien"} tone={copied ? "text-emerald-400" : "text-zinc-300"} />
         </div>
         {busy && <p className="flex items-center gap-2 px-5 pb-3 text-xs text-zinc-500"><Loader2 className="h-3.5 w-3.5 animate-spin" />Chargement…</p>}

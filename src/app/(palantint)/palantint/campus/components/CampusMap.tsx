@@ -6,8 +6,8 @@ import Map, { Source, Layer, Marker, type MapRef, type MapLayerMouseEvent } from
 import type { Feature, FeatureCollection, Geometry, Position } from "geojson";
 import type { ExpressionSpecification, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Search, X, MapPin, Layers, Loader2, ArrowRight, Building2, Pin } from "lucide-react";
-import { loadCampus, loadCampusContext, loadOccupancy, loadSurfaces, resolveCampusRoom, type AerialIndex, type BasemapData, type DrawnPlans, type LocalPlans, type ResidenceSummary } from "@/lib/campusData";
+import { Search, X, MapPin, Layers, Loader2, ArrowRight, Building2, Bookmark, BookmarkX } from "lucide-react";
+import { loadBookmarks, loadCampus, loadCampusContext, loadOccupancy, loadSurfaces, removeBookmark, resolveCampusRoom, saveBookmark, type AerialIndex, type PlaceBookmark, type BasemapData, type DrawnPlans, type LocalPlans, type ResidenceSummary } from "@/lib/campusData";
 import FloorPlanCanvas from "@/components/FloorPlanCanvas";
 import type { FloorPlan } from "@/lib/planGeometry";
 import { fetchPrivate } from "@/lib/api";
@@ -31,8 +31,9 @@ const MARKER_ABOVE_FLOOR = 1.3;
 const EARTH_CIRCUMFERENCE = 2 * Math.PI * 6378137;
 // Street-level camera of the immersive view: the steepest pitch the map allows, close in.
 const IMMERSIVE = { pitch: 75, zoom: 20.6 };
-const PINS_KEY = "palantint_campus_pins";
-const readPins = (): string[] => { try { return JSON.parse(localStorage.getItem(PINS_KEY) || "[]"); } catch { return []; } };
+// Places pinned in this browser before bookmarks were kept by the server; moved there once.
+const LEGACY_PINS_KEY = "palantint_campus_pins";
+const readLegacyPins = (): string[] => { try { return JSON.parse(localStorage.getItem(LEGACY_PINS_KEY) || "[]"); } catch { return []; } };
 const levelLabel = (value: number) => value === 0 ? "RDC" : String(value);
 const tokenHeaders = (): Record<string, string> => {
     const token = localStorage.getItem("palantint_token");
@@ -80,8 +81,10 @@ export default function CampusMap() {
     const [isAdmin, setIsAdmin] = useState(false);
     // People placed on the map by a place action; kept while other places are opened.
     const [overlay, setOverlay] = useState<(MapOverlay & { action: string }) | null>(null);
-    // Pinned places stay marked on the map between visits, for this browser only.
-    const [pins, setPins] = useState<string[]>([]);
+    // Bookmarked places: marked on the map and listed under the bookmark button, on every device.
+    const [bookmarks, setBookmarks] = useState<PlaceBookmark[]>([]);
+    const [bookmarksOpen, setBookmarksOpen] = useState(false);
+    const pins = useMemo(() => bookmarks.map(bookmark => bookmark.feature_id), [bookmarks]);
     const immersiveTarget = useRef<Position | null>(null);
     const [retry, setRetry] = useState(0);
     const hovered = useRef<string | number | null>(null);
@@ -110,7 +113,7 @@ export default function CampusMap() {
         loadCampusContext().then(([drawnPlans, osm, aerialTiles, residences, offMap]) => { if (active) { setDrawn(drawnPlans); setBasemap(osm); setAerialIndex(aerialTiles); setHousing(residences); setLocalPlans(offMap); } });
         // Without it the flats keep the neutral room colours.
         fetchPrivate("/users/me").then(user => { if (active) setIsAdmin(!!user?.is_admin); }).catch(() => {});
-        setPins(readPins());
+        loadBookmarks().then(list => { if (active) setBookmarks(list); }).catch(() => {});
         loadOccupancy().then(data => { if (active) setOccupancy(new globalThis.Map([...data.occupied.map(id => [id, "occupied"] as const), ...data.vacant.map(id => [id, "vacant"] as const)])); }).catch(() => {});
         return () => { active = false; };
     }, [retry]);
@@ -311,6 +314,15 @@ export default function CampusMap() {
         const xy = feature && !localFeatures.includes(feature) ? placeCenter(feature) : null;
         return xy ? [{ type: "Feature" as const, properties: { id }, geometry: { type: "Point" as const, coordinates: xy } }] : [];
     }) }), [pins, featureIndex, localFeatures]);
+    // Pins of this browser become bookmarks once the places they name are known.
+    useEffect(() => {
+        const legacy = readLegacyPins();
+        if (!legacy.length || !featureIndex.size) return;
+        try { localStorage.removeItem(LEGACY_PINS_KEY); } catch { /* moved again next visit */ }
+        Promise.all(legacy.flatMap(id => { const feature = featureIndex.get(id); return feature ? [saveBookmark(bookmarkOf(feature))] : []; }))
+            .then(() => loadBookmarks()).then(setBookmarks).catch(() => {});
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [featureIndex]);
     // The same people and bookmarks for the 3D layer: a room at mid-height of its floor, a building on its roof.
     useEffect(() => {
         const layer = reliefLayer.current;
@@ -411,6 +423,7 @@ export default function CampusMap() {
     useEffect(() => {
         const escape = (event: KeyboardEvent) => {
             if (event.key !== "Escape" || (event.target as HTMLElement)?.closest?.("input")) return;
+            if (bookmarksOpen) { setBookmarksOpen(false); return; }
             unfocus();
         };
         window.addEventListener("keydown", escape);
@@ -437,17 +450,41 @@ export default function CampusMap() {
         if (bounds) camera(bounds, { padding: 40, duration: 400 });
     };
     const changeView = (next: CampusView) => setQuery({ view: next === "plan" ? null : next });
-    const togglePin = () => {
+    const bookmarkOf = (feature: PlanFeature) => ({
+        feature_id: String(feature.id), name: feature.properties.name || String(feature.id),
+        building_id: feature.properties.building_id === null || feature.properties.building_id === undefined ? null : String(feature.properties.building_id),
+        level: feature.properties.levels[0] ?? null, location_id: feature.properties.location_id || null,
+    });
+    const toggleBookmark = async () => {
         if (!selected) return;
         const id = String(selected.id);
-        const next = pins.includes(id) ? pins.filter(pin => pin !== id) : [...pins, id];
-        setPins(next);
-        try { localStorage.setItem(PINS_KEY, JSON.stringify(next)); } catch { /* the pin stays for this visit */ }
+        const previous = bookmarks;
+        // Shown at once, put back if the server refuses.
+        if (pins.includes(id)) {
+            setBookmarks(bookmarks.filter(bookmark => bookmark.feature_id !== id));
+            try { await removeBookmark(id); } catch { setBookmarks(previous); }
+        } else {
+            const draft = { ...bookmarkOf(selected), created_at: new Date().toISOString() };
+            setBookmarks([draft, ...bookmarks]);
+            try { const saved = await saveBookmark(bookmarkOf(selected)); setBookmarks(list => list.map(bookmark => bookmark.feature_id === id ? saved : bookmark)); } catch { setBookmarks(previous); }
+        }
+    };
+    const forgetBookmark = async (id: string) => {
+        const previous = bookmarks;
+        setBookmarks(bookmarks.filter(bookmark => bookmark.feature_id !== id));
+        try { await removeBookmark(id); } catch { setBookmarks(previous); }
+    };
+    const openBookmark = (bookmark: PlaceBookmark) => {
+        setBookmarksOpen(false);
+        const feature = featureIndex.get(bookmark.feature_id);
+        if (feature) select(feature);
+        // A place no longer drawn: its building and floor still open.
+        else setQuery({ feature: null, room: null, building: bookmark.building_id, level: bookmark.level === null ? null : String(bookmark.level) });
     };
     const tools: PlaceTools = {
         isAdmin,
         pinned: !!selected && pins.includes(String(selected.id)),
-        onTogglePin: togglePin,
+        onTogglePin: () => { void toggleBookmark(); },
         onImmersive: () => {
             const center = placeCenter(selected);
             const map = mapRef.current;
@@ -480,10 +517,7 @@ export default function CampusMap() {
     const panelOpen = !!building || (!!selected && selected.properties.kind !== "building");
     const buildingFeature = building?.feature_id ? featureIndex.get(building.feature_id) : undefined;
     const floorRooms = useMemo(() => buildingId ? destinations.filter(feature => String(feature.properties.building_id) === buildingId && feature.properties.kind !== "building" && feature.properties.levels.includes(level)) : [], [destinations, buildingId, level]);
-    const pinnedPlaces = pins.flatMap(id => { const feature = featureIndex.get(id); return feature ? [feature] : []; });
-    // Inside a building an empty search lists nothing but the pins; the panel lists its places.
-    const listResults = !!search.trim() || !buildingId;
-    const showResults = searchOpen && (listResults || !!pinnedPlaces.length);
+    const showResults = searchOpen && (!!search.trim() || !buildingId);
     const offMapFloor = offMap?.floors.find(floor => floor.level === level);
     const offMapPlan = useMemo<FloorPlan | null>(() => offMapFloor ? {
         type: "FeatureCollection",
@@ -561,29 +595,45 @@ export default function CampusMap() {
             <CampusPanel building={building} buildingFeature={buildingFeature} level={level} levelCount={levels.length} rooms={floorRooms} occupancy={occupancy} selected={selected} context={context ?? null} loadingContext={loadingContext} drawnRoom={drawnRoom} housing={housing} copied={copied} tools={tools}
                 onSelect={select} onCloseBuilding={() => focusBuilding(null)} onClosePlace={closePlace} onCopy={copyLink} />
         </PanelSheet>}
-        <div className="absolute left-3 top-3 z-30 w-[min(352px,calc(100%-24px))] sm:left-3.5 sm:top-4">
-            <div className="relative rounded-none border border-zinc-800 bg-zinc-950/95 shadow-xl backdrop-blur-xl">
+        <div className="absolute left-3 top-3 z-30 flex w-[min(352px,calc(100%-24px))] items-start gap-1.5 sm:left-3.5 sm:top-4">
+            <div className="relative min-w-0 flex-1 rounded-none border border-zinc-800 bg-zinc-950/95 shadow-xl backdrop-blur-xl">
                 <Search className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-zinc-500" />
-                <input value={search} onChange={event => { setSearch(event.target.value); setSearchOpen(true); }} onFocus={() => setSearchOpen(true)} onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
+                <input value={search} onChange={event => { setSearch(event.target.value); setSearchOpen(true); }} onFocus={() => { setSearchOpen(true); setBookmarksOpen(false); }} onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
                     onKeyDown={event => { if (event.key === "Escape") { setSearch(""); event.currentTarget.blur(); } if (event.key === "Enter" && searchResults.length === 1) select(searchResults[0]); }}
                     role="combobox" placeholder={building ? `Rechercher dans ${building.name}…` : "Un bâtiment, une salle…"} aria-label="Rechercher dans les plans" aria-expanded={showResults} aria-controls="campus-search-results"
                     className="h-11 w-full rounded-none bg-transparent pl-10 pr-10 text-sm text-white outline-none placeholder:text-zinc-600 focus:ring-1 focus:ring-campus-400" />
                 {search && <button title="Effacer" aria-label="Effacer la recherche" onClick={() => setSearch("")} className="absolute right-2 top-2 p-1.5 text-zinc-400 hover:text-white"><X className="h-4 w-4" /></button>}
                 {showResults && <div id="campus-search-results" className="max-h-[50dvh] overflow-y-auto border-t border-zinc-800/60 p-1.5">
-                    {/* Pinned places first while nothing is typed. */}
-                    {!search.trim() && pinnedPlaces.map(feature => <button key={`pin:${feature.id}`} onMouseDown={event => event.preventDefault()} onClick={() => select(feature)} className="flex w-full items-center gap-3 rounded-none px-3 py-2.5 text-left text-sm text-zinc-300 hover:bg-zinc-900">
-                        <Pin className="h-4 w-4 shrink-0 text-timetable-400" /><span className="min-w-0 flex-1 truncate">{feature.properties.name}</span><span className="shrink-0 text-[10px] text-zinc-500">Épinglé</span><ArrowRight className="h-3 w-3 text-zinc-600" />
-                    </button>)}
-                    {listResults && searchResults.map(feature => {
+                    {searchResults.map(feature => {
                         const isBuilding = feature.properties.kind === "building";
                         const Icon = isBuilding ? Building2 : MapPin;
                         return <button key={String(feature.id)} onMouseDown={event => event.preventDefault()} onClick={() => isBuilding && feature.properties.building_id ? focusBuilding(String(feature.properties.building_id)) : select(feature)} className="flex w-full items-center gap-3 rounded-none px-3 py-2.5 text-left text-sm text-zinc-300 hover:bg-zinc-900">
                             <Icon className="h-4 w-4 shrink-0 text-campus-400" /><span className="min-w-0 flex-1 truncate">{feature.properties.name}</span><span className="shrink-0 text-[10px] text-zinc-500">{isBuilding ? "Bâtiment" : feature.properties.levels.map(levelLabel).join(" · ")}</span><ArrowRight className="h-3 w-3 text-zinc-600" />
                         </button>;
                     })}
-                    {listResults && !searchResults.length && <p className="px-3 py-4 text-xs text-zinc-500">Aucun résultat</p>}
+                    {!searchResults.length && <p className="px-3 py-4 text-xs text-zinc-500">Aucun résultat</p>}
                 </div>}
             </div>
+            {/* Bookmarks: always one press away, next to the search. */}
+            <button onClick={() => { setBookmarksOpen(!bookmarksOpen); setSearchOpen(false); }} title="Signets" aria-label={`Signets (${bookmarks.length})`} aria-expanded={bookmarksOpen} aria-controls="campus-bookmarks"
+                className={`relative flex h-11 w-11 shrink-0 items-center justify-center border bg-zinc-950/95 shadow-xl backdrop-blur-xl focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-campus-400 ${bookmarksOpen ? "border-campus-500/60 text-campus-300" : "border-zinc-800 text-timetable-400 hover:text-white"}`}>
+                <Bookmark className="h-4 w-4" />
+                {!!bookmarks.length && <span className="absolute -right-1 -top-1 min-w-4 bg-timetable-400 px-1 font-mono text-[9px] font-bold leading-4 text-zinc-950">{bookmarks.length}</span>}
+            </button>
+            {bookmarksOpen && <div id="campus-bookmarks" className="absolute inset-x-0 top-full mt-1.5 max-h-[50dvh] overflow-y-auto border border-zinc-800 bg-zinc-950/95 p-1.5 shadow-xl backdrop-blur-xl">
+                <p className="px-3 pb-1 pt-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Signets</p>
+                {bookmarks.map(bookmark => {
+                    const home = buildings.find(item => item.id === bookmark.building_id);
+                    const where = [home?.name || bookmark.building_id, bookmark.level === null ? null : floorName(bookmark.level)].filter(Boolean).join(" · ");
+                    return <div key={bookmark.feature_id} className="flex items-center hover:bg-zinc-900">
+                        <button onClick={() => openBookmark(bookmark)} className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left text-sm text-zinc-300">
+                            <Bookmark className="h-4 w-4 shrink-0 text-timetable-400" /><span className="min-w-0 flex-1 truncate">{bookmark.name}</span><span className="shrink-0 font-mono text-[10px] text-zinc-500">{where}</span>
+                        </button>
+                        <button onClick={() => void forgetBookmark(bookmark.feature_id)} title="Retirer le signet" aria-label={`Retirer le signet ${bookmark.name}`} className="p-2.5 text-zinc-500 hover:text-comms-400"><BookmarkX className="h-4 w-4" /></button>
+                    </div>;
+                })}
+                {!bookmarks.length && <p className="px-3 py-3 text-xs text-zinc-500">Aucun signet. Ajoutez un lieu depuis sa fiche avec « Signet ».</p>}
+            </div>}
         </div>
         {building && levels.length > 0 && <nav aria-label="Étages" className="absolute right-3 top-1/2 z-10 flex max-h-[calc(100%-300px)] -translate-y-1/2 max-sm:top-[24%] max-sm:max-h-[30%] flex-col gap-1 overflow-y-auto rounded-none border border-zinc-800 bg-zinc-950/95 p-1.5 shadow-xl backdrop-blur-xl sm:right-5 sm:top-[42%]">
             <Layers className="mx-auto my-1 h-3.5 w-3.5 shrink-0 text-zinc-600" />

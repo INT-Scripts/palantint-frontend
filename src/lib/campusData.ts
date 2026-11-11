@@ -50,6 +50,11 @@ export const loadCampusContext = () => Promise.all([
 // Flats by location: occupied ones have a current resident. Fetched fresh, like occupants.
 export type Occupancy = { occupied: string[]; vacant: string[] };
 export const loadOccupancy = () => fetchPrivate("/maps/indoor/occupancy") as Promise<Occupancy>;
+// Bookmarked places of the signed-in user, kept by the server.
+export type PlaceBookmark = { feature_id: string; name: string; building_id: string | null; level: number | null; location_id: string | null; created_at: string };
+export const loadBookmarks = () => fetchPrivate("/maps/indoor/bookmarks").then((data: { bookmarks: PlaceBookmark[] }) => data.bookmarks);
+export const saveBookmark = (bookmark: Omit<PlaceBookmark, "created_at">) => fetchPrivate("/maps/indoor/bookmarks", { method: "PUT", body: JSON.stringify(bookmark) }) as Promise<PlaceBookmark>;
+export const removeBookmark = (featureId: string) => fetchPrivate(`/maps/indoor/bookmarks?feature_id=${encodeURIComponent(featureId)}`, { method: "DELETE" });
 export type ReliefTile = { z: number; x: number; y: number; lod: "detail" | "context"; path: string; bounds: [number, number, number, number] };
 export type ReliefIndex = { attribution: string; tiles: ReliefTile[] };
 export type ScanRegistration = { origin: [number, number]; a: number; b: number; tx: number; tz: number; scale: number; altitude: number; anchors: number; error: number };

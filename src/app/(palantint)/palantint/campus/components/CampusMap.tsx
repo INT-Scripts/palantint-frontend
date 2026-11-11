@@ -387,7 +387,7 @@ export default function CampusMap() {
         </Map>
         <div ref={hoverLabel} hidden className="pointer-events-none absolute left-0 top-0 z-30 max-w-40 rounded-none border border-zinc-800 bg-zinc-950/95 px-2.5 py-1.5 text-xs text-white shadow-xl" />
         {panelOpen && <div className="absolute inset-x-0 bottom-0 z-20 max-h-[58%] sm:inset-x-auto sm:left-0 sm:top-0 sm:max-h-none sm:w-[380px] sm:pt-[76px] sm:bg-zinc-950/95">
-            <CampusPanel building={building} buildingFeature={buildingFeature} level={level} rooms={floorRooms} selected={selected} context={context ?? null} loadingContext={loadingContext} drawnRoom={drawnRoom} housing={housing} copied={copied}
+            <CampusPanel building={building} buildingFeature={buildingFeature} level={level} levelCount={levels.length} rooms={floorRooms} selected={selected} context={context ?? null} loadingContext={loadingContext} drawnRoom={drawnRoom} housing={housing} copied={copied}
                 onSelect={select} onCloseBuilding={() => focusBuilding(null)} onClosePlace={closePlace} onCopy={copyLink} />
         </div>}
         <div className="absolute left-3 top-3 z-30 w-[min(352px,calc(100%-24px))] sm:left-3.5 sm:top-4">

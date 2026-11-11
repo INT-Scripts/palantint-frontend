@@ -89,10 +89,12 @@ function ClubRow({ club }: { club: ClubLink }) {
         : <div className="flex items-center gap-2 p-2 text-sm text-zinc-400">{body}</div>;
 }
 
-export default function CampusPanel({ building, buildingFeature, level, rooms, selected, context, loadingContext, drawnRoom, housing, copied, onSelect, onCloseBuilding, onClosePlace, onCopy }: {
+export default function CampusPanel({ building, buildingFeature, level, levelCount, rooms, selected, context, loadingContext, drawnRoom, housing, copied, onSelect, onCloseBuilding, onClosePlace, onCopy }: {
     building?: Building;
     buildingFeature?: Place;
     level: number;
+    // Wemap levels and the levels of the drawn plans placed in the building.
+    levelCount: number;
     rooms: Place[];
     selected?: Place;
     context: PlaceContext | null;
@@ -118,7 +120,7 @@ export default function CampusPanel({ building, buildingFeature, level, rooms, s
                 <h2 className="truncate text-lg font-semibold text-white">{place ? p!.name : building?.name}</h2>
                 <p className="mt-1 flex flex-wrap items-center gap-x-2 font-mono text-[11px] text-zinc-500">
                     {place ? <><Layers className="h-3 w-3" />{p!.levels.map(value => floorName(value)).join(" · ") || "Tous niveaux"}{building && <span>· {building.name}</span>}</>
-                        : building && <>{building.levels.length} niveau{building.levels.length > 1 ? "x" : ""} · {floorName(level)}</>}
+                        : building && <>{levelCount} niveau{levelCount > 1 ? "x" : ""} · {floorName(level)}</>}
                 </p>
             </div>
             <button onClick={onCloseBuilding} title="Quitter le bâtiment" aria-label="Quitter le bâtiment" className="p-1 text-zinc-500 hover:text-white"><X className="h-4 w-4" /></button>

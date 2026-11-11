@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { planGeometry, planLines, polygonRings, type FloorPlan } from '@/lib/planGeometry';
+import { PLAN_SPACE_KINDS, planGeometry, planLines, polygonRings, type FloorPlan } from '@/lib/planGeometry';
 import { extrudePolygons } from '@/lib/campusExtrusion';
 type FloorData = {
     value: string;
@@ -94,6 +94,7 @@ function PlanFloor({ plan, factor, tx, ty, center, y, height, active, accent, xr
 }) {
     const geometries = useMemo(() => {
         const positions: number[] = [];
+        const spaces: THREE.ExtrudeGeometry[] = [];
         const surfaces: {
             geometry: THREE.ExtrudeGeometry;
             room: string;
@@ -121,13 +122,18 @@ function PlanFloor({ plan, factor, tx, ty, center, y, height, active, accent, xr
                 if (surface)
                     surfaces.push({ geometry: surface, room: feature.properties.room_id || String(feature.id) });
             }
+            if (PLAN_SPACE_KINDS.has(feature.properties.kind)) {
+                const surface = extrudePolygons(polygonRings(geometry).map(rings => rings.map(ring => ring.map(convert))), .01);
+                if (surface)
+                    spaces.push(surface);
+            }
         }
         const walls = new THREE.BufferGeometry();
         walls.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-        return { walls, surfaces };
+        return { walls, surfaces, spaces };
     }, [plan, factor, tx, ty, center, height]);
-    useEffect(() => () => { geometries.walls.dispose(); geometries.surfaces.forEach(({ geometry }) => geometry.dispose()); }, [geometries]);
-    return <group position={[0, y, 0]}><lineSegments geometry={geometries.walls} raycast={() => { }} renderOrder={5}><lineBasicMaterial color={active ? accent : '#71717a'} transparent opacity={active ? 1 : .35} depthTest={!xray}/></lineSegments>{geometries.surfaces.map(({ geometry, room }) => <mesh key={room} geometry={geometry} onClick={active && onSelectRoom ? event => { event.stopPropagation(); onSelectRoom(room); } : undefined}><meshBasicMaterial color={active && room === selectedRoom ? '#fbbf24' : active ? accent : '#52525b'} transparent opacity={active ? .35 : .07} depthWrite={false} depthTest={!xray} side={THREE.DoubleSide}/></mesh>)}</group>;
+    useEffect(() => () => { geometries.walls.dispose(); geometries.surfaces.forEach(({ geometry }) => geometry.dispose()); geometries.spaces.forEach(geometry => geometry.dispose()); }, [geometries]);
+    return <group position={[0, y, 0]}><lineSegments geometry={geometries.walls} raycast={() => { }} renderOrder={5}><lineBasicMaterial color={active ? accent : '#71717a'} transparent opacity={active ? 1 : .35} depthTest={!xray}/></lineSegments>{geometries.spaces.map((geometry, i) => <mesh key={`space-${i}`} geometry={geometry} raycast={() => { }}><meshBasicMaterial color="#475569" transparent opacity={active ? .3 : .05} depthWrite={false} depthTest={!xray} side={THREE.DoubleSide}/></mesh>)}{geometries.surfaces.map(({ geometry, room }) => <mesh key={room} geometry={geometry} onClick={active && onSelectRoom ? event => { event.stopPropagation(); onSelectRoom(room); } : undefined}><meshBasicMaterial color={active && room === selectedRoom ? '#fbbf24' : active ? accent : '#52525b'} transparent opacity={active ? .35 : .07} depthWrite={false} depthTest={!xray} side={THREE.DoubleSide}/></mesh>)}</group>;
 }
 export default function BuildingModel({ bldg, floors, activeFloor, buildingPlans, buildingMetadata }: BuildingWireframeProps & {
     bldg: string;

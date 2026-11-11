@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Minus, Maximize2 } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { planGeometry, planLines, polygonRings, type FloorPlan, type PlanFeature } from '@/lib/planGeometry';
+import { PLAN_SPACE_KINDS, planGeometry, planLines, polygonRings, type FloorPlan, type PlanFeature } from '@/lib/planGeometry';
 const DEFAULT_VIEW = [0, 0, 1000, 1000];
 type Props = {
     plan: FloorPlan | null;
@@ -76,9 +76,24 @@ export default function FloorPlanCanvas({ plan, reference, selectedRoom, filtere
                 ctx.stroke(pathFor(feature));
             ctx.globalAlpha = 1;
         }
+        // Storey slab and unnumbered spaces under the walls and rooms.
+        for (const { feature, path } of paths) {
+            const p = feature.properties;
+            if (planGeometry(feature).type === 'Point')
+                continue;
+            if (p.kind === 'floor')
+                ctx.fillStyle = privateView ? '#18181b' : dark ? '#292524' : '#e7e5e4aa';
+            else if (PLAN_SPACE_KINDS.has(p.kind))
+                ctx.fillStyle = privateView ? '#47556959' : dark ? '#57534e88' : '#d6d3d1aa';
+            else
+                continue;
+            ctx.fill(path, 'evenodd');
+        }
         for (const { feature, path } of paths) {
             const p = feature.properties, id = p.room_id;
             ctx.lineWidth = 1 / scale;
+            if (p.kind !== 'wall' && p.kind !== 'room')
+                continue;
             if (p.kind === 'wall') {
                 ctx.strokeStyle = privateView ? '#71717a' : '#78716c';
                 ctx.stroke(path);

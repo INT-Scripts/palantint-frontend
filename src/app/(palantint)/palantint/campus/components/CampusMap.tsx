@@ -9,7 +9,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { Search, X, MapPin, Layers, Loader2, ArrowRight, Building2, Bookmark, BookmarkX } from "lucide-react";
 import { loadBookmarks, loadCampus, loadCampusContext, loadOccupancy, loadSurfaces, removeBookmark, resolveCampusRoom, saveBookmark, type AerialIndex, type PlaceBookmark, type BasemapData, type DrawnPlans, type LocalPlans, type ResidenceSummary } from "@/lib/campusData";
 import FloorPlanCanvas from "@/components/FloorPlanCanvas";
-import type { FloorPlan } from "@/lib/planGeometry";
+import type { FloorPlan, PlanFeature as FloorPlanFeature } from "@/lib/planGeometry";
 import { fetchPrivate } from "@/lib/api";
 import { floorName, normalizePlace as text, isCampusDestination, campusDestinations, type Place as PlanFeature, type CampusPlans as Plans, type CampusBuilding as Building, type PlaceProperties as Properties } from "@/lib/campus";
 import { createReliefLayer, type SceneLine, type SceneMarker } from "./reliefLayer";
@@ -511,7 +511,7 @@ export default function CampusMap() {
     const lift = reliefState === "ready" ? LIFT : 0;
     // In 3D with the surfaces, people and bookmarks are drawn by the 3D layer at their floor's height.
     const markers3D = is3D && reliefState === "ready";
-    const roomFilter: ExpressionSpecification = ["all", isPolygon, ["in", ["get", "kind"], ["literal", ["room", "corridor", "stairs", "elevator"]]]];
+    const roomFilter: ExpressionSpecification = ["all", isPolygon, ["in", ["get", "kind"], ["literal", ["room", "corridor", "stairs", "elevator", "space"]]]];
     const attribution = ["Wemap", basemap && !aerial && "© OpenStreetMap", (aerial || is3D) && "© IGN"].filter(Boolean).join(" · ");
     const panelOpen = !!building || (!!selected && selected.properties.kind !== "building");
     const buildingFeature = building?.feature_id ? featureIndex.get(building.feature_id) : undefined;
@@ -522,7 +522,7 @@ export default function CampusMap() {
         type: "FeatureCollection",
         metadata: { schema_version: 1, building: offMap!.code, floor: offMapFloor.floor, plan_coordinate_space: "local_plan", view_box: offMapFloor.view_box, georeferenced: false, room_count: 0, unresolved_rooms: [] },
         features: (localPlans?.features || []).filter(feature => feature.properties.building_id === offMap!.code && feature.properties.levels.includes(level))
-            .map(feature => ({ type: "Feature", id: String(feature.id), geometry: null, properties: { kind: feature.properties.kind as "room" | "wall", building: offMap!.code, floor: offMapFloor.floor, plan_geometry: feature.properties.plan_geometry as Geometry, room_id: feature.properties.room_id as string | undefined, name: feature.properties.name, label_coordinates: feature.properties.label_coordinates } })),
+            .map(feature => ({ type: "Feature", id: String(feature.id), geometry: null, properties: { kind: feature.properties.kind as FloorPlanFeature["properties"]["kind"], building: offMap!.code, floor: offMapFloor.floor, plan_geometry: feature.properties.plan_geometry as Geometry, room_id: feature.properties.room_id as string | undefined, name: feature.properties.name, label_coordinates: feature.properties.label_coordinates } })),
     } : null, [offMap, offMapFloor, localPlans, level]);
     const offMapTones = useMemo(() => Object.fromEntries((localPlans?.features || []).flatMap(feature => {
         const state = occupancy?.get(feature.properties.location_id || "");
@@ -543,7 +543,7 @@ export default function CampusMap() {
                 <Layer id="buildings" type="fill" filter={["==", ["get", "kind"], "building"]} layout={{ visibility: flat }} paint={{ "fill-color": "#27272a", "fill-opacity": aerial ? 0.25 : 0.8, "fill-outline-color": aerial ? "#e4e4e7" : "#71717a" }} />
                 <Layer id="active-building" type="line" filter={["all", ["==", ["get", "kind"], "building"], ["==", ["to-string", ["get", "building_id"]], buildingId || ""]]} paint={{ "line-color": "#a78bfa", "line-width": 2 }} />
                 <Layer id="floors" minzoom={17.8} type="fill" filter={["all", isPolygon, ["==", ["get", "kind"], "floor"]]} layout={{ visibility: flat }} paint={{ "fill-color": "#18181b", "fill-opacity": 0.9 }} />
-                <Layer id="circulation" minzoom={17.8} type="fill" filter={["all", isPolygon, ["in", ["get", "kind"], ["literal", ["corridor", "stairs", "elevator"]]]]} layout={{ visibility: flat }} paint={{ "fill-color": "#475569", "fill-opacity": 0.5, "fill-outline-color": "#64748b" }} />
+                <Layer id="circulation" minzoom={17.8} type="fill" filter={["all", isPolygon, ["in", ["get", "kind"], ["literal", ["corridor", "stairs", "elevator", "space"]]]]} layout={{ visibility: flat }} paint={{ "fill-color": "#475569", "fill-opacity": 0.5, "fill-outline-color": "#64748b" }} />
                 <Layer id="rooms" minzoom={17.8} type="fill" filter={["all", isPolygon, ["==", ["get", "kind"], "room"]]} layout={{ visibility: flat }} paint={{ "fill-color": ["match", ["get", "occupancy"], "occupied", OCCUPANCY_TONES.occupied.fill, "vacant", OCCUPANCY_TONES.vacant.fill, ["case", ["==", ["get", "actionable"], true], "#164e63", "#27272a"]], "fill-opacity": 0.8, "fill-outline-color": ["match", ["get", "occupancy"], "occupied", OCCUPANCY_TONES.occupied.stroke, "vacant", OCCUPANCY_TONES.vacant.stroke, ["case", ["==", ["get", "actionable"], true], "#38bdf8", "#52525b"]] }} />
                 <Layer id="lines" minzoom={18} type="line" filter={["all", ["in", ["geometry-type"], ["literal", ["LineString", "MultiLineString"]]], ["!=", ["get", "kind"], "wall"]]} layout={{ visibility: flat }} paint={{ "line-color": "#64748b", "line-width": 1 }} />
                 <Layer id="walls" minzoom={18} type="line" filter={["==", ["get", "kind"], "wall"]} layout={{ visibility: flat }} paint={{ "line-color": "#a1a1aa", "line-width": ["interpolate", ["linear"], ["zoom"], 18, 0.6, 21, 2] }} />

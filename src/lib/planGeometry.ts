@@ -4,11 +4,13 @@ export type PlanFeature = {
     id: string;
     geometry: Geometry | null;
     properties: {
-        kind: 'wall' | 'room';
+        // floor: the storey slab; corridor…space: unnumbered areas (plan-spaces.json).
+        kind: 'wall' | 'room' | 'floor' | 'corridor' | 'stairs' | 'elevator' | 'space';
         building: string;
         floor: string;
         plan_geometry: Geometry;
         room_id?: string;
+        space_id?: string;
         name?: string;
         label_coordinates?: number[];
         extraction?: string;
@@ -29,6 +31,7 @@ export type FloorPlan = {
     features: PlanFeature[];
 };
 export function planGeometry(feature: PlanFeature) { return feature.properties.plan_geometry; }
+export const PLAN_SPACE_KINDS: ReadonlySet<string> = new Set(['corridor', 'stairs', 'elevator', 'space']);
 export function polygonRings(geometry: Geometry): number[][][][] {
     return geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.type === 'MultiPolygon' ? geometry.coordinates : [];
 }
